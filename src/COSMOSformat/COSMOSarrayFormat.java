@@ -6,11 +6,13 @@
 
 package COSMOSformat;
 
+import static COSMOSformat.VFileConstants.MAX_LINE_LENGTH;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import SmException.FormatException;
+import java.util.Arrays;
 
 /**
  *
@@ -54,7 +56,6 @@ abstract class COSMOSarrayFormat {
         
         //set the copy of the header format line
         this.formatLine = line;
-        System.out.println("header format line: " + line);
         
         //get the number of values at the start of the line
         Pattern regDigits = Pattern.compile( getDigitsRegex );
@@ -93,12 +94,6 @@ abstract class COSMOSarrayFormat {
             this.precision = Integer.parseInt(formatter.get(2));
         } else {
             throw new FormatException("Could not extract format values in " + line);
-        }
-        System.out.println("total number of values: " + this.numVals);
-        System.out.println("field width: " + this.fieldWidth);
-        System.out.println("vals per line: " + this.valsPerLine);
-        if (this.precision != 0) {
-            System.out.println("precision: " + this.precision);
         }
     }
 
@@ -140,28 +135,81 @@ abstract class COSMOSarrayFormat {
     //from the format line to calculate the number of lines of data in the file.
     //Using integer math, round up the count if there's an unfilled last line.
     public int calculateNumLines() throws FormatException {
-        if (getValsPerLine() > 0) {
-            this.numLines = (getNumVals() / getValsPerLine()) + 
-                              (((getNumVals() % getValsPerLine()) > 0) ? 1 : 0);
+        if (this.valsPerLine > 0) {
+            this.numLines = (this.numVals / this.valsPerLine) + 
+                              (((this.numVals % this.valsPerLine) > 0) ? 1 : 0);
         } else {
             throw new FormatException("Invalid number of values per input line");
         }      
         return this.numLines;
     }
+    //Let the individual array types convert their data types into formatted strings
+    public abstract ArrayList<String> arrayToText();
+    
+    public String[] numberSectionToText() {
+        int valsToPack = 0;
+        int current = 0;
+        int totalLength = 1 + this.numLines;
+        String[] newText = new String[totalLength];
+        newText[0] = this.getFormatLine();
+        ArrayList<String> textVals = this.arrayToText();
+        
+        //pack each text value into a line according to the values per line
+        for (int i=0; i<this.numLines; i++) {
+            StringBuilder line = new StringBuilder();
+            //calculate the number of vals to pack into a single line
+            //use valsPerLine unless the last line has fewer
+            valsToPack = ((this.numVals-current) >= this.valsPerLine) ? 
+                                this.valsPerLine : (this.numVals - current);
+            for (int next=0; next < valsToPack; next++){
+                line.append(textVals.get(current));
+                current++;
+            }
+            newText[i+1] = line.toString();
+        }
+        return newText;
+    }
     
     public String getFormatLine(){
         return this.formatLine;
     }    
+    public void setFormatLine(String aformatLine){
+        this.formatLine = aformatLine;
+    }    
     public String getNumberFormat(){
         return this.numberFormat;
+    }    
+    public void setNumberFormat(String anumberFormat){
+        this.numberFormat = anumberFormat;
     }    
     public int getNumVals(){
         return this.numVals;
     }    
+    public void setNumVals( int anumVals){
+        this.numVals = anumVals;
+    }    
     public int getNumLines(){
         return this.numLines;
     }    
+    public void setNumLines( int anumLines){
+        this.numLines = anumLines;
+    }    
     public int getValsPerLine() {
         return this.valsPerLine;
+    }
+    public void setValsPerLine( int avalsPerLine ) {
+        this.valsPerLine = avalsPerLine;
+    }
+    public int getFieldWidth() {
+        return this.fieldWidth;
+    }
+    public void setFieldWidth( int afieldWidth ) {
+        this.fieldWidth = afieldWidth;
+    }
+    public int getPrecision() {
+        return this.precision;
+    }
+    public void setPrecision( int aprecision ) {
+        this.precision = aprecision;
     }
 }

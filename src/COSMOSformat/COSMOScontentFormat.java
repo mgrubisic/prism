@@ -18,17 +18,18 @@ import java.util.regex.Pattern;
  *
  * @author jmjones
  */
-abstract class COSMOScontentFormat {
+public class COSMOScontentFormat {
     private final String procType;  //data file type flag
-    private int noIntVal;  //NoData value for integer header array
-    private double noRealVal;  //NoData value for real header array
-    private String[] textHeader;  //Holds the text header lines
-    private VIntValueFormat intHeader;  //Holds the integer header array
-    private VRealValueFormat realHeader;  //Holds the real header array
-    private String[] comments;  //Holds the comment field
-    private String endOfData;  //Save the end-of-data line
+    private int channelNum;
+    protected int noIntVal;  //NoData value for integer header array
+    protected double noRealVal;  //NoData value for real header array
+    protected String[] textHeader;  //Holds the text header lines
+    protected VIntArray intHeader;  //Holds the integer header array
+    protected VRealArray realHeader;  //Holds the real header array
+    protected String[] comments;  //Holds the comment field
+    protected String endOfData;  //Save the end-of-data line
     
-    COSMOScontentFormat( String procType){
+    public COSMOScontentFormat( String procType){
         this.procType = procType;
         this.noIntVal = -999;
         this.noRealVal = -999.0;
@@ -41,14 +42,13 @@ abstract class COSMOScontentFormat {
         current = parseTextHeader(current, infile);
          
         //get integer header values
-        intHeader = new VIntValueFormat();
+        intHeader = new VIntArray();    
         current = intHeader.parseValues( current, infile);
-        System.out.println("50th integer val, channel #: " + intHeader.getIntValue(49));
+        channelNum = intHeader.getIntValue(STATION_CHANNEL_NUMBER);
         
         //get real header values
-        realHeader = new VRealValueFormat();
+        realHeader = new VRealArray();     
         current = realHeader.parseValues( current, infile);
-        System.out.format("63d real val, max val: %f%n", realHeader.getRealValue(63));
          
         //store commments
         current = parseComments ( current, infile);
@@ -65,8 +65,11 @@ abstract class COSMOScontentFormat {
     //each COSMOS file differs only in the format of the data sections.  Let each
     //class extending this for a specific V type define the process for extracting
     //the data from the arrays.
-    public abstract int parseDataSection (int startLine, String[] infile) throws 
-                                        FormatException, NumberFormatException;
+    public int parseDataSection (int startLine, String[] infile) throws 
+                                        FormatException, NumberFormatException {
+        System.err.println("method parseDataSection must be overridden");
+        return startLine;
+    }
     
     //Extract the text header to get the number of lines and NoData values.  Also
     //save for writing out other data products.
@@ -82,7 +85,6 @@ abstract class COSMOScontentFormat {
         if (line.length() >= HEADLINE_1_LENGTH){
             numHeaderLines = Integer.parseInt(
                             line.substring(NUM_HEAD_START,NUM_HEAD_END).trim());
-            System.out.println("numHeaderLines: " + numHeaderLines);
         }
         else {
             throw new FormatException("Error parsing V0 line " + current + " " + 
@@ -97,7 +99,6 @@ abstract class COSMOScontentFormat {
             numbers = line.split(",");
             noIntVal = Integer.parseInt(numbers[0].trim());
             noRealVal = Double.parseDouble(numbers[1].trim());
-            System.out.println(textHeader[8]);
         }
         else {
             throw new FormatException("Error in text header length of " + numHeaderLines);
@@ -136,9 +137,6 @@ abstract class COSMOScontentFormat {
         if ((numComments > 0) && (infile.length > (current + numComments + 1))) {
             comments = new String[numComments+1];
             comments = Arrays.copyOfRange(infile,current,(current + numComments + 1));
-            for (String each: comments){
-                System.out.println(each);
-            }
         }
         else {
             throw new FormatException("Error in comment length of " + numComments);
@@ -161,7 +159,6 @@ abstract class COSMOScontentFormat {
             Matcher m = regDigits.matcher( line );
             if (m.find(0)){
                 this.endOfData = line;
-                System.out.println("last line: " + line);
             } else {
                 throw new FormatException("Could not find end-of-data at line " + current);
             }            
@@ -171,5 +168,58 @@ abstract class COSMOScontentFormat {
         }
         return (current + 1);
     }
-
+    public void buildNewIntHeaderFormatLine() {
+        String line = "";
+        line = String.format("%1$4s Integer-header values follow on %2$3s lines, Format= ",
+                    String.valueOf(intHeader.getNumVals()),
+                        String.valueOf(intHeader.getNumLines()));
+        intHeader.setFormatLine(line + intHeader.getNumberFormat());
+    }
+    public void buildNewRealHeaderFormatLine() {
+        String line = "";
+        line = String.format("%1$4s Real-header values follow on %2$3s lines, Format= ",
+                    String.valueOf(realHeader.getNumVals()),
+                        String.valueOf(realHeader.getNumLines()));
+        realHeader.setFormatLine(line + realHeader.getNumberFormat());
+    }
+    public int getChannelNum(){
+        return channelNum;
+    }
+    public void setChannelNum() {
+        channelNum = intHeader.getIntValue(STATION_CHANNEL_NUMBER);
+    }
+    public double getRealHeaderValue( int index ) {
+        return realHeader.getRealValue(index);
+    }
+    public void setRealHeaderValue( int aindex, double avalue ) {
+        realHeader.setRealValue( aindex, avalue );
+    }
+    public int getIntHeaderValue( int index ) {
+        return intHeader.getIntValue(index);
+    }
+    public void setIntHeaderValue( int index, int aValue ) {
+        intHeader.setIntValue(index, aValue);
+    }
+    public double[] getRealHeaderArray() {
+        return realHeader.getRealArray();
+    }
+    public int[] getIntHeaderArray() {
+        return intHeader.getIntArray();
+    }
+    public void setRealHeaderArray( double[] aArray) throws FormatException {
+        realHeader.setRealArray( aArray );
+    }
+    public void setIntHeaderArray( int[] aArray) throws FormatException {
+        intHeader.setIntArray( aArray );
+    }
+    public String[] getTextHeader() {
+        String[] textCopy = new String[textHeader.length];
+        System.arraycopy(textHeader, 0 , textCopy, 0, textHeader.length);
+        return textCopy;
+    }
+    public String[] getComments() {
+        String[] textCopy = new String[comments.length];
+        System.arraycopy(comments, 0 , textCopy, 0, comments.length);
+        return textCopy;        
+    }
 }

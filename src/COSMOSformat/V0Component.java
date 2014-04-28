@@ -12,10 +12,10 @@ import SmException.FormatException;
  *
  * @author jmjones
  */
-public class V0Format extends COSMOScontentFormat {
-    private VIntValueFormat V0;  //raw acceleration counts
+public class V0Component extends COSMOScontentFormat {
+    private VIntArray V0;  //raw acceleration counts
 
-    public V0Format( String procType){
+    public V0Component( String procType){
         super( procType );
     }
 
@@ -24,11 +24,18 @@ public class V0Format extends COSMOScontentFormat {
                                         FormatException, NumberFormatException {
         int current = startLine;
         
-        V0 = new VIntValueFormat();
+        V0 = new VIntArray();
         current = V0.parseValues( current, infile);
-        System.out.println("last data value: " + V0.getIntValue(V0.getNumVals()-1));
         return current;
     }
-
+    public int getDataLength() {
+        return V0.getNumVals();
+    }
+    public int getDataValue( int index ) {
+        return V0.getIntValue(index);
+    }
+    public int[] getDataArray() {
+        return V0.getIntArray();
+    }
     
 }

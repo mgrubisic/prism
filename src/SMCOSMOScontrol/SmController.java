@@ -4,8 +4,10 @@
  * and open the template in the editor.
  */
 
-package smcontroller;
+package SMCOSMOScontrol;
 
+import COSMOSformat.V1Component;
+import static COSMOSformat.VFileConstants.RAWACC;
 import java.io.*;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -30,8 +32,6 @@ import SmException.FormatException;
 // writing out the data in the different formats, either individually or bundled.
 public class SmController {
     // set up temp. values for input parms (also using netbeans args option)
-    private static final String INFOLDER = "D:/PRISM/smtesting/debug";
-    private static final String OUTFOLDER = "D:/PRISM/smtesting/outProcessed";
     private static final String CONFIGFILE = "";
     
     private final String inFolder;
@@ -41,6 +41,7 @@ public class SmController {
     // data structures for the controller
     private File[] inVList;
     private SmQueue smqueue;
+    private SmProduct V1product;
 
     /**
      * @param args the command line arguments
@@ -72,7 +73,7 @@ public class SmController {
 
             //get the list of filenames in the input directory
             try {
-                smc.inVList = smc.getFileList( smc.inFolder );
+                smc.inVList = smc.getFileList( smc.inFolder, "*.v0" );
             }
             catch (IOException err) {
                 throw new SmException("Unable to access V0 file list: " + err.getMessage());
@@ -80,19 +81,22 @@ public class SmController {
             //get each filename, read in, parse, process, write it out
             for (File each: smc.inVList){
                 smc.smqueue = new SmQueue( each );
+                smc.V1product = new SmProduct(each, "V1", smc.outFolder);
                 try {
-                    lineCount = smc.smqueue.readInV0();
-                    System.out.println("Lines read: " + lineCount);
+                    lineCount = smc.smqueue.readInVFile();
 
                     // parse the raw acceleration file into channel record(s)
-                    recordCount = smc.smqueue.parseV0();
+                    recordCount = smc.smqueue.parseVFile( RAWACC );
 
-                    //next is to process the records, then write out results                   
+                    //next is to process the records, then write out results
+                    smc.smqueue.processQueueContents(smc.V1product);
+                    smc.V1product.writeOutProducts();
+                    //this is a mess!
                 }
                 catch (FormatException | IOException | NumberFormatException err) {
                     //log the exact error msg and move on to the next file
                     //print stack trace to log for numberformatexception?
-                    System.out.println("Unable to read file " + each.toString());
+                    System.out.println("Unable to read/process/write file " + each.toString());
                     System.out.println(err.getMessage());
                 }
             }
@@ -104,18 +108,18 @@ public class SmController {
     
     //Get the list of .V0C files in the input folder and return as an array of
     //file names.  Flag if the input folder doesn't contain any files.
-    private File[] getFileList(String filePath) throws IOException {
+    private File[] getFileList(String filePath, String exten) throws IOException {
         Path dir = Paths.get(filePath);
         ArrayList<File> inList = new ArrayList<>();
         try (DirectoryStream<Path> stream =
-                                    Files.newDirectoryStream(dir, "*.v0c")) {
+                                    Files.newDirectoryStream(dir, exten)) {
             for (Path entry: stream) {
                 File name = new File( this.inFolder,entry.getFileName().toString());
                 inList.add(name);
             }
             File[] finalList = new File[inList.size()];
             if (inList.isEmpty()) {
-                throw new IOException("No .V0C files found in directory " + this.inFolder);
+                throw new IOException("No " + exten + " files found in directory " + this.inFolder);
             }
             return inList.toArray(finalList);
         }
