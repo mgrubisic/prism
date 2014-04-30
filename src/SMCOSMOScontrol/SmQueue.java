@@ -43,7 +43,7 @@ public class SmQueue {
         String nextLine;
         ArrayList<String> tempfile = new ArrayList<>();
         System.out.println(System.lineSeparator());
-        System.out.println("Reading in file: " + this.fileName);
+        System.out.println("+++ Reading in file: " + this.fileName);
 
         try (BufferedReader bufReader = new BufferedReader(new FileReader(this.fileName))){
             while ((nextLine = bufReader.readLine()) != null) {
@@ -95,7 +95,7 @@ public class SmQueue {
             }
         }
         numRecords = smlist.size();
-        System.out.println("found " + smlist.size() + " record(s) in file");
+        System.out.println("+++ found " + smlist.size() + " record(s) in file");
         return smlist.size();
     }
     

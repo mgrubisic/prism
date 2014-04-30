@@ -24,6 +24,11 @@ public class SmDataProcess {
     //Try to keep the api clean of V records?  Just operate on arrays and
     //parameters and let the caller build the products?
     
+    //This needs to return the max value, the avg value, and the place in the
+    //array where the max value occurred.  It also needs to return the mean
+    //offset value.  Make all processing methods return an object with these
+    //values as instance vars.
+    
     public double[] countsToValues(V0Component v0rec) {
         
         int inLength = v0rec.getDataLength();

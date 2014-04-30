@@ -41,6 +41,7 @@ public class SmProduct {
     public void addProduct(TextFileWriter newprod ) {
         this.productList.add(newprod);
     }
+    //fix this to deal with single or bundled out to file
     public void writeOutProducts() throws IOException {
         Path outName;
         String[] contents;

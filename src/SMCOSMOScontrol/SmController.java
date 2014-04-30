@@ -60,6 +60,7 @@ public class SmController {
         String config = "";
         int lineCount = 0; 
         int recordCount = 0;
+        double NANO_TO_SECOND = 1.0e-9;
         // 
         try {
             // make a method checkArgs here
@@ -83,15 +84,25 @@ public class SmController {
                 smc.smqueue = new SmQueue( each );
                 smc.V1product = new SmProduct(each, "V1", smc.outFolder);
                 try {
+//                    long startTime = System.nanoTime();
                     lineCount = smc.smqueue.readInVFile();
-
+//                    long readTime = System.nanoTime() - startTime;
                     // parse the raw acceleration file into channel record(s)
+//                    startTime = System.nanoTime();
                     recordCount = smc.smqueue.parseVFile( RAWACC );
-
+//                    long parseTime = System.nanoTime() - startTime;
                     //next is to process the records, then write out results
+//                    startTime = System.nanoTime();
                     smc.smqueue.processQueueContents(smc.V1product);
+//                    long processTime = System.nanoTime() - startTime;
+//                    startTime = System.nanoTime();
                     smc.V1product.writeOutProducts();
+//                    long writeTime = System.nanoTime() - startTime;
                     //this is a mess!
+//                    System.out.println("+++ read time: " + readTime*NANO_TO_SECOND);
+//                    System.out.println("+++ parse time: " + parseTime*NANO_TO_SECOND);
+//                    System.out.println("+++ process time: " + processTime*NANO_TO_SECOND);
+//                    System.out.println("+++ write time: " + writeTime*NANO_TO_SECOND);
                 }
                 catch (FormatException | IOException | NumberFormatException err) {
                     //log the exact error msg and move on to the next file
@@ -106,7 +117,7 @@ public class SmController {
         }
     }
     
-    //Get the list of .V0C files in the input folder and return as an array of
+    //Get the list of .V0 files in the input folder and return as an array of
     //file names.  Flag if the input folder doesn't contain any files.
     private File[] getFileList(String filePath, String exten) throws IOException {
         Path dir = Paths.get(filePath);
