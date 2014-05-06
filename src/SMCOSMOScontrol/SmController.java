@@ -74,7 +74,7 @@ public class SmController {
 
             //get the list of filenames in the input directory
             try {
-                smc.inVList = smc.getFileList( smc.inFolder, "*.v0" );
+                smc.inVList = smc.getFileList( smc.inFolder, "*.[vV]0" );
             }
             catch (IOException err) {
                 throw new SmException("Unable to access V0 file list: " + err.getMessage());
@@ -117,7 +117,7 @@ public class SmController {
         }
     }
     
-    //Get the list of .V0 files in the input folder and return as an array of
+    //Get the list of .V* files in the input folder and return as an array of
     //file names.  Flag if the input folder doesn't contain any files.
     private File[] getFileList(String filePath, String exten) throws IOException {
         Path dir = Paths.get(filePath);

@@ -6,16 +6,21 @@
 
 package COSMOSformat;
 
-import static COSMOSformat.VFileConstants.MAX_LINE_LENGTH;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import SmException.FormatException;
-import java.util.Arrays;
 
 /**
- *
+ * This abstract class defines fields and methods to work with numeric arrays 
+ * extracted from COSMOS files.  It extracts the format line from the input 
+ * text, pulls out and converts formatting text to numbers, and then uses these
+ * to parse the numeric header/data values from the text and store in numeric
+ * arrays.  It contains methods to allow access to the arrays during processing,
+ * and it also converts the numeric arrays back to text for writing out
+ * to another COSMOS file.
+ * 
  * @author jmjones
  */
 abstract class COSMOSarrayFormat {
@@ -27,6 +32,9 @@ abstract class COSMOSarrayFormat {
     private int fieldWidth;  //number of characters for each numeric value
     private int precision;  //number of places after decimal point (reals)
     
+    /**
+     * Constructor for this class simply initializes the shared instance variables
+     */
     public COSMOSarrayFormat(){
         this.numLines = 0;
         this.numVals = 0;
@@ -35,19 +43,32 @@ abstract class COSMOSarrayFormat {
         this.fieldWidth = 0;
         this.precision = 0;
     }
-    
-    //Let each caller handle the conversion of the text data to the numeric vals.
+    /**
+     * This method is to be defined for each array type, to extract numeric
+     * values and formatting information from the input text file.
+     * @param startLine The line number in the text file to begin parsing array info.
+     * @param infile The input text file, one line per string
+     * @return The text file line number updated to the line after the array info.
+     * @throws FormatException if unable to extract the formatting values
+     * @throws NumberFormatException if unable to convert text to numeric format
+     */
     public abstract int parseValues( int startLine, String[] infile) 
                                 throws FormatException, NumberFormatException;
     
-    //Start with the format line before either the header or the data arrays.
-    //Pull out the number of values and the format for each value.
+    /**
+     * This method takes the format line before either the header or the data
+     * arrays and pulls out the needed values such as the number of values in 
+     * the array, the number of values per line and the field width.
+     * @param line the line from the text file with array formatting information
+     * @throws FormatException if unable to find the necessary values in the line
+     * @throws NumberFormatException if unable to convert format text to numeric
+     */
     public void parseNumberFormatLine( String line) 
                                 throws FormatException, NumberFormatException {
          
         //at start of line, skip over any whitespace and pick up all digits
         String getDigitsRegex = "^((\\s*)(\\d+))";
-        //pick up (xxx) for the format
+        //pick up (xxx) for the number format
         String formatRegex = "\\((\\d+)([A-Za-z]+)(\\d+)(\\.*)(\\d*)\\)";
         //look for groups of digits in the number format
         String fieldRegex = "(\\d+)";
@@ -96,11 +117,18 @@ abstract class COSMOSarrayFormat {
             throw new FormatException("Could not extract format values in " + line);
         }
     }
-
-    //Pull each string representation of a number out of the line and put into
-    //an array.  Use the field width to separate the values in each line.
-    //Continue until the total value count is reached.  Let the caller of this
-    //method do the integer or real conversion of the numbers.
+    /**
+     * This method pulls each string representation of a number out of the line
+     * and puts it into a string arrayList.  It uses the field width to separate 
+     * the values in each line.  Continue until the total value count is reached. 
+     * Let the caller of this method do the integer or real conversion of the 
+     * numbers.
+     * @param startLine line number in input file contents where array begins
+     * @param infile text file contents in an array of strings
+     * @return arrayList of numeric values in text form, one value per entry
+     * @throws FormatException if unpacked values from the format line are not 
+     * valid or if the end-of-file is reached before all values extracted
+     */
     public ArrayList<String> extractNumericVals(int startLine, String[] infile) 
                                                         throws FormatException {
         ArrayList<String> holdNumbers;
@@ -130,10 +158,15 @@ abstract class COSMOSarrayFormat {
         }           
         return holdNumbers;
     }
-    
-    //Use the number of data values and the number of values per line extracted
-    //from the format line to calculate the number of lines of data in the file.
-    //Using integer math, round up the count if there's an unfilled last line.
+    /**
+     * This method uses the number of data values and the number of values per
+     * line extracted from the format line to calculate the number of lines of
+     * data in the file.  Using integer math, round up the count if there's an
+     * unfilled last line.
+     * 
+     * @return The number of text file lines holding the values of the array
+     * @throws FormatException for an invalid value extracted for values per line
+     */
     public int calculateNumLines() throws FormatException {
         if (this.valsPerLine > 0) {
             this.numLines = (this.numVals / this.valsPerLine) + 
@@ -143,9 +176,26 @@ abstract class COSMOSarrayFormat {
         }      
         return this.numLines;
     }
-    //Let the individual array types convert their data types into formatted strings
+    /**
+     * This method is defined for each array type using this abstract class.  Each
+     * array type handles the conversion of each numeric value into text form
+     * according to the defined formatting.  The result is an arrayList of strings
+     * that can then be packed into lines for text file output.
+     * 
+     * @return arrayList of strings containing the text representation of each
+     * number in the array
+     */
     public abstract ArrayList<String> arrayToText();
-    
+    /**
+     * This method converts the array and its format line into text
+     * strings to be written to a file.  It calls arrayToText, which is defined
+     * in each individual array type's methods, to convert each numeric value 
+     * into a text string according to the output format.  This method then
+     * packs each text string into a line.  It puts the format line at the
+     * start and returns a string array ready to be appended to the text output.
+     * 
+     * @return array of strings ready for text file output
+     */
     public String[] numberSectionToText() {
         int valsToPack = 0;
         int current = 0;
@@ -169,47 +219,103 @@ abstract class COSMOSarrayFormat {
         }
         return newText;
     }
-    
+    /**
+     * This getter returns the full format line for the array
+     * @return string containing the array's format line
+     */
     public String getFormatLine(){
         return this.formatLine;
-    }    
-    public void setFormatLine(String aformatLine){
-        this.formatLine = aformatLine;
-    }    
+    }  
+    /**
+     * This setter sets the format line field to the input string
+     * @param formatLine complete format line for this array
+     */
+    public void setFormatLine(String formatLine){
+        this.formatLine = formatLine;
+    }  
+    /**
+     * This getter returns the section of the format line holding number format,
+     * such as '(10I8)' or '(8F10.3)'
+     * @return the number format string
+     */
     public String getNumberFormat(){
         return this.numberFormat;
-    }    
-    public void setNumberFormat(String anumberFormat){
-        this.numberFormat = anumberFormat;
-    }    
+    }  
+    /**
+     * Setter for the number format field
+     * @param numberFormat the number format string, i.e. '(10I8)'
+     */
+    public void setNumberFormat(String numberFormat){
+        this.numberFormat = numberFormat;
+    } 
+    /**
+     * Getter for the numVals field
+     * @return the number of values in the array
+     */
     public int getNumVals(){
         return this.numVals;
     }    
-    public void setNumVals( int anumVals){
-        this.numVals = anumVals;
+    /**
+     * Setter for the numVals field
+     * @param numVals the number of values in the array
+     */
+    public void setNumVals( int numVals){
+        this.numVals = numVals;
     }    
+    /**
+     * Getter for the number of lines needed to hold the array as text
+     * @return the number of lines needed for text output
+     */
     public int getNumLines(){
         return this.numLines;
     }    
-    public void setNumLines( int anumLines){
-        this.numLines = anumLines;
+    /**
+     * Setter for the number of lines needed to hold the array as text
+     * @param numLines the number of lines needed for text output
+     */
+    public void setNumLines( int numLines){
+        this.numLines = numLines;
     }    
+    /**
+     * Getter for the number of numeric values (as text) to pack into a text line
+     * @return the number of values packed into a line
+     */
     public int getValsPerLine() {
         return this.valsPerLine;
     }
-    public void setValsPerLine( int avalsPerLine ) {
-        this.valsPerLine = avalsPerLine;
+    /**
+     * Setter for the number of array values to pack into a text line
+     * @param valsPerLine the number of values packed into a line
+     */
+    public void setValsPerLine( int valsPerLine ) {
+        this.valsPerLine = valsPerLine;
     }
+    /**
+     * Getter for the field width for numbers in the text array lines
+     * @return the field width
+     */
     public int getFieldWidth() {
         return this.fieldWidth;
     }
-    public void setFieldWidth( int afieldWidth ) {
-        this.fieldWidth = afieldWidth;
+    /**
+     * Setter for the field width for converting numbers to text in the arrays
+     * @param fieldWidth 
+     */
+    public void setFieldWidth( int fieldWidth ) {
+        this.fieldWidth = fieldWidth;
     }
+    /**
+     * Getter for the precision for conversion of doubles to text
+     * @return the precision
+     */
     public int getPrecision() {
         return this.precision;
     }
-    public void setPrecision( int aprecision ) {
-        this.precision = aprecision;
+    /**
+     * Setter for the precision for conversion of doubles to text
+     * @param precision the type double precision
+     */
+    public void setPrecision( int precision ) {
+        this.precision = precision;
     }
 }

@@ -80,37 +80,31 @@ public class VRealArray extends COSMOSarrayFormat {
         }
         return textVals;
     }
-    public double getRealValue( int aindex){
-        return realVals[aindex];
+    public double getRealValue( int index) throws IndexOutOfBoundsException {
+        if ((index < 0) || (index > realVals.length)) {
+            throw new IndexOutOfBoundsException("Real array index: " + index);
+        }
+        return realVals[index];
     }
-    public void setRealValue( int aindex, double avalue ){
-        this.realVals[aindex] = avalue;
+    public void setRealValue( int index, double avalue ) throws IndexOutOfBoundsException {
+        if ((index < 0) || (index > realVals.length)) {
+            throw new IndexOutOfBoundsException("Real array index: " + index);
+        }
+        this.realVals[index] = avalue;
     }
-    public void initRealArray( int aLength ) {
-        this.realVals = new double[ aLength ];
+    public double[] getRealArray() throws NullPointerException{
+        if (this.realVals == null) {
+            throw new NullPointerException("Null real array reference");
+        }
+        return this.realVals;
     }
-    public double[] getRealArray() {
-        double[] array = new double[this.realVals.length];
-        System.arraycopy(this.realVals, 0, array, 0, this.realVals.length);
-        return array;
-    }    
-    //allow the array to be set with the default print option or to specify
-    // a different fieldWidth, precision, and displayType of 'F' or 'E'
-    public void setRealArray(double[] inArray ) throws FormatException {
-        System.arraycopy(inArray, 0, this.realVals, 0, inArray.length);
-        this.setNumVals(this.realVals.length);
-        this.buildArrayParams();
-    }    
-    public void setRealArray(double[] inArray, int afieldWidth, int aprecision,
-                                  String adisplayType) throws FormatException {
-        System.arraycopy(inArray, 0, this.realVals, 0, inArray.length);
-        this.setFieldWidth(afieldWidth);
-        this.setPrecision(aprecision);
-        this.displayType = adisplayType;
-        this.setNumVals(this.realVals.length);
-        this.buildArrayParams();
-    }    
-    private void buildArrayParams() throws FormatException {
+    public void setRealArray(double[] inArray) throws NullPointerException{
+        if (this.realVals == null) {
+            throw new NullPointerException("Null real array reference");
+        }
+        this.realVals = inArray;
+    }
+    public void buildArrayParams() throws FormatException {
         if (this.getFieldWidth() > 0 ) {
             this.setValsPerLine(MAX_LINE_LENGTH / this.getFieldWidth());
         } else {
@@ -120,5 +114,8 @@ public class VRealArray extends COSMOSarrayFormat {
                 this.displayType + String.valueOf(this.getFieldWidth()) + 
                 "." + String.valueOf(this.getPrecision()) + ")");
         this.calculateNumLines();
+    }
+    public String getDisplayType() {
+        return this.displayType;
     }
 }

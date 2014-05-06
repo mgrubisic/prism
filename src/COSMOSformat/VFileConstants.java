@@ -29,12 +29,12 @@ public final class VFileConstants {
     public static final String DEFAULT_INT_DISPLAYTYPE = "I";
     
     //data product names
-    public static final String RAWACC = "Raw acceleration counts";
+    public static final String RAWACC =   "Raw acceleration counts ";
     public static final String UNCORACC = "Uncorrected acceleration";
-    public static final String CORACC = "Corrected acceleration";
-    public static final String VELOCITY = "Velocity data";
-    public static final String DISPLACE = "Displacement data";
-    public static final String SPECTRA = "Response spectra";
+    public static final String CORACC =   "Corrected acceleration  ";
+    public static final String VELOCITY = "Velocity data           ";
+    public static final String DISPLACE = "Displacement data       ";
+    public static final String SPECTRA =  "Response spectra        ";
     
     //units names and codes
     public static final String CMSQSECT = "cm/sec2";
@@ -47,13 +47,33 @@ public final class VFileConstants {
     public static final int SINGLE_CHANNEL = 1;
     public static final int BUNDLED = 2;
     
+    //int header index values
     public static final int STATION_CHANNEL_NUMBER = 49;
+    public static final int LENGTH_OF_RAW_RECORD = 34;
+    public static final int PROCESSING_STAGE_INDEX = 0;
+    public static final int V1_UNITS_INDEX = 2;
+    public static final int PROCESSING_AGENCY = 13;
+    
+    public static final int PROCESSING_AGENCY_USGS = 2; //should come from config file
+    
+    //real header index values
+    public static final int MEAN_ZERO = 35;
+    public static final int DELTA_T = 61;
+    public static final int MAX_VAL = 63;
+    public static final int MAX_VAL_TIME = 64;
+    public static final int AVG_VAL = 65;
+    
+    //Table 2 units
+    public static final int CM_SEC_SEC = 4;
+    
+    //Processing stages
+    public static final int V1_STAGE = 1;
     
     //processing - counts to physical values constants
     public static final double FROM_G_CONVERSION = 980.665; //cm per sq. sec per g
     
     //index values into real array to pick up value
-    public static final int RECORER_LSB = 22;  //recorder least significant bit in microvolts
-    public static final int RECORDER_FSI = 23;  //recorder full scale input in volts
-    public static final int SENSOR_SENITIVITY = 42; //in volts per g
+    public static final int RECORER_LSB = 21;  //recorder least significant bit in microvolts
+    public static final int RECORDER_FSI = 22;  //recorder full scale input in volts
+    public static final int SENSOR_SENITIVITY = 41; //in volts per g
 }

@@ -8,6 +8,7 @@ package COSMOSformat;
 
 import static COSMOSformat.VFileConstants.*;
 import SmException.FormatException;
+import SmProcessing.V1Process;
 
 /**
  *
@@ -47,8 +48,8 @@ public class V1Component extends COSMOScontentFormat {
         //the individual params for the real array.
         this.V1Data = new VRealArray();
         
-        this.comments = pV0.getComments();
-        this.endOfData = pV0.endOfData; //to be updated by method that updates the data
+        this.comments = pV0.getComments(); //leave update for processing, if any
+        this.endOfData = pV0.endOfData; //same as V0
     }
     @Override
     public int parseDataSection (int startLine, String[] infile) throws 
@@ -59,24 +60,43 @@ public class V1Component extends COSMOScontentFormat {
         current = V1Data.parseValues( current, infile);
         return current;
     }
-    //This method takes the 
-    public void buildV1(double[] inData) throws FormatException {
-        //under construction
-        V1Data.initRealArray(inData.length);
+    //Once in this method, the V1Process object is no longer needed and its array
+    //is transferred to the V1component object
+    public void buildV1 (V1Process inVvals) throws FormatException {
+        final double MSEC_TO_SEC = 1e-3;
+        //update values in the text header
+        this.textHeader[0] = this.textHeader[0].replaceAll(RAWACC, UNCORACC);
+        //update the processing date to the current date!!!
+        
+        //transfer the data array and set all array values
+        V1Data.setRealArray(inVvals.getV1Array());
         V1Data.setFieldWidth(REAL_FIELDWIDTH_V1);
         V1Data.setPrecision(REAL_PRECISION_V1);
-        V1Data.setRealArray(inData);
+        V1Data.setNumVals(inVvals.getV1ArrayLength());
+        V1Data.buildArrayParams();
         this.buildNewDataFormatLine();
-        //set values in the int header
+        
+        //update the headers with the V1 values
+        this.intHeader.setIntValue(PROCESSING_STAGE_INDEX, V1_STAGE);
+        this.intHeader.setIntValue(V1_UNITS_INDEX, CM_SEC_SEC);
+        this.intHeader.setIntValue(PROCESSING_AGENCY, PROCESSING_AGENCY_USGS);
+        this.realHeader.setRealValue(MEAN_ZERO, inVvals.getMeanToZero());
+        this.realHeader.setRealValue(MAX_VAL, inVvals.getMaxVal());
+        this.realHeader.setRealValue(AVG_VAL, inVvals.getAvgVal());
+        double time = (inVvals.getMaxIndex()) * MSEC_TO_SEC *
+                                        this.realHeader.getRealValue(DELTA_T);
+        this.realHeader.setRealValue(MAX_VAL_TIME, time);
     }
     public void buildNewDataFormatLine() {
-        //fix this for data format line
+        //calculate the time by multiplying the number of data values by delta t
         String line = "";
-        String tempSec = "XXX";
+        double dtime = this.getRealHeaderValue(DELTA_T);
+        double calcTime = dtime * this.realHeader.getNumVals();
+        String timeSec = Integer.toString((int)calcTime);
         String datType = "uncor. accel.";
-        line = String.format("%1$8s %2$13s pts, approx %3$4s secs, units=%4$7s(%5$2s), Format= ",
+        line = String.format("%1$8s %2$13s pts, approx %3$4s secs, units=%4$7s(%5$2s), Format=",
                                      String.valueOf(V1Data.getNumVals()),datType,
-                                                    tempSec, CMSQSECT, CMSQSECN);
+                                                    timeSec, CMSQSECT, CMSQSECN);
         V1Data.setFormatLine(line + V1Data.getNumberFormat());
     }
     

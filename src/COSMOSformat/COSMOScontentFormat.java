@@ -185,6 +185,12 @@ public class COSMOScontentFormat {
     public int getChannelNum(){
         return channelNum;
     }
+    public int getNoIntVal(){
+        return noIntVal;
+    }
+    public double getNoRealVal(){
+        return noRealVal;
+    }
     public void setChannelNum() {
         channelNum = intHeader.getIntValue(STATION_CHANNEL_NUMBER);
     }
@@ -199,18 +205,6 @@ public class COSMOScontentFormat {
     }
     public void setIntHeaderValue( int index, int aValue ) {
         intHeader.setIntValue(index, aValue);
-    }
-    public double[] getRealHeaderArray() {
-        return realHeader.getRealArray();
-    }
-    public int[] getIntHeaderArray() {
-        return intHeader.getIntArray();
-    }
-    public void setRealHeaderArray( double[] aArray) throws FormatException {
-        realHeader.setRealArray( aArray );
-    }
-    public void setIntHeaderArray( int[] aArray) throws FormatException {
-        intHeader.setIntArray( aArray );
     }
     public String[] getTextHeader() {
         String[] textCopy = new String[textHeader.length];

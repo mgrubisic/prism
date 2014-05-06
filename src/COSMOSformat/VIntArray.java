@@ -11,19 +11,32 @@ import SmException.FormatException;
 import java.util.ArrayList;
 
 /**
- *
+ * This class defines the fields and methods for integer arrays in COSMOS format.
+ * It can be used for integer headers or integer data arrays.  It extracts the
+ * array information from the text file, provides access to individual values or
+ * the whole array, and converts the array values and header into text for
+ * writing out to a file.  The access to the whole array was added to speed up
+ * processing of V0 to V1, eliminating the need to copy the data array before using
+ * it in processing.
  * @author jmjones
  */
 public class VIntArray extends COSMOSarrayFormat {
     private int[] intVals;
     private String displayType = "";
-    
+    /**
+     * Default constructor
+     */
     public VIntArray(){
         super();
         this.setFieldWidth(DEFAULT_INT_FIELDWIDTH);
         this.displayType = DEFAULT_INT_DISPLAYTYPE;
     }
-    //Copy constructor - use this to create a copy of a VIntArray object
+    /**
+     * Copy constructor - use this to create a copy of a VIntArray object from
+     * another VIntArray object.  Useful during processing to create a COSMOS
+     * component at the next processing step.
+     * @param source a VIntArray object to be copied
+     */
     public VIntArray( VIntArray source ){
         super();
         this.setFieldWidth(source.getFieldWidth());
@@ -37,14 +50,18 @@ public class VIntArray extends COSMOSarrayFormat {
         this.setNumLines(source.getNumLines());  
     }
     /**
-     *
-     * @param startLine
-     * @param infile
-     * @return
-     * @throws FormatException
+     * This method overrides the abstract class to handle the extraction of 
+     * numeric values for integer arrays.  It takes a string array of text lines
+     * from the input file and an index into the text where the array section
+     * begins, and parses the format line, then extracts each number and stores
+     * in an integer array
+     * @param startLine beginning line in the text file for the array information
+     * @param infile string array holding the contents of the COSMOS file
+     * @return updated line number, now pointing to the line after the array info.
+     * @throws FormatException if unable to find the expected format values
+     * @throws NumberFormatException if unable to convert text to integer
      */
     @Override
-    //Customize the numeric extraction for integer arrays
     public int parseValues( int startLine, String[] infile) 
                                 throws FormatException, NumberFormatException {
         int current = startLine;
@@ -64,29 +81,49 @@ public class VIntArray extends COSMOSarrayFormat {
         //add 1 to account for the integer header format line
         return (current + calculateNumLines() + 1);
     }
-    public int getIntValue( int index) {
+    /**
+     * This getter returns a value from the integer array at the given index
+     * @param index index into the integer array
+     * @return value from the integer array at the index
+     * @throws IndexOutOfBoundsException if index not within array index range
+     */
+    public int getIntValue( int index) throws IndexOutOfBoundsException {
+        if ((index < 0) || (index > intVals.length)) {
+            throw new IndexOutOfBoundsException("Integer array index: " + index);
+        }
         return intVals[index];
     }
-    public void setIntValue( int index, int aValue ) {
+    /**
+     * This setter sets a value in the integer array at the given index to the
+     * new value
+     * @param index index into the integer array
+     * @param aValue value to write into the array at the given index
+     * @throws IndexOutOfBoundsException if index not within array index range
+     */
+    public void setIntValue( int index, int aValue ) throws IndexOutOfBoundsException {
+        if ((index < 0) || (index > intVals.length)) {
+            throw new IndexOutOfBoundsException("Integer array index: " + index);
+        }
         intVals[index] = aValue;
     }
-    public int[] getIntArray() {
-        int length = intVals.length;
-        int[] array = new int[length];
-        System.arraycopy(intVals, 0, array, 0,length);
-        return array;
-    }    
-    public void setIntArray(int[] inArray ) throws FormatException {
-        System.arraycopy(inArray, 0, this.intVals, 0, inArray.length);
-        this.setNumVals(this.intVals.length);
-        this.buildTextFormats();
-    }    
-    public void setIntArray(int[] inArray, int afieldWidth) throws FormatException {
-        System.arraycopy(inArray, 0, this.intVals, 0, inArray.length);
-        this.setFieldWidth(afieldWidth);
-        this.setNumVals(this.intVals.length);
-        this.buildTextFormats();
+    /**
+     * This method returns a reference to the integer array.  This is used when
+     * processing V0 data values to V1 data.
+     * @return reference to the integer array
+     * @throws NullPointerException if the array is null when requested
+     */
+    public int[] getIntArray() throws NullPointerException{
+        if (this.intVals == null) {
+            throw new NullPointerException("Null integer array reference");
+        }
+        return this.intVals;
     }
+    /**
+     * This method takes each numeric value and converts it to its text
+     * representation according to the formatting stored for the array.
+     * Each text representation of a number is stored in an arrayList
+     * @return arrayList of text-formatted numbers
+     */
     public ArrayList<String> arrayToText() {
         String formatting = "%" + String.valueOf(this.getFieldWidth()) + "d";
         ArrayList <String> textVals = new ArrayList<>();
@@ -96,15 +133,11 @@ public class VIntArray extends COSMOSarrayFormat {
         }
         return textVals;
     }
-    private void buildTextFormats() throws FormatException {
-        if (this.getFieldWidth() > 0 ) {
-            this.setValsPerLine(MAX_LINE_LENGTH / this.getFieldWidth());
-        } else {
-            throw new FormatException("Invalid field width of " + this.getFieldWidth());
-        }
-        this.setNumberFormat("(" + String.valueOf(this.getValsPerLine()) + 
-                this.displayType + String.valueOf(this.getFieldWidth()) + ")");
-        this.calculateNumLines();
+    /**
+     * Getter for the displayType field,i.e. "I", for type integer
+     * @return the display type
+     */
+    public String getDisplayType() {
+        return this.displayType;
     }
-
 }

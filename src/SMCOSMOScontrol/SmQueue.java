@@ -17,7 +17,7 @@ import java.io.*;
 import java.util.ArrayList;
 
 import SmException.FormatException;
-import SmProcessing.SmDataProcess;
+import SmProcessing.V1Process;
 
 /**
  *
@@ -103,12 +103,20 @@ public class SmQueue {
         //under construction
         double[] array;
         for (COSMOScontentFormat rec : smlist) {
-            //start a new thread for each processing piece?
-            SmDataProcess process = new SmDataProcess();
-            array = process.countsToValues((V0Component)rec);
-            //need to get the mean offset value from countsToValues for the header
+            //declare rec as a V0 channel record
+            V0Component v0rec = (V0Component)rec;
+            //create the V1 processing object
+            int V0arrLength = v0rec.getDataLength();
+            V1Process v1val = new V1Process(V0arrLength);
+            //calculate the counts-to-physical-values conversion value
+            double lsb = v0rec.getRealHeaderValue(RECORER_LSB);
+            double fsi = v0rec.getRealHeaderValue(RECORDER_FSI);
+            double sensitivity = v0rec.getRealHeaderValue(SENSOR_SENITIVITY);
+            double conv = v1val.countToCMSConversion(lsb, fsi, sensitivity);
+            v1val.countsToValues(v0rec.getDataArray(), v1val, conv);
+            //create a new V1 channel record and add processing to it
             V1Component V1 = new V1Component( UNCORACC, (V0Component)rec);
-            V1.buildV1(array);
+            V1.buildV1(v1val);
             TextFileWriter V1out = new TextFileWriter( V1.getChannelNum(),V1.V1ToText());
             V1prod.addProduct(V1out);
         }
