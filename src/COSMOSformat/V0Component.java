@@ -53,7 +53,7 @@ public class V0Component extends COSMOScontentFormat {
      * @param index location in the array to retrieve the value
      * @return value from the array
      */
-    public int getDataValue( int index ) {
+    public int getDataValue( int index ) throws IndexOutOfBoundsException {
         return V0.getIntValue(index);
     }
     /**

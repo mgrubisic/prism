@@ -16,7 +16,7 @@ import org.junit.rules.ExpectedException;
 
 
 /**
- *
+ * JUnit test for VIntArray and COSMOSarrayFormat
  * @author jmjones
  */
 public class VIntArrayTest {

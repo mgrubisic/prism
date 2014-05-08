@@ -19,7 +19,7 @@ import org.junit.Rule;
 import org.junit.rules.ExpectedException;
 
 /**
- *
+ * JUnit test for VRealArray and COSMOSarrayFormat
  * @author jmjones
  */
 public class VRealArrayTest {

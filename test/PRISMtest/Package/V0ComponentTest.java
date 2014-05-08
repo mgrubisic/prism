@@ -18,8 +18,11 @@
 package PRISMtest.Package;
 
 import COSMOSformat.V0Component;
+import static COSMOSformat.VFileConstants.DEFAULT_NOINTVAL;
 import static COSMOSformat.VFileConstants.RAWACC;
+import static COSMOSformat.VFileConstants.STATION_CHANNEL_NUMBER;
 import SmException.FormatException;
+import SmException.SmException;
 import java.util.Arrays;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,7 +31,7 @@ import org.junit.Rule;
 import org.junit.rules.ExpectedException;
 
 /**
- *
+ * JUnit test class for V0Component and COSMOScontentFormat
  * @author jmjones
  */
 public class V0ComponentTest {
@@ -54,7 +57,7 @@ public class V0ComponentTest {
         infile[9] = "Raw record length =  56.000 sec, Uncor max =    20108 counts, at   25.205 sec.";
         infile[10]= "Processed: 01/15/14  (k2vol0 v0.1 CSMIP)";
         infile[11]= "Record not filtered.";
-        infile[12]= "Values used when parameter or data value is unknown/unspecified:   -933, -222.0";
+        infile[12]= "Values used when parameter or data value is unknown/unspecified:   -999, -999.0";
         infile[13]= " 100 Integer-header values follow on  10 lines, Format= (10I8)";
         infile[14]= "       0       1      50     120       1    -999    -999   13921    -999    -999";
         infile[15]= "       5       5       5       5    -999       1    -999    -999       6     360";
@@ -107,6 +110,7 @@ public class V0ComponentTest {
     }
     @Test
     public void testParseHeader() throws FormatException, NumberFormatException {
+        infile[12]= "Values used when parameter or data value is unknown/unspecified:   -933, -222.0";
         int lineNum = v0.loadComponent(0, infile);
         org.junit.Assert.assertEquals(RAWACC, v0.getProcType());
         org.junit.Assert.assertEquals(-933, v0.getNoIntVal());
@@ -199,5 +203,51 @@ public class V0ComponentTest {
         expectedEx.expectMessage("End-of-file found before end-of-data at line 48");
         String[] test = Arrays.copyOfRange(infile, 0, 47);
         int lineNum = v0.loadComponent(0, test);
+    }
+    @Test
+    public void testGetChannelNumber()  throws SmException, FormatException {
+        expectedEx.expect(SmException.class);
+        expectedEx.expectMessage("Undefined station channel number in int. header, index " + (STATION_CHANNEL_NUMBER+1));
+        int lineNum = v0.loadComponent(0, infile);
+        
+        v0.setIntHeaderValue(STATION_CHANNEL_NUMBER, v0.getNoIntVal());
+        int num = v0.getIntHeaderValue(STATION_CHANNEL_NUMBER);
+        org.junit.Assert.assertEquals(DEFAULT_NOINTVAL, num);
+        
+        v0.setChannelNum();
+    }
+    @Test
+    public void testGetSetHeaderVals() throws IndexOutOfBoundsException, FormatException {
+        int lineNum = v0.loadComponent(0, infile);
+        v0.setIntHeaderValue(10, 10);
+        v0.setRealHeaderValue(10, 10.25);
+        org.junit.Assert.assertEquals(10,v0.getIntHeaderValue(10));
+        org.junit.Assert.assertEquals(10.25, v0.getRealHeaderValue(10),delta);
+    }
+    @Test
+    public void testSetIntHeaderValsRange() throws IndexOutOfBoundsException, FormatException {
+        expectedEx.expect(IndexOutOfBoundsException.class);
+        int lineNum = v0.loadComponent(0, infile);
+        v0.setIntHeaderValue(1000, 10);
+    }
+    @Test
+    public void testGetRealHeaderValsRange() throws IndexOutOfBoundsException, FormatException {
+        expectedEx.expect(IndexOutOfBoundsException.class);
+        int lineNum = v0.loadComponent(0, infile);
+        double test = v0.getRealHeaderValue(-8);
+    }
+    @Test
+    public void testDataArrayMethods() throws IndexOutOfBoundsException, FormatException {
+        int lineNum = v0.loadComponent(0, infile);
+        org.junit.Assert.assertEquals(19, v0.getDataLength());
+        org.junit.Assert.assertEquals(3254, v0.getDataValue(18));
+        int[] test = v0.getDataArray();
+        org.junit.Assert.assertEquals(3300, test[10]);
+    }
+    @Test
+    public void testGetDataValueRange() throws IndexOutOfBoundsException, FormatException {
+        expectedEx.expect(IndexOutOfBoundsException.class);
+        int lineNum = v0.loadComponent(0, infile);
+        int test = v0.getDataValue(20);
     }
 }

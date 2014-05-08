@@ -21,6 +21,8 @@ public final class VFileConstants {
     public static final int NODATA_LINE = 12;
     
     //data arrays, display default parameters
+    public static final int DEFAULT_NOINTVAL = -999;
+    public static final double DEFAULT_NOREALVAL = -999.0;
     public static final int DEFAULT_INT_FIELDWIDTH = 8;
     public static final int DEFAULT_REAL_FIELDWIDTH = 13;
     public static final int DEFAULT_REAL_PRECISION = 6;
