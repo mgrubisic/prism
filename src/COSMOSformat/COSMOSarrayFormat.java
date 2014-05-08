@@ -120,9 +120,8 @@ abstract class COSMOSarrayFormat {
     /**
      * This method pulls each string representation of a number out of the line
      * and puts it into a string arrayList.  It uses the field width to separate 
-     * the values in each line.  Continue until the total value count is reached. 
-     * Let the caller of this method do the integer or real conversion of the 
-     * numbers.
+     * the values in each line and continues until the total value count is reached. 
+     * Another method handles the text to numeric conversion.
      * @param startLine line number in input file contents where array begins
      * @param infile text file contents in an array of strings
      * @return arrayList of numeric values in text form, one value per entry

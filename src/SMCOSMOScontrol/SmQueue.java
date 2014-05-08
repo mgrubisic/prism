@@ -17,6 +17,7 @@ import java.io.*;
 import java.util.ArrayList;
 
 import SmException.FormatException;
+import SmException.SmException;
 import SmProcessing.V1Process;
 
 /**
@@ -42,7 +43,6 @@ public class SmQueue {
         int status = -1;
         String nextLine;
         ArrayList<String> tempfile = new ArrayList<>();
-        System.out.println(System.lineSeparator());
         System.out.println("+++ Reading in file: " + this.fileName);
 
         try (BufferedReader bufReader = new BufferedReader(new FileReader(this.fileName))){
@@ -67,11 +67,11 @@ public class SmQueue {
     // in the file so they can be processed individually.  Keeping them in
     // the list will also facilitate writing out the results either individually
     // or bundled.
-    public int parseVFile(String dataType) throws FormatException, NumberFormatException {
+    public int parseVFile(String dataType) throws FormatException, 
+                                        NumberFormatException, SmException {
         int currentLine = 0;
         int returnLine;
         smlist = new ArrayList<>();
-        
         
         while (currentLine < fileContents.length) {
             if (dataType.equals( RAWACC )) {
@@ -99,7 +99,7 @@ public class SmQueue {
         return smlist.size();
     }
     
-    public int processQueueContents(SmProduct V1prod) throws FormatException {
+    public int processQueueContents(SmProduct V1prod) throws FormatException, SmException {
         //under construction
         double[] array;
         for (COSMOScontentFormat rec : smlist) {
@@ -108,14 +108,14 @@ public class SmQueue {
             //create the V1 processing object
             int V0arrLength = v0rec.getDataLength();
             V1Process v1val = new V1Process(V0arrLength);
+            //create a V1 component to get the processing results
+            V1Component V1 = new V1Component( UNCORACC, (V0Component)rec);
             //calculate the counts-to-physical-values conversion value
             double lsb = v0rec.getRealHeaderValue(RECORER_LSB);
             double fsi = v0rec.getRealHeaderValue(RECORDER_FSI);
-            double sensitivity = v0rec.getRealHeaderValue(SENSOR_SENITIVITY);
+            double sensitivity = v0rec.getRealHeaderValue(SENSOR_SENSITIVITY);
             double conv = v1val.countToCMSConversion(lsb, fsi, sensitivity);
-            v1val.countsToValues(v0rec.getDataArray(), v1val, conv);
-            //create a new V1 channel record and add processing to it
-            V1Component V1 = new V1Component( UNCORACC, (V0Component)rec);
+            v1val.countsToValues(v0rec.getDataArray(), conv);
             V1.buildV1(v1val);
             TextFileWriter V1out = new TextFileWriter( V1.getChannelNum(),V1.V1ToText());
             V1prod.addProduct(V1out);

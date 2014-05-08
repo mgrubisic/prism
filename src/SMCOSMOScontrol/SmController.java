@@ -83,6 +83,7 @@ public class SmController {
             for (File each: smc.inVList){
                 smc.smqueue = new SmQueue( each );
                 smc.V1product = new SmProduct(each, "V1", smc.outFolder);
+                //add V2 and V3 products eventually
                 try {
 //                    long startTime = System.nanoTime();
                     lineCount = smc.smqueue.readInVFile();
@@ -96,6 +97,11 @@ public class SmController {
                     smc.smqueue.processQueueContents(smc.V1product);
 //                    long processTime = System.nanoTime() - startTime;
 //                    startTime = System.nanoTime();
+
+                    //add another method here to handle moving the V0 file
+                    //out of the input directory and into its pass/fail location.
+                    //create the directories for writing out.  Append directory
+                    //names to writeOutProducts call?
                     smc.V1product.writeOutProducts();
 //                    long writeTime = System.nanoTime() - startTime;
                     //this is a mess!

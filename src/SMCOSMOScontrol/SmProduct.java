@@ -60,13 +60,13 @@ public class SmProduct {
             }
         }
     }
-    private Path buildFilename( int aChannelNum, int aBundleFlag) {
+    public Path buildFilename( int aChannelNum, int aBundleFlag) {
         String startName = this.fileName.getName();
         String name = "";
         String getExtensionRegex = "\\.(?i)V\\d$";
         Pattern extension = Pattern.compile( getExtensionRegex );
         Matcher matcher = extension.matcher(startName);
-        if (aBundleFlag == BUNDLED) {
+        if (aBundleFlag == SINGLE_CHANNEL) {
             String channel = String.valueOf(aChannelNum);
             name = matcher.replaceFirst("." + channel + "." + this.fileExtension);
         } else {

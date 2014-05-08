@@ -15,6 +15,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import org.junit.Rule;
+import org.junit.rules.ExpectedException;
 
 /**
  *
@@ -25,6 +27,8 @@ public class VRealArrayTest {
     String[] data;
     VRealArray hi;
     VRealArray di;
+    String badformat;
+    String[] badData;
     String[] headerbits;
     static double epsilon = 0.001;
     
@@ -32,6 +36,8 @@ public class VRealArrayTest {
         this.header = new String[3];
         this.data = new String[4];
         this.headerbits = new String[12];
+        this.badformat = "";
+        this.badData = new String[2];
     }
     
     @Before
@@ -45,6 +51,10 @@ public class VRealArrayTest {
         data[2] = "     0.230    -0.557    -0.059     0.387    -0.033    -0.505     0.230     0.414";
         data[3] = "     0.099    -0.085    -0.662     0.545     0.177    -0.610     0.781    -0.190";
 
+        badformat = "      24 uncor. accel. pts, approx  500 secs, units=cm/sec2(04), Format=(8F10)";
+        badData[0] = "       8 uncor. accel. pts, approx  500 secs, units=cm/sec2(04), Format=(8F10.3)";
+        badData[1] = "    -0.269     0.387    -0.111    -0.269     x.xxx    -0.820    -0.898     0.256";
+        
         headerbits[0] = "    33.975300";
         headerbits[1] = "  -117.486500";
         headerbits[2] = "   213.000000";
@@ -155,6 +165,47 @@ public class VRealArrayTest {
         di.parseValues(0, data);
         String[] textList = di.numberSectionToText();
         org.junit.Assert.assertArrayEquals(data, textList);
+    }
+    @Test(expected=FormatException.class)
+    public void testBadFormatLine() throws FormatException {
+        di.parseNumberFormatLine(badformat);
+    }
+    @Test(expected=NumberFormatException.class)
+    public void testBadDataValue() throws NumberFormatException, FormatException {
+        di.parseValues(0, badData);
+    }
+    @Rule public ExpectedException expectedEx = ExpectedException.none();
+    @Test
+    public void testIndexRangeLow() throws IndexOutOfBoundsException, FormatException {
+        expectedEx.expect(IndexOutOfBoundsException.class);
+        expectedEx.expectMessage("Real array index: -2");
+        di.parseValues(0, data);
+        di.getRealValue(-2);
+    }
+    @Test(expected=IndexOutOfBoundsException.class)
+    public void testIndexRangeHigh() throws IndexOutOfBoundsException, FormatException {
+        di.parseValues(0, data);
+        di.setRealValue(300,23);
+    }
+    @Test
+    public void testArrayGet() throws NullPointerException {
+        expectedEx.expect(NullPointerException.class);
+        expectedEx.expectMessage("Null real array reference");        
+        double[] test;
+        test = di.getRealArray();
+    }
+    @Test
+    public void testArraySet() throws NullPointerException {
+        expectedEx.expect(NullPointerException.class);
+        expectedEx.expectMessage("Null real array reference");        
+        double[] test = null;
+        di.setRealArray(test);
+    }
+    @Test
+    public void testEOF() throws NumberFormatException, FormatException {
+        expectedEx.expect(FormatException.class);
+        expectedEx.expectMessage("Unexpected EOF encountered at line 6");        
+        di.parseValues(6, data);
     }
     
 }

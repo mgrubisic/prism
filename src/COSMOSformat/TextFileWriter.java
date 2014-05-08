@@ -7,24 +7,22 @@
 package COSMOSformat;
 
 /**
- *
+ * 
  * @author jmjones
  */
 public class TextFileWriter {
     private final int channelNum;
     private final String[] contents;
     
-    public TextFileWriter( int aChannelNum, String[] aContents) {
-        this.channelNum = aChannelNum;
-        this.contents = aContents;
+    public TextFileWriter( int channelNum, String[] contents) {
+        this.channelNum = channelNum;
+        this.contents = contents;
     }
     public int getChannelNum() {
         return this.channelNum;
     }
     public String[] getText() {
-        String [] outText = new String[contents.length];
-        System.arraycopy(contents, 0, outText, 0, contents.length);
-        return outText;
+        return this.contents;
     }
 }
 

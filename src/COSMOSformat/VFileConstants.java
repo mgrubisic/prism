@@ -7,7 +7,8 @@
 package COSMOSformat;
 
 /**
- *
+ * This class defines the constants used during strong motion processing, including
+ * constants from the tables defined in the COSMOS Strong Motion Data Format document.
  * @author jmjones
  */
 public final class VFileConstants {
@@ -75,5 +76,5 @@ public final class VFileConstants {
     //index values into real array to pick up value
     public static final int RECORER_LSB = 21;  //recorder least significant bit in microvolts
     public static final int RECORDER_FSI = 22;  //recorder full scale input in volts
-    public static final int SENSOR_SENITIVITY = 41; //in volts per g
+    public static final int SENSOR_SENSITIVITY = 41; //in volts per g
 }

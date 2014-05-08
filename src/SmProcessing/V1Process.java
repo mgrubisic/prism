@@ -40,38 +40,29 @@ public class V1Process {
         return result;
     }
     
-    public void countsToValues(final int[] inArray, V1Process inV1parm, double countConv) {
+    public void countsToValues(final int[] inArray, double countConv) {
         
-        int inLength = inArray.length;
+        int length = array.length;
         double total = 0.0;
-        double meanZero = 0.0;
-        double maxVal = 0.0;  //could the whole array be negative?
-        int maxIndex = 0;
-        double avgVal = 0.0;
-        double[] result = inV1parm.getV1Array();
         
         System.out.println("+++ countToVals: " + countConv);
-        for (int i = 0; i < inLength; i++) {
-            result[i] = inArray[i] * countConv;
-            total = total + result[i];
+        for (int i = 0; i < length; i++) {
+            array[i] = inArray[i] * countConv;
+            total = total + array[i];
         }
-        meanZero = total / inLength;
-        System.out.println("+++ Mean Zero: " + meanZero);
+        meanToZero = total / length;
+        System.out.println("+++ Mean Zero: " + meanToZero);
         
         total = 0.0;
-        for (int i = 0; i < inLength; i++) {
-            result[i] = result[i] - meanZero;
-            total = total + result[i];
-            if (result[i] > maxVal) {
-                maxVal = result[i];
+        for (int i = 0; i < length; i++) {
+            array[i] = array[i] - meanToZero;
+            total = total + array[i];
+            if (array[i] > maxVal) {
+                maxVal = array[i];
                 maxIndex = i;
             }
         }
-        avgVal = total / inLength;
-        inV1parm.setAvgVal(avgVal);
-        inV1parm.setMaxVal(maxVal);
-        inV1parm.setMaxIndex(maxIndex);
-        inV1parm.setMeanToZero(meanZero);
+        this.avgVal = total / length;
     }
 
     public double getMeanToZero() {

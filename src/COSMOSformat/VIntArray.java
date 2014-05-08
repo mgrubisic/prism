@@ -16,8 +16,8 @@ import java.util.ArrayList;
  * array information from the text file, provides access to individual values or
  * the whole array, and converts the array values and header into text for
  * writing out to a file.  The access to the whole array was added to speed up
- * processing of V0 to V1, eliminating the need to copy the data array before using
- * it in processing.
+ * processing of strong motion records, eliminating the need to copy the data  
+ * array before using it in processing.
  * @author jmjones
  */
 public class VIntArray extends COSMOSarrayFormat {
@@ -97,14 +97,14 @@ public class VIntArray extends COSMOSarrayFormat {
      * This setter sets a value in the integer array at the given index to the
      * new value
      * @param index index into the integer array
-     * @param aValue value to write into the array at the given index
+     * @param value value to write into the array at the given index
      * @throws IndexOutOfBoundsException if index not within array index range
      */
-    public void setIntValue( int index, int aValue ) throws IndexOutOfBoundsException {
+    public void setIntValue( int index, int value ) throws IndexOutOfBoundsException {
         if ((index < 0) || (index > intVals.length)) {
             throw new IndexOutOfBoundsException("Integer array index: " + index);
         }
-        intVals[index] = aValue;
+        intVals[index] = value;
     }
     /**
      * This method returns a reference to the integer array.  This is used when

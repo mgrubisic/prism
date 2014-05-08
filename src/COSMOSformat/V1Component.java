@@ -8,6 +8,7 @@ package COSMOSformat;
 
 import static COSMOSformat.VFileConstants.*;
 import SmException.FormatException;
+import SmException.SmException;
 import SmProcessing.V1Process;
 
 /**
@@ -29,7 +30,8 @@ public class V1Component extends COSMOScontentFormat {
     //Use this constructor when the V1 component is created from processing
     //done on a V0 component.  In this case, the contents of V1 are initialized
     //to the V0 values and updated during the processing.
-    public V1Component( String procType, V0Component pV0) throws FormatException {
+    public V1Component( String procType, V0Component pV0) throws FormatException, 
+                                                                SmException {
         super( procType );
         this.parentV0 = pV0;
         //Load the text header with parent V0 values.  Leave the update to the V1
