@@ -10,6 +10,8 @@ import static COSMOSformat.VFileConstants.*;
 import SmException.FormatException;
 import SmException.SmException;
 import SmProcessing.V1Process;
+import SmUtilities.ConfigReader;
+import static SmUtilities.SmConfigConstants.PROC_AGENCY_CODE;
 
 /**
  *
@@ -64,7 +66,7 @@ public class V1Component extends COSMOScontentFormat {
     }
     //Once in this method, the V1Process object is no longer needed and its array
     //is transferred to the V1component object
-    public void buildV1 (V1Process inVvals) throws FormatException {
+    public void buildV1 (V1Process inVvals, ConfigReader config) throws FormatException {
         final double MSEC_TO_SEC = 1e-3;
         //update values in the text header
         this.textHeader[0] = this.textHeader[0].replaceAll(RAWACC, UNCORACC);
@@ -81,7 +83,8 @@ public class V1Component extends COSMOScontentFormat {
         //update the headers with the V1 values
         this.intHeader.setIntValue(PROCESSING_STAGE_INDEX, V1_STAGE);
         this.intHeader.setIntValue(V1_UNITS_INDEX, CM_SEC_SEC);
-        this.intHeader.setIntValue(PROCESSING_AGENCY, PROCESSING_AGENCY_USGS);
+        this.intHeader.setIntValue(PROCESSING_AGENCY, 
+                    Integer.parseInt(config.getConfigValue(PROC_AGENCY_CODE)));
         this.realHeader.setRealValue(MEAN_ZERO, inVvals.getMeanToZero());
         this.realHeader.setRealValue(MAX_VAL, inVvals.getMaxVal());
         this.realHeader.setRealValue(AVG_VAL, inVvals.getAvgVal());
@@ -103,6 +106,7 @@ public class V1Component extends COSMOScontentFormat {
     }
     
     public String[] V1ToText() {
+        //MAKE THIS FASTER BY ELIMINATING THE 2ND COPY!!!
         //add up the length of the text portions of the component, which are
         //the text header, the comments, and the end-of-data line.
         int totalLength = 0;

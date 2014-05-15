@@ -6,7 +6,7 @@
 
 package SMCOSMOScontrol;
 
-import COSMOSformat.TextFileWriter;
+import SmUtilities.TextFileWriter;
 import static COSMOSformat.VFileConstants.BUNDLED;
 import static COSMOSformat.VFileConstants.SINGLE_CHANNEL;
 import java.io.BufferedWriter;

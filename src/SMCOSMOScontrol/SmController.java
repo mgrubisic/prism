@@ -17,60 +17,75 @@ import java.util.ArrayList;
 
 import SmException.SmException;
 import SmException.FormatException;
+import SmUtilities.ConfigReader;
+import SmUtilities.TextFileReader;
+import SmUtilities.PrismXMLReader;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 /**
- *
+ * Main class for the PRISM strong motion analysis tool.  This is the controller
+ * for the batch processing mode, to be started from the command line or
+ * automatically by other software.  This class takes an input folder as a param.,
+ * reads in *.V0 files in the folder and then processes each file in turn.
+ * Processing involves reading in the file and parsing into record(s), running
+ * the signal processing algorithms to create the other data products, and then
+ * writing out the data in the different formats, either individually or bundled.
  * @author jmjones
  */
-
-// Main class for the PRISM strong motion analysis tool.  This is the controller
-// for the batch processing mode, to be started from the command line or
-// automatically by other software.  This class takes an input folder as a param.,
-// reads in *.V0 files in the folder and then processes each file in turn.
-// Processing involves reading in the file and parsing into record(s), running
-// the signal processing algorithms to create the other data products, and then
-// writing out the data in the different formats, either individually or bundled.
 public class SmController {
-    // set up temp. values for input parms (also using netbeans args option)
-    private static final String CONFIGFILE = "";
-    
     private final String inFolder;
     private final String outFolder;
-    private final String configFile;
-    
+    private String configFile;
+    private ConfigReader config;
     // data structures for the controller
     private File[] inVList;
     private SmQueue smqueue;
     private SmProduct V1product;
+    private SmProduct V2product;
+    private SmProduct V3product;
 
-    /**
-     * @param args the command line arguments
-     * @throws SmException.SmException
-     */
-    //When going through the list of input files, simply report any problems with
-    //an individual file and move directly to the next file.  Attempt to process
-    //all the files in the list.
-    public SmController (String infolder, String outfolder, String config) {
-        this.inFolder = infolder;
-        this.outFolder = outfolder;
-        this.configFile = config;
+    public SmController (String[] args) throws SmException {
+        this.configFile = "";
+        if (args.length > 1) {
+            File inDir = new File(args[0]);
+            File outDir = new File(args[1]);
+            if (inDir.isDirectory() && outDir.isDirectory()) {
+                this.inFolder = args[0];
+                this.outFolder = args[1]; 
+            } else {
+                throw new SmException("Input and output directories are not recognized.");
+            }
+            if (args.length == 3) {
+                Path configval = Paths.get(args[2]);
+                if (Files.isReadable(configval)) {
+                    this.configFile = args[2];
+                } else {
+                    throw new SmException("Unable to read configuration file.");
+                }
+            }
+        } else {
+            throw new SmException("Input and output directories must provided.");
+        }
     }
     
-    public static void main(String[] args) throws SmException { 
+    public static void main(String[] args) throws SmException, IOException, ParserConfigurationException, SAXException { 
         String config = "";
         int lineCount = 0; 
         int recordCount = 0;
-        double NANO_TO_SECOND = 1.0e-9;
+        double NANO_TO_SECOND = 1.0e-9; //for timing tests
         // 
         try {
-            // make a method checkArgs here
-            if (args.length < 2){
-                throw new SmException("Input and output directories must provided.");
-            }
-            if (args.length == 3){
-                config = args[2];
-            }
-            SmController smc = new SmController( args[0], args[1], config );                
+            SmController smc = new SmController( args );    
+            
+//            int cores = Runtime.getRuntime().availableProcessors();
+//            System.out.println("Number of cores: " + cores);
 
             //get the list of filenames in the input directory
             try {
@@ -79,14 +94,21 @@ public class SmController {
             catch (IOException err) {
                 throw new SmException("Unable to access V0 file list: " + err.getMessage());
             }
-            //get each filename, read in, parse, process, write it out
+            //get the configuration file
+            if ( !smc.configFile.isEmpty()  ) {
+                smc.readConfigFile( smc.configFile );
+            }
+            //Get each filename, read in, parse, process, write it out. When  
+            //going through the list of input files, report any problems 
+            //with an individual file and move directly to the next file.  
+            //Attempt to process all the files in the list.
             for (File each: smc.inVList){
                 smc.smqueue = new SmQueue( each );
                 smc.V1product = new SmProduct(each, "V1", smc.outFolder);
                 //add V2 and V3 products eventually
                 try {
 //                    long startTime = System.nanoTime();
-                    lineCount = smc.smqueue.readInVFile();
+                    smc.smqueue.readInFile( each );
 //                    long readTime = System.nanoTime() - startTime;
                     // parse the raw acceleration file into channel record(s)
 //                    startTime = System.nanoTime();
@@ -94,7 +116,7 @@ public class SmController {
 //                    long parseTime = System.nanoTime() - startTime;
                     //next is to process the records, then write out results
 //                    startTime = System.nanoTime();
-                    smc.smqueue.processQueueContents(smc.V1product);
+                    smc.smqueue.processQueueContents(smc.V1product, smc.config);
 //                    long processTime = System.nanoTime() - startTime;
 //                    startTime = System.nanoTime();
 
@@ -122,10 +144,21 @@ public class SmController {
             System.err.println(err.getMessage());
         }
     }
-    
+    public void readConfigFile( String filename ) throws SmException {
+
+        config = new ConfigReader();
+        try {
+            PrismXMLReader xml = new PrismXMLReader();
+            xml.readFile(filename, config);
+        } catch (ParserConfigurationException | SAXException err) {
+            throw new SmException("Unable to parse configuration file " + filename);
+        } catch (IOException err) {
+            throw new SmException("Unable to read configuration file " + filename);
+        }
+    }
     //Get the list of .V* files in the input folder and return as an array of
     //file names.  Flag if the input folder doesn't contain any files.
-    private File[] getFileList(String filePath, String exten) throws IOException {
+    public File[] getFileList(String filePath, String exten) throws IOException {
         Path dir = Paths.get(filePath);
         ArrayList<File> inList = new ArrayList<>();
         try (DirectoryStream<Path> stream =

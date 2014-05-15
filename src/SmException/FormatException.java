@@ -8,10 +8,10 @@ package SmException;
 
 /**
  * Exception to be thrown when a file format is bad.
- * @original author Doug Given, Jiggle code
- * @version 1.0
+ * original author Doug Given, Jiggle code
+ * version 1.0
  *
- * @author jmjones
+ * @author jmjones, Doug Given
  * Borrowed this class from Jiggle code, Mar 2014
  */
 public class FormatException extends Exception {

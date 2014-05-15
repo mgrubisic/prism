@@ -9,7 +9,7 @@ package SMCOSMOScontrol;
 
 import COSMOSformat.V0Component;
 import COSMOSformat.COSMOScontentFormat;
-import COSMOSformat.TextFileWriter;
+import SmUtilities.TextFileWriter;
 import COSMOSformat.V1Component;
 import COSMOSformat.V2Component;
 import static COSMOSformat.VFileConstants.*;
@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import SmException.FormatException;
 import SmException.SmException;
 import SmProcessing.V1Process;
+import SmUtilities.ConfigReader;
+import SmUtilities.TextFileReader;
 
 /**
  *
@@ -37,27 +39,10 @@ public class SmQueue {
         this.numRecords = 0;
     }
 
-    //read in the file into a temp arrayList. If the read was good, copy the
-    //arrayList into a regular array and return the length.
-    public int readInVFile() throws IOException{
-        int status = -1;
-        String nextLine;
-        ArrayList<String> tempfile = new ArrayList<>();
-        System.out.println("+++ Reading in file: " + this.fileName);
-
-        try (BufferedReader bufReader = new BufferedReader(new FileReader(this.fileName))){
-            while ((nextLine = bufReader.readLine()) != null) {
-                tempfile.add(nextLine);
-            }
-            if (tempfile.size() > 0){
-                fileContents = tempfile.toArray(new String[tempfile.size()]);
-                status = fileContents.length;
-            } else {
-                fileContents = new String[0];
-                throw new IOException("Empty file: " + fileName.toString());
-            }
-        return status;
-        }
+    //read in the input text file
+    public void readInFile(File filename) throws IOException{
+        TextFileReader infile = new TextFileReader( filename );
+        fileContents = infile.readInTextFile();
     }
 
     // Start with the COSMOS text file in an array of strings.  Create a record for
@@ -99,7 +84,7 @@ public class SmQueue {
         return smlist.size();
     }
     
-    public int processQueueContents(SmProduct V1prod) throws FormatException, SmException {
+    public int processQueueContents(SmProduct V1prod, ConfigReader config) throws FormatException, SmException {
         //under construction
         double[] array;
         for (COSMOScontentFormat rec : smlist) {
@@ -116,7 +101,7 @@ public class SmQueue {
             double sensitivity = v0rec.getRealHeaderValue(SENSOR_SENSITIVITY);
             double conv = v1val.countToCMSConversion(lsb, fsi, sensitivity);
             v1val.countsToValues(v0rec.getDataArray(), conv);
-            V1.buildV1(v1val);
+            V1.buildV1(v1val, config);
             TextFileWriter V1out = new TextFileWriter( V1.getChannelNum(),V1.V1ToText());
             V1prod.addProduct(V1out);
         }

@@ -57,14 +57,15 @@ public final class VFileConstants {
     public static final int V1_UNITS_INDEX = 2;
     public static final int PROCESSING_AGENCY = 13;
     
-    public static final int PROCESSING_AGENCY_USGS = 2; //should come from config file
-    
     //real header index values
     public static final int MEAN_ZERO = 35;
     public static final int DELTA_T = 61;
     public static final int MAX_VAL = 63;
     public static final int MAX_VAL_TIME = 64;
     public static final int AVG_VAL = 65;
+    public static final int RECORER_LSB = 21;  //recorder least significant bit in microvolts
+    public static final int RECORDER_FSI = 22;  //recorder full scale input in volts
+    public static final int SENSOR_SENSITIVITY = 41; //in volts per g
     
     //Table 2 units
     public static final int CM_SEC_SEC = 4;
@@ -74,9 +75,4 @@ public final class VFileConstants {
     
     //processing - counts to physical values constants
     public static final double FROM_G_CONVERSION = 980.665; //cm per sq. sec per g
-    
-    //index values into real array to pick up value
-    public static final int RECORER_LSB = 21;  //recorder least significant bit in microvolts
-    public static final int RECORDER_FSI = 22;  //recorder full scale input in volts
-    public static final int SENSOR_SENSITIVITY = 41; //in volts per g
 }
