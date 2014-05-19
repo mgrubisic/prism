@@ -90,18 +90,16 @@ public class SmQueue {
         for (COSMOScontentFormat rec : smlist) {
             //declare rec as a V0 channel record
             V0Component v0rec = (V0Component)rec;
-            //create the V1 processing object
-            int V0arrLength = v0rec.getDataLength();
-            V1Process v1val = new V1Process(V0arrLength);
+            
+            //create the V1 processing object and do the processing          
+            V1Process v1val = new V1Process(v0rec, config);
+            v1val.processV1Data();
+            
             //create a V1 component to get the processing results
             V1Component V1 = new V1Component( UNCORACC, (V0Component)rec);
-            //calculate the counts-to-physical-values conversion value
-            double lsb = v0rec.getRealHeaderValue(RECORER_LSB);
-            double fsi = v0rec.getRealHeaderValue(RECORDER_FSI);
-            double sensitivity = v0rec.getRealHeaderValue(SENSOR_SENSITIVITY);
-            double conv = v1val.countToCMSConversion(lsb, fsi, sensitivity);
-            v1val.countsToValues(v0rec.getDataArray(), conv);
             V1.buildV1(v1val, config);
+            
+            //move results to the output queue
             TextFileWriter V1out = new TextFileWriter( V1.getChannelNum(),V1.V1ToText());
             V1prod.addProduct(V1out);
         }

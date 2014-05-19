@@ -75,4 +75,5 @@ public final class VFileConstants {
     
     //processing - counts to physical values constants
     public static final double FROM_G_CONVERSION = 980.665; //cm per sq. sec per g
+    
 }

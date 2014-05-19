@@ -30,11 +30,18 @@ public class ConfigReader {
     private Map<String, String> contents;
 /**
  * Constructor for the Configuration file reader uses a hash map set with
- * defaults of expected upper limit of 16 entries.  If config. file grows larger
- * then set new HashMap<>(higher limit).
+ * defaults of expected upper limit of 16 entries.
  */    
     public ConfigReader() {
-        contents = new HashMap<>(); //currently at default of 16 entries
+        contents = new HashMap<>(); //default of 16 entries
+    }
+/**
+ * Constructor for the configuration file reader that allows setting the
+ * number of entries expected from the file.
+ * @param length number of entries to be put into the config file reader
+ */
+    public ConfigReader(int length) {
+        contents = new HashMap<>(length);
     }
 /**
  * Getter for the value stored for the given key.

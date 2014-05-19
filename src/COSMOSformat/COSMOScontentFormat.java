@@ -227,30 +227,6 @@ public class COSMOScontentFormat {
         }
         return (current + 1);
     }
-//    /**
-//     * This method builds a new format line for the integer header based on 
-//     * current values in the instance fields, such as number of values, number of
-//     * lines, etc.
-//     */
-//    public void buildNewIntHeaderFormatLine() {
-//        String line = "";
-//        line = String.format("%1$4s Integer-header values follow on %2$3s lines, Format= ",
-//                    String.valueOf(intHeader.getNumVals()),
-//                        String.valueOf(intHeader.getNumLines()));
-//        intHeader.setFormatLine(line + intHeader.getNumberFormat());
-//    }
-//    /**
-//     * This method builds a new format line for the real header based on 
-//     * current values in the instance fields, such as number of values, number of
-//     * lines, etc.
-//     */
-//    public void buildNewRealHeaderFormatLine() {
-//        String line = "";
-//        line = String.format("%1$4s Real-header values follow on %2$3s lines, Format= ",
-//                    String.valueOf(realHeader.getNumVals()),
-//                        String.valueOf(realHeader.getNumLines()));
-//        realHeader.setFormatLine(line + realHeader.getNumberFormat());
-//    }
     /**
      * Getter for the channel number, which is needed for the output file name
      * @return channel number

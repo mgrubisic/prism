@@ -151,10 +151,17 @@ abstract class COSMOSarrayFormat {
                 throw new FormatException("Could not extract number from line " + current);
             }
             for (int j = 0; j <= line.length()- this.fieldWidth; j = j + this.fieldWidth) {
-                holdNumbers.add(line.substring(j, j + this.fieldWidth).trim());
+                String num = line.substring(j, j + this.fieldWidth).trim();
+                if ( !num.isEmpty()) {
+                    holdNumbers.add(line.substring(j, j + this.fieldWidth).trim());
+                }
                 total++;
             }
-        }           
+        }
+        if (this.numVals != holdNumbers.size()) {
+            throw new FormatException("Expected " + this.numVals + 
+                            " values in array but found " + holdNumbers.size());
+        }
         return holdNumbers;
     }
     /**

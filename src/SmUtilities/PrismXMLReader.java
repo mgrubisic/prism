@@ -50,8 +50,8 @@ public class PrismXMLReader {
     private final boolean ignoreComments = true;
     private final boolean putCDATAIntoText = true;
     private final boolean createEntityRefs = true;
-    private DocumentBuilderFactory dbFactory;
-    private DocumentBuilder dBuilder;
+    private final DocumentBuilderFactory dbFactory;
+    private final DocumentBuilder dBuilder;
 /**
  * This constructor for PrismXMLReader creates a document builder factory and a new
  * document builder using configuration parameters to ignore white space and comments.
@@ -77,10 +77,9 @@ public class PrismXMLReader {
  * @throws ParserConfigurationException if parser configuration is incorrect
  * @throws SAXException if unable to correctly parse the xml
  */
-    public void readFile( String filename, ConfigReader config ) throws IOException, 
+    public ConfigReader readFile( String filename ) throws IOException, 
                                     ParserConfigurationException,SAXException {
         ArrayList<String> tagtrail = new ArrayList<>();
-        String line;
         String[] keyvalue;
         
         //Parse the xml document directly from the file
@@ -93,10 +92,12 @@ public class PrismXMLReader {
         
         //Separate each tag trail into a key, value pair and enter into the 
         //config reader
+        ConfigReader config = new ConfigReader(tagtrail.size());
         for (String each : tagtrail) {
             keyvalue = each.split("///");
             config.setConfigValue(keyvalue[0], keyvalue[1]);
         }
+        return config;
     }
 /**
  * Recursive method to find all the child nodes of each node until a text node
