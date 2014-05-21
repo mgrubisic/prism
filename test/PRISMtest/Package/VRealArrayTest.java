@@ -9,12 +9,8 @@ package PRISMtest.Package;
 import COSMOSformat.VRealArray;
 import SmException.FormatException;
 import java.util.ArrayList;
-import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
 import org.junit.Rule;
 import org.junit.rules.ExpectedException;
 
@@ -170,8 +166,8 @@ public class VRealArrayTest {
     public void testBadFormatLine() throws FormatException {
         di.parseNumberFormatLine(badformat);
     }
-    @Test(expected=NumberFormatException.class)
-    public void testBadDataValue() throws NumberFormatException, FormatException {
+    @Test(expected=FormatException.class)
+    public void testBadDataValue() throws FormatException {
         di.parseValues(0, badData);
     }
     @Rule public ExpectedException expectedEx = ExpectedException.none();
@@ -188,21 +184,7 @@ public class VRealArrayTest {
         di.setRealValue(300,23);
     }
     @Test
-    public void testArrayGet() throws NullPointerException {
-        expectedEx.expect(NullPointerException.class);
-        expectedEx.expectMessage("Null real array reference");        
-        double[] test;
-        test = di.getRealArray();
-    }
-    @Test
-    public void testArraySet() throws NullPointerException {
-        expectedEx.expect(NullPointerException.class);
-        expectedEx.expectMessage("Null real array reference");        
-        double[] test = null;
-        di.setRealArray(test);
-    }
-    @Test
-    public void testEOF() throws NumberFormatException, FormatException {
+    public void testEOF() throws FormatException {
         expectedEx.expect(FormatException.class);
         expectedEx.expectMessage("Unexpected EOF encountered at line 6");        
         di.parseValues(6, data);

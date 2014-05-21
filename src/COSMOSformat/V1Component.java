@@ -59,7 +59,7 @@ public class V1Component extends COSMOScontentFormat {
     }
     @Override
     public int parseDataSection (int startLine, String[] infile) throws 
-                                        FormatException, NumberFormatException {
+                                                             FormatException {
         int current = startLine;
         
         V1Data = new VRealArray();
@@ -68,7 +68,8 @@ public class V1Component extends COSMOScontentFormat {
     }
     //Once in this method, the V1Process object is no longer needed and its array
     //is transferred to the V1component object
-    public void buildV1 (V1Process inVvals, ConfigReader config) throws SmException, FormatException {
+    public void buildV1 (V1Process inVvals, ConfigReader config) throws 
+                                                SmException, FormatException {
         Double epsilon = 0.001;
         StringBuilder sb = new StringBuilder();
         final double MSEC_TO_SEC = 1e-3;
@@ -100,7 +101,7 @@ public class V1Component extends COSMOScontentFormat {
         String val = proctime.getGMTdateTime();
         System.out.println("+++ time: " + val);
         //update values in the text header
-        this.textHeader[0] = this.textHeader[0].replaceAll(RAWACC, UNCORACC);
+        this.textHeader[0] = UNCORACC.concat(this.textHeader[0].substring(END_OF_DATATYPE));
         this.textHeader[10] = sb.append("Processed:").append(val).append(", ")
                                 .append(agabbrev).append(", Max = ")
                                 .append(String.format(realformat,inVvals.getMaxVal()))
@@ -132,7 +133,7 @@ public class V1Component extends COSMOScontentFormat {
      * @param units
      * @param unitscode
      */
-    public void buildNewDataFormatLine(String units, int unitscode) {
+    public void buildNewDataFormatLine(String units, int unitscode) throws SmException {
         //!!!! Error checking here and get units from config file (or set in component?)
         
         //calculate the time by multiplying the number of data values by delta t

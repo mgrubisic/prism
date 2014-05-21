@@ -10,7 +10,6 @@ import static COSMOSformat.VFileConstants.*;
 
 import SmException.FormatException;
 import SmException.SmException;
-import java.util.ArrayList;
 
 import java.util.Arrays;
 import java.util.regex.Matcher;
@@ -55,8 +54,9 @@ public class COSMOScontentFormat {
      * @throws NumberFormatException if unable to convert text to numeric
      */
     public int loadComponent (int start, String[] infile) 
-                                throws FormatException, NumberFormatException {
+                                throws FormatException, SmException {
         int current = start;
+        int channel;
         
         //Read in text header, look for number of lines and int, real NoData vals
         current = parseTextHeader(current, infile);
@@ -64,7 +64,14 @@ public class COSMOScontentFormat {
         //get integer header values
         intHeader = new VIntArray();    
         current = intHeader.parseValues( current, infile);
-        channelNum = intHeader.getIntValue(STATION_CHANNEL_NUMBER);
+        channel = intHeader.getIntValue(STATION_CHANNEL_NUMBER);
+        if (channel != noIntVal) {
+            channelNum = channel;
+        } else {
+            throw new SmException("Int header #" + (STATION_CHANNEL_NUMBER+1) 
+                                    + ", station channel number, is undefined");            
+        }
+        
         
         //get real header values
         realHeader = new VRealArray();     
@@ -93,7 +100,7 @@ public class COSMOScontentFormat {
      * @throws NumberFormatException if unable to convert text to numeric
      */
     public int parseDataSection (int startLine, String[] infile) throws 
-                                        FormatException, NumberFormatException {
+                                                            FormatException {
         System.err.println("method parseDataSection must be overridden");
         return startLine;
     }
@@ -107,7 +114,7 @@ public class COSMOScontentFormat {
      * @throws NumberFormatException if unable to convert text to numeric
      */
     private int parseTextHeader(int startLine, String[] infile) 
-                             throws FormatException, NumberFormatException {
+                                                        throws FormatException {
         int current = startLine;
         String line;
         String[] numbers;
@@ -115,34 +122,38 @@ public class COSMOScontentFormat {
         //look for num. of text lines
         String matchRegex = "with \\d\\d text lines";
         
-        //get the first header line and extract the number of lines in the header
-        line = infile[current];
-        Pattern regField = Pattern.compile(matchRegex);
-        Matcher m = regField.matcher( line );
-        if (m.find()) {
-            String[] num = m.group().split(" ");
-            numHeaderLines = Integer.parseInt(num[1]);
-        }
-        else {
-            throw new FormatException("Unable to find number of text header lines at line " + 
-                                                                    (current+1));
-        }
-        //verify that the header lines are in the array, then extract NoData vals
-        if ((numHeaderLines > 0) && (infile.length > (startLine + numHeaderLines))) {
-            textHeader = new String[numHeaderLines];
-            textHeader = Arrays.copyOfRange( infile, startLine, startLine+numHeaderLines);
-            line = textHeader[NODATA_LINE].substring(textHeader[NODATA_LINE].lastIndexOf(":")+1);
-            numbers = line.split(",");
-            if (numbers.length == 2) {
-                noIntVal = Integer.parseInt(numbers[0].trim());
-                noRealVal = Double.parseDouble(numbers[1].trim());
-            } else {
-                throw new FormatException("Unable to extract NoData values at line " + 
-                                                    (current + NODATA_LINE + 1));
+        try {
+            //get the first header line and extract the number of lines in the header
+            line = infile[current];
+            Pattern regField = Pattern.compile(matchRegex);
+            Matcher m = regField.matcher( line );
+            if (m.find()) {
+                String[] num = m.group().split(" ");
+                numHeaderLines = Integer.parseInt(num[1]);
             }
-        }
-        else {
-            throw new FormatException("Error in text header length of " + numHeaderLines);
+            else {
+                throw new FormatException("Unable to find number of text header lines at line " + 
+                                                                        (current+1));
+            }
+            //verify that the header lines are in the array, then extract NoData vals
+            if ((numHeaderLines > 0) && (infile.length > (startLine + numHeaderLines))) {
+                textHeader = new String[numHeaderLines];
+                textHeader = Arrays.copyOfRange( infile, startLine, startLine+numHeaderLines);
+                line = textHeader[NODATA_LINE].substring(textHeader[NODATA_LINE].lastIndexOf(":")+1);
+                numbers = line.split(",");
+                if (numbers.length == 2) {
+                    noIntVal = Integer.parseInt(numbers[0].trim());
+                    noRealVal = Double.parseDouble(numbers[1].trim());
+                } else {
+                    throw new FormatException("Unable to extract NoData values at line " + 
+                                                        (current + NODATA_LINE + 1));
+                }
+            }
+            else {
+                throw new FormatException("Error in text header length of " + numHeaderLines);
+            }
+        } catch (NumberFormatException err) {
+            throw new FormatException("Unable to convert text to numeric in text header");
         }
         return (startLine + textHeader.length);
     }
@@ -155,7 +166,7 @@ public class COSMOScontentFormat {
      * @throws NumberFormatException if unable to convert text to numeric
      */
     private int parseComments(int startLine, String[] infile) 
-                                throws FormatException, NumberFormatException {
+                                                        throws FormatException {
 
         //at start of line, skip over any whitespace and pick up all digits
         String getDigitsRegex = "^((\\s*)(\\d+))";
@@ -172,28 +183,32 @@ public class COSMOScontentFormat {
             throw new FormatException("EOF found before comments at line " 
                                                                     + (current+1));
         }
-        //Make sure it's the comment section
-        if (line.matches(commentRegex)) {
-            //get the number of values at the start of the line
-            Pattern regDigits = Pattern.compile( getDigitsRegex );
-            Matcher m = regDigits.matcher( line );
-            if (m.find(0)){
-                numComments = Integer.parseInt(m.group().trim());
+        try {
+            //Make sure it's the comment section
+            if (line.matches(commentRegex)) {
+                //get the number of values at the start of the line
+                Pattern regDigits = Pattern.compile( getDigitsRegex );
+                Matcher m = regDigits.matcher( line );
+                if (m.find(0)){
+                    numComments = Integer.parseInt(m.group().trim());
+                } else {
+                    throw new FormatException("Could not find number of comment lines at " + 
+                                                                        (current+1));
+                }
             } else {
-                throw new FormatException("Could not find number of comment lines at " + 
-                                                                    (current+1));
+                throw new FormatException("Could not find comments at " + (current+1));
             }
-        } else {
-            throw new FormatException("Could not find comments at " + (current+1));
-        }
-        
-        //verify that the comment lines are in the array
-        if ((numComments > 0) && (infile.length > (current + numComments + 1))) {
-            comments = new String[numComments+1];
-            comments = Arrays.copyOfRange(infile,current,(current + numComments + 1));
-        }
-        else {
-            throw new FormatException("Error in comment length of " + numComments);
+
+            //verify that the comment lines are in the array
+            if ((numComments > 0) && (infile.length > (current + numComments + 1))) {
+                comments = new String[numComments+1];
+                comments = Arrays.copyOfRange(infile,current,(current + numComments + 1));
+            }
+            else {
+                throw new FormatException("Error in comment length of " + numComments);
+            }
+        } catch (NumberFormatException err) {
+            throw new FormatException("Unable to convert text to numeric in comment line");
         }
         return (startLine + comments.length);
     }
@@ -265,37 +280,58 @@ public class COSMOScontentFormat {
      * Getter for individual values from the real header.  
      * @param index location in real header to pick up value
      * @return the value from the header
-     * @throws IndexOutOfBoundsException if index is outside of real header range
+     * @throws SmException if index is outside of real header range
      */
-    public double getRealHeaderValue( int index ) throws IndexOutOfBoundsException {
-        return realHeader.getRealValue(index);
+    public double getRealHeaderValue( int index ) throws SmException {
+        double val = 0.0;
+        try {
+            val = realHeader.getRealValue(index);
+        } catch (IndexOutOfBoundsException err) {
+            throw new SmException("Real header index " + (index+1) + " is out of range");
+        }
+        return val;
     }
     /**
      * Setter for individual values in the real header.
      * @param index location in real header to update
      * @param value value to use to update header
-     * @throws IndexOutOfBoundsException if index is outside of real header range
+     * @throws SmException if index is outside of real header range
      */
-    public void setRealHeaderValue( int index, double value ) throws IndexOutOfBoundsException {
-        realHeader.setRealValue( index, value );
+    public void setRealHeaderValue( int index, double value ) throws SmException {
+        try {
+            realHeader.setRealValue( index, value );
+        } catch (IndexOutOfBoundsException err) {
+            throw new SmException("Real header index " + (index+1) + " is out of range");
+        }
+        
     }
     /**
      * Getter for individual values from the integer header.  
      * @param index location in integer header to pick up value
      * @return the value from the header
-     * @throws IndexOutOfBoundsException if index is outside of integer header range
+     * @throws SmException if index is outside of integer header range
      */
-    public int getIntHeaderValue( int index ) throws IndexOutOfBoundsException {
-        return intHeader.getIntValue(index);
+    public int getIntHeaderValue( int index ) throws SmException {
+        int val = 0;
+        try {
+            val = intHeader.getIntValue(index);
+        } catch (IndexOutOfBoundsException err) {
+            throw new SmException("Integer header index " + (index+1) + " is out of range");
+        }
+        return val;
     }
     /**
      * Setter for individual values from the integer header.
      * @param index location in integer header to pick up value
      * @param value value to use to update header
-     * @throws IndexOutOfBoundsException if index is outside of integer header range
+     * @throws SmException if index is outside of integer header range
      */
-    public void setIntHeaderValue( int index, int value ) throws IndexOutOfBoundsException {
-        intHeader.setIntValue(index, value);
+    public void setIntHeaderValue( int index, int value ) throws SmException {
+        try {
+            intHeader.setIntValue(index, value);
+        } catch (IndexOutOfBoundsException err) {
+            throw new SmException("Integer header index " + (index+1) + " is out of range");
+        }
     }
     /**
      * This method retrieves a copy of the text header for use in creating a

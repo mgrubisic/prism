@@ -24,7 +24,7 @@ public class V2Component extends COSMOScontentFormat {
     }
     @Override
     public int parseDataSection (int startLine, String[] infile) throws 
-                                        FormatException, NumberFormatException {
+                                                            FormatException {
         int current = startLine;
         
         V2 = new VRealArray();

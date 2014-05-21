@@ -169,8 +169,8 @@ public class VIntArrayTest {
     public void testBadFormatLine() throws FormatException {
         di.parseNumberFormatLine(badFormat);
     }
-    @Test(expected=NumberFormatException.class)
-    public void testBadDataValue() throws NumberFormatException, FormatException {
+    @Test(expected=FormatException.class)
+    public void testBadDataValue() throws FormatException {
         di.parseValues(0, badData);
     }
     @Rule public ExpectedException expectedEx = ExpectedException.none();
@@ -185,13 +185,6 @@ public class VIntArrayTest {
     public void testIndexRangeHigh() throws IndexOutOfBoundsException, FormatException {
         di.parseValues(0, data);
         di.setIntValue(300,23);
-    }
-    @Test
-    public void testArrayVal() throws NullPointerException {
-        expectedEx.expect(NullPointerException.class);
-        expectedEx.expectMessage("Null integer array reference");        
-        int[] test;
-        test = di.getIntArray();
     }
     @Test
     public void testEOF() throws NumberFormatException, FormatException {

@@ -51,9 +51,10 @@ abstract class COSMOSarrayFormat {
      * @return The text file line number updated to the line after the array info.
      * @throws FormatException if unable to extract the formatting values
      * @throws NumberFormatException if unable to convert text to numeric format
+     * or to convert text to numeric values
      */
     public abstract int parseValues( int startLine, String[] infile) 
-                                throws FormatException, NumberFormatException;
+                                throws FormatException;
     
     /**
      * This method takes the format line before either the header or the data
@@ -61,10 +62,10 @@ abstract class COSMOSarrayFormat {
      * the array, the number of values per line and the field width.
      * @param line the line from the text file with array formatting information
      * @throws FormatException if unable to find the necessary values in the line
-     * @throws NumberFormatException if unable to convert format text to numeric
+     * or to convert text to numeric values
      */
     public void parseNumberFormatLine( String line) 
-                                throws FormatException, NumberFormatException {
+                                throws FormatException {
          
         //at start of line, skip over any whitespace and pick up all digits
         String getDigitsRegex = "^((\\s*)(\\d+))";
@@ -78,43 +79,48 @@ abstract class COSMOSarrayFormat {
         //set the copy of the header format line
         this.formatLine = line;
         
-        //get the number of values at the start of the line
-        Pattern regDigits = Pattern.compile( getDigitsRegex );
-        Matcher m = regDigits.matcher( line );
-        if (m.find(0)){
-            this.numVals = Integer.parseInt(m.group().trim());
-        } else {
-            throw new FormatException("Could not find number of values in " + line);
-        }
-        //get the format as text
-        Pattern regFormat = Pattern.compile(formatRegex);
-        m = regFormat.matcher(line);
-        if (m.find(0)){
-            this.numberFormat = m.group().trim();
-        } else {
-            throw new FormatException("Could not find number format in " + line);
-        }
-        //get field width and optional precision (if real vals)
-        Pattern regField = Pattern.compile(fieldRegex);
-        m = regField.matcher( this.numberFormat );
-        formatter = new ArrayList<>();
-        while (m.find()) {
-            formatter.add(m.group());
-        }
-        if ((formatter.size() == 2) && 
-                ((this.numberFormat.contains("I")) || (this.numberFormat.contains("i")))){
-            this.valsPerLine = Integer.parseInt(formatter.get(0));
-            this.fieldWidth = Integer.parseInt(formatter.get(1));
-        } else if ((formatter.size() == 3) && 
-                            ((this.numberFormat.contains("F")) || 
-                                    (this.numberFormat.contains("E")) || 
-                                        (this.numberFormat.contains("f")) || 
-                                            (this.numberFormat.contains("e")))){
-            this.valsPerLine = Integer.parseInt(formatter.get(0));
-            this.fieldWidth = Integer.parseInt(formatter.get(1));
-            this.precision = Integer.parseInt(formatter.get(2));
-        } else {
-            throw new FormatException("Could not extract format values in " + line);
+        try {
+        
+            //get the number of values at the start of the line
+            Pattern regDigits = Pattern.compile( getDigitsRegex );
+            Matcher m = regDigits.matcher( line );
+            if (m.find(0)){
+                this.numVals = Integer.parseInt(m.group().trim());
+            } else {
+                throw new FormatException("Could not find number of values in " + line);
+            }
+            //get the format as text
+            Pattern regFormat = Pattern.compile(formatRegex);
+            m = regFormat.matcher(line);
+            if (m.find(0)){
+                this.numberFormat = m.group().trim();
+            } else {
+                throw new FormatException("Could not find number format in " + line);
+            }
+            //get field width and optional precision (if real vals)
+            Pattern regField = Pattern.compile(fieldRegex);
+            m = regField.matcher( this.numberFormat );
+            formatter = new ArrayList<>();
+            while (m.find()) {
+                formatter.add(m.group());
+            }
+            if ((formatter.size() == 2) && 
+                    ((this.numberFormat.contains("I")) || (this.numberFormat.contains("i")))){
+                this.valsPerLine = Integer.parseInt(formatter.get(0));
+                this.fieldWidth = Integer.parseInt(formatter.get(1));
+            } else if ((formatter.size() == 3) && 
+                                ((this.numberFormat.contains("F")) || 
+                                        (this.numberFormat.contains("E")) || 
+                                            (this.numberFormat.contains("f")) || 
+                                                (this.numberFormat.contains("e")))){
+                this.valsPerLine = Integer.parseInt(formatter.get(0));
+                this.fieldWidth = Integer.parseInt(formatter.get(1));
+                this.precision = Integer.parseInt(formatter.get(2));
+            } else {
+                throw new FormatException("Could not extract format values in " + line);
+            }
+        } catch (NumberFormatException err) {
+            throw new FormatException("Unable to convert text to numbers in header/data format line");
         }
     }
     /**
@@ -153,7 +159,7 @@ abstract class COSMOSarrayFormat {
             for (int j = 0; j <= line.length()- this.fieldWidth; j = j + this.fieldWidth) {
                 String num = line.substring(j, j + this.fieldWidth).trim();
                 if ( !num.isEmpty()) {
-                    holdNumbers.add(line.substring(j, j + this.fieldWidth).trim());
+                    holdNumbers.add(num);
                 }
                 total++;
             }

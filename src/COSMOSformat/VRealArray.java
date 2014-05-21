@@ -60,12 +60,12 @@ public class VRealArray extends COSMOSarrayFormat {
      * @param startLine beginning line in the text file for the array information
      * @param infile string array holding the contents of the COSMOS file
      * @return updated line number, now pointing to the line after the array info.
-     * @throws FormatException if unable to find the expected format values
-     * @throws NumberFormatException if unable to convert text to double
+     * @throws FormatException if unable to find the expected format values or
+     * unable to convert text to double
      */
     @Override
     public int parseValues( int startLine, String[] infile) 
-                                throws FormatException, NumberFormatException {
+                                                    throws FormatException {
         int current = startLine;
         int next = 0;
         ArrayList<String> holdNumbers;
@@ -74,11 +74,16 @@ public class VRealArray extends COSMOSarrayFormat {
         if (infile.length <= current) {
             throw new FormatException("Unexpected EOF encountered at line " + current);
         }
-        this.parseNumberFormatLine(infile[current]);
-        holdNumbers =  this.extractNumericVals( current, infile);        
-        realVals = new double[holdNumbers.size()];
-        for (String each: holdNumbers){
-            realVals[next++] = Double.parseDouble(each);
+        try {
+            this.parseNumberFormatLine(infile[current]);
+            holdNumbers =  this.extractNumericVals( current, infile);        
+            realVals = new double[holdNumbers.size()];
+            for (String each: holdNumbers){
+                realVals[next++] = Double.parseDouble(each);
+            }
+        } catch (NumberFormatException err) {
+            throw new FormatException("Unable to convert text to numeric at line " 
+                                                                        + current);
         }
         //add 1 to account for the real header format line
         return (current + calculateNumLines() + 1);
@@ -112,30 +117,22 @@ public class VRealArray extends COSMOSarrayFormat {
      * This method returns a reference to the real array.  This is used when
      * processing V(n) data values to V(n+1) data.
      * @return reference to the real array
-     * @throws NullPointerException if the array is null when requested
      */
-    public double[] getRealArray() throws NullPointerException{
-        if (this.realVals == null) {
-            throw new NullPointerException("Null real array reference");
-        }
+    public double[] getRealArray(){
         return this.realVals;
     }
     /**
      * This method sets the real array reference to the input array.  This is
      * used when processing V(n) data values to V(n+1) data.
      * @param inArray reference to a real array
-     * @throws NullPointerException if input array reference is null
      */
-    public void setRealArray(double[] inArray) throws NullPointerException{
-        if (inArray == null) {
-            throw new NullPointerException("Null real array reference");
-        }
+    public void setRealArray(double[] inArray){
         this.realVals = inArray;
     }
 /**
  * This method calculates the values for the valsPerLine, numberFormat, and
  * numLines fields based on the current array size and other field values.
- * @throws FormatException if the fieldWidth field is <= 0
+ * @throws FormatException if the fieldWidth field is less than or equal to 0
  */
     public void buildArrayParams() throws FormatException {
         if (this.getFieldWidth() > 0 ) {

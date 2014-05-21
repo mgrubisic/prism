@@ -29,12 +29,12 @@ public class V0Component extends COSMOScontentFormat {
      * @param startLine line number for the start of the data section
      * @param infile contents of the input file, one string per line
      * @return updated line number now pointing to first line after data section
-     * @throws FormatException if unable to extract format information
-     * @throws NumberFormatException if unable to convert text values to numeric
+     * @throws FormatException if unable to extract format information or
+     * to convert text values to numeric
      */
     @Override
     public int parseDataSection (int startLine, String[] infile) throws 
-                                        FormatException, NumberFormatException {
+                                                            FormatException {
         int current = startLine;
         
         V0 = new VIntArray();
@@ -47,14 +47,6 @@ public class V0Component extends COSMOScontentFormat {
      */
     public int getDataLength() {
         return V0.getNumVals();
-    }
-    /**
-     * Getter for an individual value in the V0 data array.
-     * @param index location in the array to retrieve the value
-     * @return value from the array
-     */
-    public int getDataValue( int index ) throws IndexOutOfBoundsException {
-        return V0.getIntValue(index);
     }
     /**
      * Getter for a copy of the data array reference.  Used to access the entire

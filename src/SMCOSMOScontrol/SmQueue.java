@@ -84,7 +84,8 @@ public class SmQueue {
         return smlist.size();
     }
     
-    public int processQueueContents(SmProduct V1prod, ConfigReader config) throws FormatException, SmException {
+    public int processQueueContents(SmProduct V1prod, ConfigReader config) 
+                                        throws FormatException, SmException {
         //under construction
         double[] array;
         for (COSMOScontentFormat rec : smlist) {

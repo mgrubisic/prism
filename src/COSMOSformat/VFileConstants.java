@@ -14,6 +14,7 @@ package COSMOSformat;
 public final class VFileConstants {
     //text header markers
     public static final int HEADLINE_1_LENGTH = 59;
+    public static final int END_OF_DATATYPE = 24;
     public static final int NUM_HEAD_START = 46;
     public static final int NUM_HEAD_END = 48;
     
@@ -32,12 +33,12 @@ public final class VFileConstants {
     public static final String DEFAULT_INT_DISPLAYTYPE = "I";
     
     //data product names
-    public static final String RAWACC =   "Raw acceleration counts ";
-    public static final String UNCORACC = "Uncorrected acceleration";
-    public static final String CORACC =   "Corrected acceleration  ";
-    public static final String VELOCITY = "Velocity data           ";
-    public static final String DISPLACE = "Displacement data       ";
-    public static final String SPECTRA =  "Response spectra        ";
+    public static final String RAWACC =   "Raw acceleration counts  ";
+    public static final String UNCORACC = "Uncorrected acceleration ";
+    public static final String CORACC =   "Corrected acceleration   ";
+    public static final String VELOCITY = "Velocity data            ";
+    public static final String DISPLACE = "Displacement data        ";
+    public static final String SPECTRA =  "Response spectra         ";
     
     //units names and codes
     public static final String CMSQSECT = "cm/sec2";

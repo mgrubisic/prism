@@ -58,12 +58,12 @@ public class VIntArray extends COSMOSarrayFormat {
      * @param startLine beginning line in the text file for the array information
      * @param infile string array holding the contents of the COSMOS file
      * @return updated line number, now pointing to the line after the array info.
-     * @throws FormatException if unable to find the expected format values
-     * @throws NumberFormatException if unable to convert text to integer
+     * @throws FormatException if unable to find the expected format values or
+     * unable to convert text to integer
      */
     @Override
     public int parseValues( int startLine, String[] infile) 
-                                throws FormatException, NumberFormatException {
+                                                        throws FormatException {
         int current = startLine;
         int next = 0;
         ArrayList<String> holdNumbers;
@@ -72,11 +72,16 @@ public class VIntArray extends COSMOSarrayFormat {
         if (infile.length <= current) {
             throw new FormatException("Unexpected EOF encountered at line " + current);
         }
-        this.parseNumberFormatLine(infile[current]);
-        holdNumbers =  this.extractNumericVals( current, infile);
-        intVals = new int[holdNumbers.size()];
-        for (String each: holdNumbers){
-            intVals[next++] = Integer.parseInt(each);
+        try {
+            this.parseNumberFormatLine(infile[current]);
+            holdNumbers =  this.extractNumericVals( current, infile);
+            intVals = new int[holdNumbers.size()];
+            for (String each: holdNumbers){
+                intVals[next++] = Integer.parseInt(each);
+            }
+        } catch (NumberFormatException err) {
+            throw new FormatException("Unable to convert text to numeric at line " 
+                                                                        + current);
         }
         //add 1 to account for the integer header format line
         return (current + calculateNumLines() + 1);
@@ -110,12 +115,8 @@ public class VIntArray extends COSMOSarrayFormat {
      * This method returns a reference to the integer array.  This is used when
      * processing V0 data values to V1 data.
      * @return reference to the integer array
-     * @throws NullPointerException if the array is null when requested
      */
-    public int[] getIntArray() throws NullPointerException{
-        if (this.intVals == null) {
-            throw new NullPointerException("Null integer array reference");
-        }
+    public int[] getIntArray(){
         return this.intVals;
     }
     /**

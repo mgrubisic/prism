@@ -26,7 +26,6 @@ import SmException.SmException;
 import java.util.Arrays;
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
 import org.junit.Rule;
 import org.junit.rules.ExpectedException;
 
@@ -103,13 +102,13 @@ public class V0ComponentTest {
         org.junit.Assert.assertEquals(-999.0, v0.getNoRealVal(), delta);
     }
     @Test
-    public void testLoadComponent() throws FormatException, NumberFormatException {
+    public void testLoadComponent() throws FormatException, SmException {
         int lineNum = v0.loadComponent(0, infile);
         org.junit.Assert.assertEquals(48, lineNum);
         org.junit.Assert.assertEquals(76, v0.getChannelNum());
     }
     @Test
-    public void testParseHeader() throws FormatException, NumberFormatException {
+    public void testParseHeader() throws FormatException, SmException {
         infile[12]= "Values used when parameter or data value is unknown/unspecified:   -933, -222.0";
         int lineNum = v0.loadComponent(0, infile);
         org.junit.Assert.assertEquals(RAWACC, v0.getProcType());
@@ -121,27 +120,27 @@ public class V0ComponentTest {
     }
     @Rule public ExpectedException expectedEx = ExpectedException.none();
     @Test
-    public void testParseHeaderFormatError() throws FormatException, NumberFormatException {
+    public void testParseHeaderFormatError() throws FormatException, SmException {
         expectedEx.expect(FormatException.class);
         expectedEx.expectMessage("Unable to find number of text header lines at line 1");
         infile[0] = "Raw acceleration counts   (Format v01.20 with text lines) Src: 921az039.evt";
         int lineNum = v0.loadComponent(0, infile);
     }
     @Test
-    public void testParseHeaderNumberError() throws FormatException, NumberFormatException {
+    public void testParseHeaderNumberError() throws FormatException, SmException {
         expectedEx.expect(FormatException.class);
         expectedEx.expectMessage("Unable to extract NoData values at line 13");
         infile[12] = "Values used when parameter or data value is unknown/unspecified:   -999";
         int lineNum = v0.loadComponent(0, infile);
     }
     @Test
-    public void testParseHeaderNumberError2() throws FormatException, NumberFormatException {
-        expectedEx.expect(NumberFormatException.class);
+    public void testParseHeaderNumberError2() throws FormatException, SmException {
+        expectedEx.expect(FormatException.class);
         infile[12] = "Values used when parameter or data value is unknown/unspecified:   -999.0, -999";
         int lineNum = v0.loadComponent(0, infile);
     }
     @Test
-    public void testParseComments() throws FormatException, NumberFormatException {
+    public void testParseComments() throws FormatException, SmException {
         int lineNum = v0.loadComponent(0, infile);
         String[] check = v0.getComments();
         org.junit.Assert.assertEquals(infile[42], check[0]);
@@ -153,35 +152,35 @@ public class V0ComponentTest {
         org.junit.Assert.assertEquals(infile[43], check[1]); 
     }
     @Test
-    public void testParseCommentsEOF()  throws FormatException, NumberFormatException {
+    public void testParseCommentsEOF()  throws FormatException, SmException {
         expectedEx.expect(FormatException.class);
         expectedEx.expectMessage("EOF found before comments at line 43");
         String[] test = Arrays.copyOfRange(infile, 0, 42);
         int lineNum = v0.loadComponent(0, test);
     }
     @Test
-    public void testParseCommentsTooShort()  throws FormatException, NumberFormatException {
+    public void testParseCommentsTooShort()  throws FormatException, SmException {
         expectedEx.expect(FormatException.class);
         expectedEx.expectMessage("Error in comment length of 1");
         String[] test = Arrays.copyOfRange(infile, 0, 43);
         int lineNum = v0.loadComponent(0, test);
     }
     @Test
-    public void testParseCommentsKeyword()  throws FormatException, NumberFormatException {
+    public void testParseCommentsKeyword()  throws FormatException, SmException {
         expectedEx.expect(FormatException.class);
         expectedEx.expectMessage("Could not find comments at 43");
         infile[42]= "   1 extra line(s) follow, each starting with a \"|\":";
         int lineNum = v0.loadComponent(0, infile);
     }
     @Test
-    public void testParseCommentsBadNum()  throws FormatException, NumberFormatException {
+    public void testParseCommentsBadNum()  throws FormatException, SmException {
         expectedEx.expect(FormatException.class);
         expectedEx.expectMessage("Could not find number of comment lines at 43");
         infile[42]= "  xx Comment line(s) follow, each starting with a \"|\":";
         int lineNum = v0.loadComponent(0, infile);
     }
     @Test
-    public void testParseEndOfData() throws FormatException, NumberFormatException {
+    public void testParseEndOfData() throws FormatException, SmException {
         int lineNum = v0.loadComponent(0, infile);
         String check = v0.getEndOfData();
         org.junit.Assert.assertEquals(infile[47], check);
@@ -191,14 +190,14 @@ public class V0ComponentTest {
         org.junit.Assert.assertEquals(infile[47], check);
     }
     @Test
-    public void testParseEODKeyword()  throws FormatException, NumberFormatException {
+    public void testParseEODKeyword()  throws FormatException, SmException {
         expectedEx.expect(FormatException.class);
         expectedEx.expectMessage("Could not find End-of-data at line 48");
         infile[47]= "End-o-file for Chan  1 acceleration";
         int lineNum = v0.loadComponent(0, infile);
     }
     @Test
-    public void testParseEODTooShort()  throws FormatException, NumberFormatException {
+    public void testParseEODTooShort()  throws FormatException, SmException {
         expectedEx.expect(FormatException.class);
         expectedEx.expectMessage("End-of-file found before end-of-data at line 48");
         String[] test = Arrays.copyOfRange(infile, 0, 47);
@@ -217,7 +216,7 @@ public class V0ComponentTest {
         v0.setChannelNum();
     }
     @Test
-    public void testGetSetHeaderVals() throws IndexOutOfBoundsException, FormatException {
+    public void testGetSetHeaderVals() throws IndexOutOfBoundsException, FormatException, SmException {
         int lineNum = v0.loadComponent(0, infile);
         v0.setIntHeaderValue(10, 10);
         v0.setRealHeaderValue(10, 10.25);
@@ -225,29 +224,22 @@ public class V0ComponentTest {
         org.junit.Assert.assertEquals(10.25, v0.getRealHeaderValue(10),delta);
     }
     @Test
-    public void testSetIntHeaderValsRange() throws IndexOutOfBoundsException, FormatException {
-        expectedEx.expect(IndexOutOfBoundsException.class);
+    public void testSetIntHeaderValsRange() throws FormatException, SmException {
+        expectedEx.expect(SmException.class);
         int lineNum = v0.loadComponent(0, infile);
         v0.setIntHeaderValue(1000, 10);
     }
     @Test
-    public void testGetRealHeaderValsRange() throws IndexOutOfBoundsException, FormatException {
-        expectedEx.expect(IndexOutOfBoundsException.class);
+    public void testGetRealHeaderValsRange() throws FormatException, SmException {
+        expectedEx.expect(SmException.class);
         int lineNum = v0.loadComponent(0, infile);
         double test = v0.getRealHeaderValue(-8);
     }
     @Test
-    public void testDataArrayMethods() throws IndexOutOfBoundsException, FormatException {
+    public void testDataArrayMethods() throws FormatException, SmException {
         int lineNum = v0.loadComponent(0, infile);
         org.junit.Assert.assertEquals(19, v0.getDataLength());
-        org.junit.Assert.assertEquals(3254, v0.getDataValue(18));
         int[] test = v0.getDataArray();
         org.junit.Assert.assertEquals(3300, test[10]);
-    }
-    @Test
-    public void testGetDataValueRange() throws IndexOutOfBoundsException, FormatException {
-        expectedEx.expect(IndexOutOfBoundsException.class);
-        int lineNum = v0.loadComponent(0, infile);
-        int test = v0.getDataValue(20);
     }
 }

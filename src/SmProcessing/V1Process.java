@@ -21,6 +21,8 @@ import static SmUtilities.SmConfigConstants.DATA_UNITS_NAME;
  * @author jmjones
  */
 public class V1Process {
+    private final double microToVolt = 1.0e-6;
+    
     private double[] array;
     private double meanToZero;
     private double maxVal;
@@ -45,16 +47,16 @@ public class V1Process {
         this.fsi = v0rec.getRealHeaderValue(RECORDER_FSI);
         this.sensitivity = v0rec.getRealHeaderValue(SENSOR_SENSITIVITY);
         if  (((lsb - 0.0) < epsilon) || ((lsb - nodata) < epsilon)){
-            throw new SmException("Real header #22, recorder least sig. bit, is invalid: " 
-                                                                        + lsb);
+            throw new SmException("Real header #" + (RECORER_LSB + 1) + 
+                            ", recorder least sig. bit, is invalid: " + lsb);
         }
-        if (((fsi - 0.0) < epsilon) || ((fsi - nodata) < epsilon)) {
-            throw new SmException("Real header #23, recorder full-scale input, is invalid: " 
-                                                                        + fsi);
-        }
+//        if (((fsi - 0.0) < epsilon) || ((fsi - nodata) < epsilon)) {
+//            throw new SmException("Real header #" + (RECORDER_FSI + 1) + 
+//                     ", recorder full-scale input, is invalid: " + RECORDER_FSI);
+//        }
         if (((sensitivity - 0.0) < epsilon) || ((sensitivity - nodata) < epsilon)){
-            throw new SmException("Real header #42, sensor sensitivity, is invalid: " 
-                                                                + sensitivity);
+            throw new SmException("Real header #" + (SENSOR_SENSITIVITY + 1) + 
+                            ", sensor sensitivity, is invalid: " + sensitivity);
         }
         //Set the length of the V1 data array to the same as the V0
         this.array = new double[V0arrLength];
@@ -79,8 +81,7 @@ public class V1Process {
     }
     
     public double countToGConversion() {
-        double microToVolt = 1.0e-6;
-        double result = ((fsi / lsb) * microToVolt) * (sensitivity);
+        double result = ( lsb * microToVolt) / sensitivity;
         return result;        
     }
     
@@ -88,8 +89,9 @@ public class V1Process {
         //sensor calculation of volts per count and cm per sq. sec per volt
         //countToCMS units are cm per sq. sec per count
         //This is multiplied by each count to get the sensor value in cm per sq. sec
-        double microToVolt = 1.0e-6;
-        double result = ((fsi / lsb) * microToVolt) * (FROM_G_CONVERSION * sensitivity);
+        
+//        double result = ((fsi / lsb) * microToVolt) * (FROM_G_CONVERSION * sensitivity);
+        double result = (( lsb * microToVolt) / sensitivity) * FROM_G_CONVERSION;
         return result;
     }
     
