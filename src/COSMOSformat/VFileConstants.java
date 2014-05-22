@@ -20,6 +20,7 @@ public final class VFileConstants {
     
     public static final int MAX_LINE_LENGTH = 80;
     public static final int NODATA_LINE = 12;
+    public static final int END_OF_DATA_CHAN = 21;
     
     //data arrays, display default parameters
     public static final int DEFAULT_NOINTVAL = -999;
@@ -48,8 +49,7 @@ public final class VFileConstants {
     public static final String CMT = "cm";
     public static final String CMN = "06";
     
-    public static final int SINGLE_CHANNEL = 1;
-    public static final int BUNDLED = 2;
+    public enum OutputStyle { SINGLE_CHANNEL, BUNDLED };
     
     //int header index values
     public static final int STATION_CHANNEL_NUMBER = 49;
@@ -68,11 +68,9 @@ public final class VFileConstants {
     public static final int RECORDER_FSI = 22;  //recorder full scale input in volts
     public static final int SENSOR_SENSITIVITY = 41; //in volts per g
     
-    //Table 2 units
-    public static final int CM_SEC_SEC = 4;
-    
     //Processing stages
     public static final int V1_STAGE = 1;
+    public static final int V2_STAGE = 2;
     
     //processing - counts to physical values constants
     public static final double FROM_G_CONVERSION = 980.665; //cm per sq. sec per g

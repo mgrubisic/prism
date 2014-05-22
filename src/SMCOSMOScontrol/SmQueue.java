@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import SmException.FormatException;
 import SmException.SmException;
 import SmProcessing.V1Process;
+import SmProcessing.V2Process;
 import SmUtilities.ConfigReader;
 import SmUtilities.TextFileReader;
 
@@ -71,7 +72,7 @@ public class SmQueue {
                 smlist.add(rec);                
             } else if (dataType.equals( CORACC ) || dataType.equals( VELOCITY ) || 
                                                     dataType.equals( DISPLACE )) {
-                V2Component rec = new V2Component( dataType, null, null );
+                V2Component rec = new V2Component( dataType, null );
                 returnLine = rec.loadComponent(currentLine, fileContents);
                 currentLine = (returnLine > currentLine) ? returnLine : fileContents.length;
                 smlist.add(rec);                
@@ -84,7 +85,7 @@ public class SmQueue {
         return smlist.size();
     }
     
-    public int processQueueContents(SmProduct V1prod, ConfigReader config) 
+    public void processQueueContents(SmProduct V1prod, SmProduct V2prod, ConfigReader config) 
                                         throws FormatException, SmException {
         //under construction
         double[] array;
@@ -97,13 +98,22 @@ public class SmQueue {
             v1val.processV1Data();
             
             //create a V1 component to get the processing results
-            V1Component V1 = new V1Component( UNCORACC, (V0Component)rec);
-            V1.buildV1(v1val, config);
+            V1Component v1rec = new V1Component( UNCORACC, (V0Component)rec);
+            v1rec.buildV1(v1val, config);
             
-            //move results to the output queue
-            TextFileWriter V1out = new TextFileWriter( V1.getChannelNum(),V1.V1ToText());
+            //move V1 results to the output queue
+            TextFileWriter V1out = new TextFileWriter( v1rec.getChannelNum(),v1rec.V1ToText());
             V1prod.addProduct(V1out);
+            
+            //Create the V2 processing object and do the processing.  V2 processing
+            //produces 3 V2 objects: corrected acceleration, velocity, and displacement
+            V2Process v2val = new V2Process(v1rec, config);
+            v2val.processV2Data();
+            
+            //create the V2 components to get the processing results
+            V2Component V2acc = new V2Component( CORACC, v1rec );
+            V2Component V2vel = new V2Component( VELOCITY, v1rec );
+            V2Component V2dis = new V2Component( DISPLACE, v1rec );
         }
-        return 0;
     }
 }

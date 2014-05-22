@@ -24,8 +24,8 @@ import java.util.regex.Pattern;
  * @author jmjones
  */
 public class COSMOScontentFormat {
-    private final String procType;  //data file type flag
-    private int channelNum; //the channel number for this record
+    protected final String procType;  //data file type flag
+    protected int channelNum; //the channel number for this record
     protected int noIntVal;  //NoData value for integer header array
     protected double noRealVal;  //NoData value for real header array
     protected String[] textHeader;  //Holds the text header lines

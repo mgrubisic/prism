@@ -71,7 +71,6 @@ public class PrismXMLReader {
  * paths to each text node, and enters each key-value pair in the config reader
  * object.
  * @param filename The xml file to read and parse
- * @param config The configuration object to hold each key-value pair found in
  * the xml file
  * @throws IOException if unable to read in the file
  * @throws ParserConfigurationException if parser configuration is incorrect

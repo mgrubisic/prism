@@ -23,7 +23,7 @@ import static SmUtilities.SmConfigConstants.DATA_UNITS_NAME;
 public class V1Process {
     private final double microToVolt = 1.0e-6;
     
-    private double[] array;
+    private double[] V1Array;
     private double meanToZero;
     private double maxVal;
     private int maxIndex;
@@ -58,8 +58,6 @@ public class V1Process {
             throw new SmException("Real header #" + (SENSOR_SENSITIVITY + 1) + 
                             ", sensor sensitivity, is invalid: " + sensitivity);
         }
-        //Set the length of the V1 data array to the same as the V0
-        this.array = new double[V0arrLength];
         
         //Get config values with a default of cm/sec2 if not defined
         String unitcode = config.getConfigValue(DATA_UNITS_CODE);
@@ -70,14 +68,18 @@ public class V1Process {
         
         //initialize the results values
         this.meanToZero = 0.0;
-        this.maxVal = -1.0e10;  //Set default to large neg. number
+        this.maxVal = Double.MIN_VALUE;  //Set default to large neg. number
         this.maxIndex = -1;  //Set index to out-of-range
         this.avgVal = 0.0;
     }
     
     public void processV1Data() {
         double conv = countToCMSConversion();
-        countsToValues(inV0.getDataArray(), conv);
+        DataVals result = countsToValues(inV0.getDataArray(), conv);
+        V1Array = result.array;
+        meanToZero = result.mean;
+        maxVal = result.max;
+        maxIndex = result.maxIndex;
     }
     
     public double countToGConversion() {
@@ -90,34 +92,35 @@ public class V1Process {
         //countToCMS units are cm per sq. sec per count
         //This is multiplied by each count to get the sensor value in cm per sq. sec
         
-//        double result = ((fsi / lsb) * microToVolt) * (FROM_G_CONVERSION * sensitivity);
         double result = (( lsb * microToVolt) / sensitivity) * FROM_G_CONVERSION;
         return result;
     }
     
-    public void countsToValues(final int[] inArray, double countConv) {
+    public DataVals countsToValues(final int[] inArray, final double countConv) {
         
-        int length = array.length;
+        int length = inArray.length;
+        double[] result = new double[length];
         double total = 0.0;
+        double max = Double.MIN_VALUE;
+        double firstMean = Double.MIN_VALUE;
+        int maxid = -1;
         
-        System.out.println("+++ countToVals: " + countConv);
         for (int i = 0; i < length; i++) {
-            array[i] = inArray[i] * countConv;
-            total = total + array[i];
+            result[i] = inArray[i] * countConv;
+            total = total + result[i];
         }
-        meanToZero = total / length;
-        System.out.println("+++ Mean Zero: " + meanToZero);
+        firstMean = total / length;
         
         total = 0.0;
         for (int i = 0; i < length; i++) {
-            array[i] = array[i] - meanToZero;
-            total = total + array[i];
-            if (array[i] > maxVal) {
-                maxVal = array[i];
-                maxIndex = i;
+            result[i] = result[i] - firstMean;
+            total = total + result[i];
+            if (result[i] > max) {
+                max = result[i];
+                maxid = i;
             }
         }
-        this.avgVal = total / length;
+        return (new DataVals( result, firstMean, max, maxid));
     }
 
     public double getMeanToZero() {
@@ -133,15 +136,28 @@ public class V1Process {
         return this.avgVal;
     }
     public double[] getV1Array() {
-        return this.array;
+        return this.V1Array;
     }
     public int getV1ArrayLength() {
-        return this.array.length;
+        return this.V1Array.length;
     }
     public int getDataUnitCode() {
         return this.data_unit_code;
     }
     public String getDataUnits() {
         return this.data_units;
+    }
+    class DataVals {
+        public final double[] array;
+        public final double max;
+        public final double mean;
+        public final int maxIndex;
+
+        public DataVals(double[] inArray, double inMean, double inMax, int inIndex) {
+            max = inMax;
+            mean = inMean;
+            maxIndex = inIndex;
+            array = inArray;
+        }
     }
 }

@@ -98,7 +98,8 @@ public class SmController {
             for (File each: smc.inVList){
                 smc.smqueue = new SmQueue( each );
                 smc.V1product = new SmProduct(each, "V1", smc.outFolder);
-                //add V2 and V3 products eventually
+                smc.V2product = new SmProduct(each, "V2", smc.outFolder);
+                //add V3 products eventually
                 try {
 //                    long startTime = System.nanoTime();
                     smc.smqueue.readInFile( each );
@@ -109,7 +110,8 @@ public class SmController {
 //                    long parseTime = System.nanoTime() - startTime;
                     //next is to process the records, then write out results
 //                    startTime = System.nanoTime();
-                    smc.smqueue.processQueueContents(smc.V1product, smc.config);
+                    smc.smqueue.processQueueContents(smc.V1product, smc.V2product,
+                                                                    smc.config);
 //                    long processTime = System.nanoTime() - startTime;
 //                    startTime = System.nanoTime();
 

@@ -66,12 +66,32 @@ public class V1Component extends COSMOScontentFormat {
         current = V1Data.parseValues( current, infile);
         return current;
     }
+    public V0Component getParent() {
+        return this.parentV0;
+    }
+    /**
+     * Getter for the length of the data array
+     * @return the number of values in the data array
+     */
+    public int getDataLength() {
+        return V1Data.getNumVals();
+    }
+    /**
+     * Getter for a copy of the data array reference.  Used to access the entire
+     * array during data processing.
+     * @return a copy of the array reference
+     */
+    public double[] getDataArray() {
+        return V1Data.getRealArray();
+    }
+
     //Once in this method, the V1Process object is no longer needed and its array
     //is transferred to the V1component object
     public void buildV1 (V1Process inVvals, ConfigReader config) throws 
                                                 SmException, FormatException {
         Double epsilon = 0.001;
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder(MAX_LINE_LENGTH);
+        StringBuilder eod = new StringBuilder(MAX_LINE_LENGTH);
         final double MSEC_TO_SEC = 1e-3;
         String realformat = "%8.3f";
 
@@ -125,6 +145,12 @@ public class V1Component extends COSMOScontentFormat {
         this.realHeader.setRealValue(MAX_VAL, inVvals.getMaxVal());
         this.realHeader.setRealValue(AVG_VAL, inVvals.getAvgVal());
         this.realHeader.setRealValue(MAX_VAL_TIME, time);
+        
+        //Update the end-of-data line with the new data type
+        this.endOfData = eod.append(this.endOfData,0,END_OF_DATA_CHAN)
+                            .append(" ")
+                            .append(String.valueOf(unitscode))
+                            .append(" acceleration").toString();
     }
     /**
      * This method creates a new data format line for the V1 component data array.
@@ -132,12 +158,11 @@ public class V1Component extends COSMOScontentFormat {
      * and gets the physical units from the configuration file.
      * @param units
      * @param unitscode
+     * @throws SmException.SmException
      */
     public void buildNewDataFormatLine(String units, int unitscode) throws SmException {
-        //!!!! Error checking here and get units from config file (or set in component?)
-        
         //calculate the time by multiplying the number of data values by delta t
-        String line = "";
+        String line;
         double dtime = this.getRealHeaderValue(DELTA_T);
         double calcTime = dtime * this.realHeader.getNumVals();
         String timeSec = Integer.toString((int)calcTime);

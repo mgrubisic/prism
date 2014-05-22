@@ -15,7 +15,7 @@ import SmException.FormatException;
  * @author jmjones
  */
 public class V0Component extends COSMOScontentFormat {
-    private VIntArray V0;  //raw acceleration counts
+    private VIntArray V0Data;  //raw acceleration counts
     /**
      * Default constructor
      * @param procType 
@@ -37,8 +37,8 @@ public class V0Component extends COSMOScontentFormat {
                                                             FormatException {
         int current = startLine;
         
-        V0 = new VIntArray();
-        current = V0.parseValues( current, infile);
+        V0Data = new VIntArray();
+        current = V0Data.parseValues( current, infile);
         return current;
     }
     /**
@@ -46,7 +46,7 @@ public class V0Component extends COSMOScontentFormat {
      * @return the number of values in the data array
      */
     public int getDataLength() {
-        return V0.getNumVals();
+        return V0Data.getNumVals();
     }
     /**
      * Getter for a copy of the data array reference.  Used to access the entire
@@ -54,7 +54,6 @@ public class V0Component extends COSMOScontentFormat {
      * @return a copy of the array reference
      */
     public int[] getDataArray() {
-        return V0.getIntArray();
+        return V0Data.getIntArray();
     }
-    
 }

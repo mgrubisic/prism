@@ -6,9 +6,9 @@
 
 package SMCOSMOScontrol;
 
+import COSMOSformat.VFileConstants;
+import COSMOSformat.VFileConstants.OutputStyle;
 import SmUtilities.TextFileWriter;
-import static COSMOSformat.VFileConstants.BUNDLED;
-import static COSMOSformat.VFileConstants.SINGLE_CHANNEL;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
@@ -45,9 +45,9 @@ public class SmProduct {
     public void writeOutProducts() throws IOException {
         Path outName;
         String[] contents;
-        int bundleFlag = SINGLE_CHANNEL;
+        OutputStyle bundleFlag = OutputStyle.SINGLE_CHANNEL;
         if (this.productList.size() > 1) {
-            bundleFlag = BUNDLED;
+            bundleFlag = OutputStyle.BUNDLED;
         }
         for (TextFileWriter each : this.productList) {
             outName = buildFilename(each.getChannelNum(), bundleFlag);
@@ -60,13 +60,13 @@ public class SmProduct {
             }
         }
     }
-    public Path buildFilename( int aChannelNum, int aBundleFlag) {
+    public Path buildFilename( int aChannelNum, OutputStyle aBundleFlag) {
         String startName = this.fileName.getName();
         String name = "";
         String getExtensionRegex = "\\.(?i)V\\d$";
         Pattern extension = Pattern.compile( getExtensionRegex );
         Matcher matcher = extension.matcher(startName);
-        if (aBundleFlag == SINGLE_CHANNEL) {
+        if (aBundleFlag == OutputStyle.SINGLE_CHANNEL) {
             String channel = String.valueOf(aChannelNum);
             name = matcher.replaceFirst("." + channel + "." + this.fileExtension);
         } else {
