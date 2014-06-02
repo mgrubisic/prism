@@ -92,7 +92,6 @@ public class V1Component extends COSMOScontentFormat {
         Double epsilon = 0.001;
         StringBuilder sb = new StringBuilder(MAX_LINE_LENGTH);
         StringBuilder eod = new StringBuilder(MAX_LINE_LENGTH);
-        final double MSEC_TO_SEC = 1e-3;
         String realformat = "%8.3f";
 
         SmTimeFormatter proctime = new SmTimeFormatter();
@@ -140,16 +139,18 @@ public class V1Component extends COSMOScontentFormat {
         //update the headers with the V1 values
         this.intHeader.setIntValue(PROCESSING_STAGE_INDEX, V1_STAGE);
         this.intHeader.setIntValue(V1_UNITS_INDEX, unitscode);
+        this.intHeader.setIntValue(DATA_PHYSICAL_PARAM_CODE, ACC_PARM_CODE);
         this.intHeader.setIntValue(PROCESSING_AGENCY, agency_code);
         this.realHeader.setRealValue(MEAN_ZERO, inVvals.getMeanToZero());
         this.realHeader.setRealValue(MAX_VAL, inVvals.getMaxVal());
         this.realHeader.setRealValue(AVG_VAL, inVvals.getAvgVal());
         this.realHeader.setRealValue(MAX_VAL_TIME, time);
+        this.realHeader.setRealValue(SCALING_FACTOR, FROM_G_CONVERSION);
         
         //Update the end-of-data line with the new data type
         this.endOfData = eod.append(this.endOfData,0,END_OF_DATA_CHAN)
                             .append(" ")
-                            .append(String.valueOf(unitscode))
+                            .append(String.valueOf(this.channelNum))
                             .append(" acceleration").toString();
     }
     /**
@@ -164,11 +165,12 @@ public class V1Component extends COSMOScontentFormat {
         //calculate the time by multiplying the number of data values by delta t
         String line;
         double dtime = this.getRealHeaderValue(DELTA_T);
-        double calcTime = dtime * this.realHeader.getNumVals();
+        int numvals = V1Data.getNumVals();
+        double calcTime = dtime * numvals * MSEC_TO_SEC;
         String timeSec = Integer.toString((int)calcTime);
         String datType = "acceleration";
         line = String.format("%1$8s %2$13s pts, approx %3$4s secs, units=%4$7s(%5$02d), Format=",
-                                     String.valueOf(V1Data.getNumVals()),datType,
+                                     String.valueOf(numvals),datType,
                                                     timeSec, units, unitscode);
         V1Data.setFormatLine(line + V1Data.getNumberFormat());
     }
@@ -177,7 +179,8 @@ public class V1Component extends COSMOScontentFormat {
      * format for writing to a file.
      * @return a text array with the V1 component in COSMOS format for a file
      */
-    public String[] V1ToText() {
+    @Override
+    public String[] VrecToText() {
         //add up the length of the text portions of the component, which are
         //the text header, the comments, and the end-of-data line.
         int totalLength = 0;

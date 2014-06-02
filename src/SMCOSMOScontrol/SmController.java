@@ -97,8 +97,8 @@ public class SmController {
             //Attempt to process all the files in the list.
             for (File each: smc.inVList){
                 smc.smqueue = new SmQueue( each );
-                smc.V1product = new SmProduct(each, "V1", smc.outFolder);
-                smc.V2product = new SmProduct(each, "V2", smc.outFolder);
+                smc.V1product = new SmProduct(each, "V1", smc.outFolder, smc.config);
+                smc.V2product = new SmProduct(each, "V2", smc.outFolder, smc.config);
                 //add V3 products eventually
                 try {
 //                    long startTime = System.nanoTime();
@@ -129,7 +129,7 @@ public class SmController {
                 }
                 catch (FormatException | IOException | SmException err) {
                     //log the exact error msg and move on to the next file
-                    //print stack trace to log for numberformatexception?
+                    //print stack trace to log for numberformatexception!!!
                     System.out.println("Unable to read/process/write file " + each.toString());
                     System.out.println("\t" + err.getMessage());
                 }

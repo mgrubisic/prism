@@ -19,9 +19,11 @@ package SmProcessing;
 
 import COSMOSformat.V1Component;
 import static COSMOSformat.VFileConstants.DELTA_T;
+import COSMOSformat.VFileConstants.V2DataType;
 import SmException.SmException;
 import SmUtilities.ConfigReader;
 import static SmUtilities.SmConfigConstants.DATA_UNITS_CODE;
+import static SmUtilities.SmConfigConstants.DATA_UNITS_NAME;
 
 /**
  *
@@ -46,6 +48,7 @@ public class V2Process {
     
     private final V1Component inV1;
     private final int data_unit_code;
+    private final String data_units;
     private DataVals result;
     private final double delta_t;
     private final double noRealVal;
@@ -58,6 +61,9 @@ public class V2Process {
         //Get config values with a default of cm/sec2 if not defined
         String unitcode = config.getConfigValue(DATA_UNITS_CODE);
         this.data_unit_code = (unitcode == null) ? 4 : Integer.parseInt(unitcode);
+        
+        String unitname = config.getConfigValue(DATA_UNITS_NAME);
+        this.data_units = (unitname == null) ? "cm/sec2" : unitname;
         
         this.noRealVal = inV1.getNoRealVal();
         //verify that real header value delta t is defined and valid
@@ -91,50 +97,101 @@ public class V2Process {
         AmaxIndex = result.maxIndex;
         AavgVal = result.mean;    
     }
-    private DataVals SmIntegrate( final double[] inArray, final double deltat ){
+    private DataVals SmIntegrate( final double[] inArray, double deltat ){
         double max  = 0.0;
         double mean = 0.0;
         int index = 0;
         double total = 0.0;
-        double[] result = new double[ inArray.length ];
+        double[] calc = new double[ inArray.length ];
         double dt2 = deltat / 2.0;
-        result[0] = 0.0;
-        for (int i = 1; i < result.length; i++) {
-            result[i] = result[i-1] + (inArray[i-1] + inArray[i])*dt2;
-            total = total + result[i];
-            if (result[i] > max){
-                max = result[i];
+        calc[0] = 0.0;
+        for (int i = 1; i < calc.length; i++) {
+            calc[i] = calc[i-1] + (inArray[i-1] + inArray[i])*dt2;
+            total = total + calc[i];
+            if (calc[i] > max){
+                max = calc[i];
                 index = i;
             }
         }
-        mean = total / result.length;
-        return (new DataVals(result, mean, max, index ));
+        mean = total / calc.length;
+        return (new DataVals(calc, mean, max, index ));
     }
-    private DataVals SmDifferentiate( final double[] inArray, final double deltat ){
+    private DataVals SmDifferentiate( final double[] inArray, double deltat ){
         int len = inArray.length;
-        double[] result = new double[ len ];
-        result[0] = (inArray[1] - inArray[0]) / deltat;
-        double max  = result[0];
-        double mean = result[0];
+        double[] calc = new double[ len ];
+        calc[0] = (inArray[1] - inArray[0]) / deltat;
+        double max  = calc[0];
+        double mean = calc[0];
         int index = 0;
-        double total = result[0];
+        double total = calc[0];
         for (int i = 1; i < len-2; i++) {
-            result[i] = (inArray[i+1] - inArray[i-1]) / (deltat * 2.0);
-            total = total + result[i];
-            if (result[i] > max){
-                max = result[i];
+            calc[i] = (inArray[i+1] - inArray[i-1]) / (deltat * 2.0);
+            total = total + calc[i];
+            if (calc[i] > max){
+                max = calc[i];
                 index = i;
             }
         }
-        result[len-1] = (inArray[len-1] - inArray[len-2]) / deltat;
-        total = total + result[len-1];
-        if (result[len-1] > max) {
-            max = result[len-1];
+        calc[len-1] = (inArray[len-1] - inArray[len-2]) / deltat;
+        total = total + calc[len-1];
+        if (calc[len-1] > max) {
+            max = calc[len-1];
             index = len-1;
             
         }
-        mean = total / result.length;
-        return (new DataVals(result, mean, max, index ));
+        mean = total / calc.length;
+        return (new DataVals(calc, mean, max, index ));
+    }
+    public double getMaxVal(V2DataType dType) {
+        if (dType == V2DataType.ACC) {
+            return this.AmaxVal;
+        } else if (dType == V2DataType.VEL) {
+            return this.VmaxVal;
+        } else {
+            return this.DmaxVal;
+        }
+    }
+    public int getMaxIndex(V2DataType dType) {
+        if (dType == V2DataType.ACC) {
+            return this.AmaxIndex;
+        } else if (dType == V2DataType.VEL) {
+            return this.VmaxIndex;
+        } else {
+            return this.DmaxIndex;
+        }
+    }
+    public double getAvgVal(V2DataType dType) {
+        if (dType == V2DataType.ACC) {
+            return this.AavgVal;
+        } else if (dType == V2DataType.VEL) {
+            return this.VavgVal;
+        } else {
+            return this.DavgVal;
+        }
+    }
+    public double[] getV2Array(V2DataType dType) {
+        if (dType == V2DataType.ACC) {
+            return this.accel;
+        } else if (dType == V2DataType.VEL) {
+            return this.velocity;
+        } else {
+            return this.displace;
+        }
+    }
+    public int getV2ArrayLength(V2DataType dType) {
+        if (dType == V2DataType.ACC) {
+            return this.accel.length;
+        } else if (dType == V2DataType.VEL) {
+            return this.velocity.length;
+        } else {
+            return this.displace.length;
+        }
+    }
+    public int getDataUnitCode(V2DataType dType) {
+        return this.data_unit_code;
+    }
+    public String getDataUnits(V2DataType dType) {
+        return this.data_units;
     }
     class DataVals {
         public final double[] array;

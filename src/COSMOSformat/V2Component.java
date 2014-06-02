@@ -10,7 +10,11 @@ import static COSMOSformat.VFileConstants.*;
 import SmException.FormatException;
 import SmException.SmException;
 import SmProcessing.V1Process;
+import SmProcessing.V2Process;
 import SmUtilities.ConfigReader;
+import static SmUtilities.SmConfigConstants.PROC_AGENCY_ABBREV;
+import static SmUtilities.SmConfigConstants.PROC_AGENCY_CODE;
+import SmUtilities.SmTimeFormatter;
 
 /**
  *
@@ -65,23 +69,83 @@ public class V2Component extends COSMOScontentFormat {
     public V1Component getParent() {
         return this.parentV1;
     }
-    public void buildV2( String procType, V1Process inV1vals, ConfigReader config) {
-        //fill in!!!
+    public void buildV2acc( String procType, V2Process inVvals, ConfigReader config) throws SmException, FormatException {
+        Double epsilon = 0.001;
+        StringBuilder sb = new StringBuilder(MAX_LINE_LENGTH);
+        StringBuilder eod = new StringBuilder(MAX_LINE_LENGTH);
+        final double MSEC_TO_SEC = 1e-3;
+        String realformat = "%8.3f";
+
+        SmTimeFormatter proctime = new SmTimeFormatter();
+        
+        //verify that real header value delta t is defined and valid
+        double delta_t = this.realHeader.getRealValue(DELTA_T);
+        if (((delta_t - this.noRealVal) < epsilon) || (delta_t < 0.0)){
+            throw new SmException("Real header #62, delta t, is invalid: " + 
+                                                                        delta_t);
+        }        
+        double time = (inVvals.getMaxIndex(V2DataType.ACC)) * MSEC_TO_SEC * delta_t;
+
+        //Get the processing agency info from the config. data
+        String agabbrev = config.getConfigValue(PROC_AGENCY_ABBREV);
+        if (agabbrev == null) {
+            agabbrev = "Unknown";
+        }
+        String agcode = config.getConfigValue(PROC_AGENCY_CODE);
+        int agency_code = (agcode == null) ? 0 : Integer.parseInt(agcode);
+        
+        //Get units info from V1 processing object
+        String unitsname = inVvals.getDataUnits(V2DataType.ACC);
+        int unitscode = inVvals.getDataUnitCode(V2DataType.ACC);
+        
+        //Get the current processing time
+        String val = proctime.getGMTdateTime();
+        System.out.println("+++ time: " + val);
+        //update values in the text header
+        this.textHeader[0] = UNCORACC.concat(this.textHeader[0].substring(END_OF_DATATYPE));
+        this.textHeader[10] = sb.append("Processed:").append(val).append(", ")
+                                .append(agabbrev).append(", Max = ")
+                                .append(String.format(realformat,inVvals.getMaxVal(V2DataType.ACC)))
+                                .append(" ").append(unitsname).append(" at ")
+                                .append(String.format(realformat,time))
+                                .append(" sec").toString();
+        
+        //transfer the data array and set all array values
+        V2Data.setRealArray(inVvals.getV2Array(V2DataType.ACC));
+        V2Data.setFieldWidth(REAL_FIELDWIDTH_V1);
+        V2Data.setPrecision(REAL_PRECISION_V1);
+        V2Data.setNumVals(inVvals.getV2ArrayLength(V2DataType.ACC));
+        V2Data.buildArrayParams();
+        this.buildNewDataFormatLine(unitsname, unitscode, "acceleration");
+        
+        //update the headers with the V1 values
+        this.intHeader.setIntValue(PROCESSING_STAGE_INDEX, V2_STAGE);
+        this.intHeader.setIntValue(V1_UNITS_INDEX, unitscode);
+        this.intHeader.setIntValue(PROCESSING_AGENCY, agency_code);
+        this.realHeader.setRealValue(MAX_VAL, inVvals.getMaxVal(V2DataType.ACC));
+        this.realHeader.setRealValue(AVG_VAL, inVvals.getAvgVal(V2DataType.ACC));
+        this.realHeader.setRealValue(MAX_VAL_TIME, time);
+        
+        //Update the end-of-data line with the new data type
+        this.endOfData = eod.append(this.endOfData,0,END_OF_DATA_CHAN)
+                            .append(" ")
+                            .append(String.valueOf(unitscode))
+                            .append(" acceleration").toString();
     }
-    public void buildNewDataFormatLine(String units, int unitscode) throws SmException {
-        ///update this for V2, with different data types!!!!
+    public void buildNewDataFormatLine(String units, int unitscode, 
+                                        String dataType) throws SmException {
         //calculate the time by multiplying the number of data values by delta t
         String line;
         double dtime = this.getRealHeaderValue(DELTA_T);
         double calcTime = dtime * this.realHeader.getNumVals();
         String timeSec = Integer.toString((int)calcTime);
-        String datType = "acceleration";
         line = String.format("%1$8s %2$13s pts, approx %3$4s secs, units=%4$7s(%5$02d), Format=",
-                                     String.valueOf(V2Data.getNumVals()),datType,
+                                     String.valueOf(V2Data.getNumVals()),dataType,
                                                     timeSec, units, unitscode);
         V2Data.setFormatLine(line + V2Data.getNumberFormat());
     }
-    public String[] V2ToText() {
+    @Override
+    public String[] VrecToText() {
         //add up the length of the text portions of the component, which are
         //the text header, the comments, and the end-of-data line.
         int totalLength;
@@ -91,13 +155,13 @@ public class V2Component extends COSMOScontentFormat {
         //get the header and data arrays as text
         String[] intHeaderText = this.intHeader.numberSectionToText();
         String[] realHeaderText = this.realHeader.numberSectionToText();
-        String[] V1DataText = this.V2Data.numberSectionToText();
+        String[] V2DataText = this.V2Data.numberSectionToText();
         
         //add the array lengths to the text lengths to get the total and declare
         //an array of this length, then build it by combining all the component
         //pieces into a text version of the component.
         totalLength = textLength + intHeaderText.length + realHeaderText.length + 
-                                                        V1DataText.length;
+                                                        V2DataText.length;
         String[] outText = new String[totalLength];
         System.arraycopy(this.textHeader, 0, outText, currentLength, 
                                                         this.textHeader.length);
@@ -110,7 +174,7 @@ public class V2Component extends COSMOScontentFormat {
         currentLength = currentLength + realHeaderText.length;
         System.arraycopy(this.comments, 0, outText, currentLength, this.comments.length);
         currentLength = currentLength + this.comments.length;
-        System.arraycopy(V1DataText, 0, outText, currentLength, V1DataText.length);
+        System.arraycopy(V2DataText, 0, outText, currentLength, V2DataText.length);
         outText[totalLength-1] = this.endOfData;
         return outText;
     }

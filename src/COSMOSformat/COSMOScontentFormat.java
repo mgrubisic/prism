@@ -51,7 +51,7 @@ public class COSMOScontentFormat {
      * @param infile array holding all the lines from the input file
      * @return the line number after the end of the current component
      * @throws FormatException if unable to extract expected values from text
-     * @throws NumberFormatException if unable to convert text to numeric
+     * @throws SmException if unable to convert text to numeric
      */
     public int loadComponent (int start, String[] infile) 
                                 throws FormatException, SmException {
@@ -71,7 +71,6 @@ public class COSMOScontentFormat {
             throw new SmException("Int header #" + (STATION_CHANNEL_NUMBER+1) 
                                     + ", station channel number, is undefined");            
         }
-        
         
         //get real header values
         realHeader = new VRealArray();     
@@ -97,7 +96,6 @@ public class COSMOScontentFormat {
      * @param infile array containing each line of the input file
      * @return the updated line number, after the data section
      * @throws FormatException if unable to extract parameters from format line
-     * @throws NumberFormatException if unable to convert text to numeric
      */
     public int parseDataSection (int startLine, String[] infile) throws 
                                                             FormatException {
@@ -120,7 +118,7 @@ public class COSMOScontentFormat {
         String[] numbers;
         int numHeaderLines = 0;
         //look for num. of text lines
-        String matchRegex = "with \\d\\d text lines";
+        String matchRegex = "(?i)(with \\d\\d text lines)";
         
         try {
             //get the first header line and extract the number of lines in the header
@@ -242,6 +240,18 @@ public class COSMOScontentFormat {
         }
         return (current + 1);
     }
+
+    /**
+     * This  method must be overridden by each extending class.  It is called to
+     * format the V component into its text file format for writing out to file.
+     * @return the contents of the V record in COSMOS format
+     */
+    public String[] VrecToText () {
+        String[] temp = new String[0];
+        System.err.println("method VrecToText must be overridden");
+        return temp;
+    }
+
     /**
      * Getter for the channel number, which is needed for the output file name
      * @return channel number

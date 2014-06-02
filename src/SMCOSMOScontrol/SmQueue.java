@@ -98,13 +98,10 @@ public class SmQueue {
             v1val.processV1Data();
             
             //create a V1 component to get the processing results
-            V1Component v1rec = new V1Component( UNCORACC, (V0Component)rec);
+            V1Component v1rec = new V1Component( UNCORACC, v0rec);
             v1rec.buildV1(v1val, config);
-            
-            //move V1 results to the output queue
-            TextFileWriter V1out = new TextFileWriter( v1rec.getChannelNum(),v1rec.V1ToText());
-            V1prod.addProduct(V1out);
-            
+            V1prod.addProduct(v1rec);
+           
             //Create the V2 processing object and do the processing.  V2 processing
             //produces 3 V2 objects: corrected acceleration, velocity, and displacement
             V2Process v2val = new V2Process(v1rec, config);

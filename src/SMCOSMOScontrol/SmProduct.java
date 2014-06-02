@@ -6,8 +6,13 @@
 
 package SMCOSMOScontrol;
 
+import COSMOSformat.COSMOScontentFormat;
+import COSMOSformat.V1Component;
+import COSMOSformat.V2Component;
 import COSMOSformat.VFileConstants;
 import COSMOSformat.VFileConstants.OutputStyle;
+import SmUtilities.ConfigReader;
+import static SmUtilities.SmConfigConstants.OUT_FILE_FORMAT;
 import SmUtilities.TextFileWriter;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -29,29 +34,39 @@ public class SmProduct {
     private final String outFolder;
     private final File fileName;
     private final String fileExtension;
-    private ArrayList<TextFileWriter> productList;
+    private ArrayList<COSMOScontentFormat> productList;
     private final Charset ENCODING = StandardCharsets.UTF_8;
+    private OutputStyle bundleFlag;
     
-    public SmProduct(File inFileName, String newExt, String newFolder) {
+    public SmProduct(final File inFileName, final String newExt, 
+                        final String newFolder, final ConfigReader config) {
         this.fileName = inFileName;
         this.productList = new ArrayList<>();
         this.fileExtension = newExt;
         this.outFolder = newFolder;
+        String outStyle = config.getConfigValue(OUT_FILE_FORMAT);
+        if (outStyle.compareToIgnoreCase("bundled") == 0) {
+            this.bundleFlag = OutputStyle.BUNDLED;
+        } else {
+            this.bundleFlag = OutputStyle.SINGLE_CHANNEL;
+        }
     }
-    public void addProduct(TextFileWriter newprod ) {
+    public void addProduct(COSMOScontentFormat newprod ) {
         this.productList.add(newprod);
     }
-    //fix this to deal with single or bundled out to file
+    //fix this to deal with single or bundled out to file!!!
     public void writeOutProducts() throws IOException {
         Path outName;
-        String[] contents;
-        OutputStyle bundleFlag = OutputStyle.SINGLE_CHANNEL;
-        if (this.productList.size() > 1) {
-            bundleFlag = OutputStyle.BUNDLED;
-        }
-        for (TextFileWriter each : this.productList) {
+        String[] contents = new String[0];
+        for (COSMOScontentFormat each : this.productList) {
             outName = buildFilename(each.getChannelNum(), bundleFlag);
-            contents = each.getText();
+            if (fileExtension.compareToIgnoreCase("V1") == 0) {
+                V1Component rec = (V1Component)each;
+                contents = rec.VrecToText();
+            } else if (fileExtension.compareToIgnoreCase("V2") == 0) {
+                V2Component rec = (V2Component)each;
+                contents = rec.VrecToText();
+            }
             try (BufferedWriter writer = Files.newBufferedWriter(outName, ENCODING)) {
                 for (String line : contents) {
                     writer.write(line);

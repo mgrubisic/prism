@@ -171,4 +171,7 @@ public class VRealArray extends COSMOSarrayFormat {
     public String getDisplayType() {
         return this.displayType;
     }
+    public void setDisplayType(String dtype) {
+        this.displayType = dtype;
+    }
 }

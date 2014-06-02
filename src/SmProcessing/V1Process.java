@@ -7,10 +7,7 @@
 package SmProcessing;
 
 import COSMOSformat.V0Component;
-import static COSMOSformat.VFileConstants.FROM_G_CONVERSION;
-import static COSMOSformat.VFileConstants.RECORDER_FSI;
-import static COSMOSformat.VFileConstants.RECORER_LSB;
-import static COSMOSformat.VFileConstants.SENSOR_SENSITIVITY;
+import static COSMOSformat.VFileConstants.*;
 import SmException.SmException;
 import SmUtilities.ConfigReader;
 import static SmUtilities.SmConfigConstants.DATA_UNITS_CODE;
@@ -60,11 +57,12 @@ public class V1Process {
         }
         
         //Get config values with a default of cm/sec2 if not defined
+        //Where should the check for correct range go? !!!
         String unitcode = config.getConfigValue(DATA_UNITS_CODE);
-        this.data_unit_code = (unitcode == null) ? 4 : Integer.parseInt(unitcode);
+        this.data_unit_code = (unitcode == null) ? CMSQSECVAL : Integer.parseInt(unitcode);
         
         String unitname = config.getConfigValue(DATA_UNITS_NAME);
-        this.data_units = (unitname == null) ? "cm/sec2" : unitname;
+        this.data_units = (unitname == null) ? CMSQSECT : unitname;
         
         //initialize the results values
         this.meanToZero = 0.0;
@@ -74,7 +72,12 @@ public class V1Process {
     }
     
     public void processV1Data() {
-        double conv = countToCMSConversion();
+        double conv;
+        if (data_unit_code == CMSQSECVAL) {
+            conv = countToCMSConversion();
+        } else {
+            conv = countToGConversion();
+        }
         DataVals result = countsToValues(inV0.getDataArray(), conv);
         V1Array = result.array;
         meanToZero = result.mean;
@@ -83,6 +86,7 @@ public class V1Process {
     }
     
     public double countToGConversion() {
+        //test this!!!
         double result = ( lsb * microToVolt) / sensitivity;
         return result;        
     }
@@ -96,14 +100,18 @@ public class V1Process {
         return result;
     }
     
-    public DataVals countsToValues(final int[] inArray, final double countConv) {
+    private DataVals countsToValues(final int[] inArray, final double countConv) {
         
         int length = inArray.length;
         double[] result = new double[length];
         double total = 0.0;
-        double max = Double.MIN_VALUE;
+        double maxhigh = Double.MIN_VALUE;
+        double maxlow = Double.MAX_VALUE;
+        double maxabs = Double.MIN_VALUE;
         double firstMean = Double.MIN_VALUE;
-        int maxid = -1;
+        int maxhighid = -1;
+        int maxlowid = -1;
+        int maxabsid = -1;
         
         for (int i = 0; i < length; i++) {
             result[i] = inArray[i] * countConv;
@@ -111,16 +119,26 @@ public class V1Process {
         }
         firstMean = total / length;
         
-        total = 0.0;
         for (int i = 0; i < length; i++) {
             result[i] = result[i] - firstMean;
-            total = total + result[i];
-            if (result[i] > max) {
-                max = result[i];
-                maxid = i;
+            if (result[i] > maxhigh) {
+                maxhigh = result[i];
+                maxhighid = i;
+            }
+            if (result[i] < maxlow) {
+                maxlow = result[i];
+                maxlowid = i;
             }
         }
-        return (new DataVals( result, firstMean, max, maxid));
+        if (Math.abs(maxhigh) > Math.abs(maxlow)) {
+            maxabs =  maxhigh;
+            maxabsid = maxhighid;
+        } else {
+            maxabs =  maxlow;
+            maxabsid = maxlowid;
+            
+        }
+        return (new DataVals( result, firstMean, maxabs, maxabsid));
     }
 
     public double getMeanToZero() {

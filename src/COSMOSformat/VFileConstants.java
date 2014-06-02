@@ -41,9 +41,12 @@ public final class VFileConstants {
     public static final String DISPLACE = "Displacement data        ";
     public static final String SPECTRA =  "Response spectra         ";
     
+    public enum V2DataType { ACC, VEL, DIS }
+    
     //units names and codes
     public static final String CMSQSECT = "cm/sec2";
     public static final String CMSQSECN = "04";
+    public static final int CMSQSECVAL = 4;
     public static final String CMSECT = "cm/sec";
     public static final String CMSECN = "05";
     public static final String CMT = "cm";
@@ -51,10 +54,16 @@ public final class VFileConstants {
     
     public enum OutputStyle { SINGLE_CHANNEL, BUNDLED };
     
+    //table 1 data physical parameter codes
+    public static final int ACC_PARM_CODE = 1;
+    public static final int VEL_PARM_CODE = 2;
+    public static final int DIS_ABS_PARM_CODE = 3;
+    
     //int header index values
     public static final int STATION_CHANNEL_NUMBER = 49;
     public static final int LENGTH_OF_RAW_RECORD = 34;
     public static final int PROCESSING_STAGE_INDEX = 0;
+    public static final int DATA_PHYSICAL_PARAM_CODE = 1;
     public static final int V1_UNITS_INDEX = 2;
     public static final int PROCESSING_AGENCY = 13;
     
@@ -67,12 +76,15 @@ public final class VFileConstants {
     public static final int RECORER_LSB = 21;  //recorder least significant bit in microvolts
     public static final int RECORDER_FSI = 22;  //recorder full scale input in volts
     public static final int SENSOR_SENSITIVITY = 41; //in volts per g
+    public static final int SCALING_FACTOR = 87;
     
     //Processing stages
     public static final int V1_STAGE = 1;
     public static final int V2_STAGE = 2;
+    public static final int V3_STAGE = 3;
     
     //processing - counts to physical values constants
     public static final double FROM_G_CONVERSION = 980.665; //cm per sq. sec per g
-    
+    public static final double MSEC_TO_SEC = 1e-3; //milliseconds to seconds
+
 }
