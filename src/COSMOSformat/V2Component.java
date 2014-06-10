@@ -69,12 +69,16 @@ public class V2Component extends COSMOScontentFormat {
     public V1Component getParent() {
         return this.parentV1;
     }
-    public void buildV2acc( String procType, V2Process inVvals, ConfigReader config) throws SmException, FormatException {
+    public void buildV2( V2DataType procType, V2Process inVvals, ConfigReader config) throws SmException, FormatException {
         Double epsilon = 0.001;
         StringBuilder sb = new StringBuilder(MAX_LINE_LENGTH);
         StringBuilder eod = new StringBuilder(MAX_LINE_LENGTH);
         final double MSEC_TO_SEC = 1e-3;
         String realformat = "%8.3f";
+        double time;
+        String unitsname;
+        int unitscode;
+        String eodname;
 
         SmTimeFormatter proctime = new SmTimeFormatter();
         
@@ -83,9 +87,20 @@ public class V2Component extends COSMOScontentFormat {
         if (((delta_t - this.noRealVal) < epsilon) || (delta_t < 0.0)){
             throw new SmException("Real header #62, delta t, is invalid: " + 
                                                                         delta_t);
-        }        
-        double time = (inVvals.getMaxIndex(V2DataType.ACC)) * MSEC_TO_SEC * delta_t;
-
+        }  
+        if (procType == V2DataType.ACC) {
+            time = (inVvals.getMaxIndex(V2DataType.ACC)) * MSEC_TO_SEC * delta_t;
+            unitsname = inVvals.getDataUnits(V2DataType.ACC);
+            unitscode = inVvals.getDataUnitCode(V2DataType.ACC);
+        } else if (procType == V2DataType.VEL) {
+            time = (inVvals.getMaxIndex(V2DataType.VEL)) * MSEC_TO_SEC * delta_t;
+            unitsname = inVvals.getDataUnits(V2DataType.VEL);
+            unitscode = inVvals.getDataUnitCode(V2DataType.VEL);
+        } else {
+            time = (inVvals.getMaxIndex(V2DataType.DIS)) * MSEC_TO_SEC * delta_t;
+            unitsname = inVvals.getDataUnits(V2DataType.DIS);
+            unitscode = inVvals.getDataUnitCode(V2DataType.DIS);
+        }
         //Get the processing agency info from the config. data
         String agabbrev = config.getConfigValue(PROC_AGENCY_ABBREV);
         if (agabbrev == null) {
@@ -94,15 +109,16 @@ public class V2Component extends COSMOScontentFormat {
         String agcode = config.getConfigValue(PROC_AGENCY_CODE);
         int agency_code = (agcode == null) ? 0 : Integer.parseInt(agcode);
         
-        //Get units info from V1 processing object
-        String unitsname = inVvals.getDataUnits(V2DataType.ACC);
-        int unitscode = inVvals.getDataUnitCode(V2DataType.ACC);
-        
         //Get the current processing time
         String val = proctime.getGMTdateTime();
-        System.out.println("+++ time: " + val);
         //update values in the text header
-        this.textHeader[0] = UNCORACC.concat(this.textHeader[0].substring(END_OF_DATATYPE));
+        if (procType == V2DataType.ACC) {
+            this.textHeader[0] = CORACC.concat(this.textHeader[0].substring(END_OF_DATATYPE));
+        } else if (procType == V2DataType.VEL) {
+            this.textHeader[0] = VELOCITY.concat(this.textHeader[0].substring(END_OF_DATATYPE));
+        } else {
+            this.textHeader[0] = DISPLACE.concat(this.textHeader[0].substring(END_OF_DATATYPE));
+        }
         this.textHeader[10] = sb.append("Processed:").append(val).append(", ")
                                 .append(agabbrev).append(", Max = ")
                                 .append(String.format(realformat,inVvals.getMaxVal(V2DataType.ACC)))
@@ -111,36 +127,65 @@ public class V2Component extends COSMOScontentFormat {
                                 .append(" sec").toString();
         
         //transfer the data array and set all array values
-        V2Data.setRealArray(inVvals.getV2Array(V2DataType.ACC));
-        V2Data.setFieldWidth(REAL_FIELDWIDTH_V1);
-        V2Data.setPrecision(REAL_PRECISION_V1);
-        V2Data.setNumVals(inVvals.getV2ArrayLength(V2DataType.ACC));
-        V2Data.buildArrayParams();
-        this.buildNewDataFormatLine(unitsname, unitscode, "acceleration");
+        if (procType == V2DataType.ACC) {
+            V2Data.setRealArray(inVvals.getV2Array(V2DataType.ACC));
+            V2Data.setFieldWidth(REAL_FIELDWIDTH_V1);
+            V2Data.setPrecision(REAL_PRECISION_V1);
+            V2Data.setNumVals(inVvals.getV2ArrayLength(V2DataType.ACC));
+            V2Data.buildArrayParams();
+            this.buildNewDataFormatLine(unitsname, unitscode, "acceleration");
+        } else if (procType == V2DataType.VEL) {
+            V2Data.setRealArray(inVvals.getV2Array(V2DataType.VEL));
+            V2Data.setFieldWidth(REAL_FIELDWIDTH_V1);
+            V2Data.setPrecision(REAL_PRECISION_V1);
+            V2Data.setNumVals(inVvals.getV2ArrayLength(V2DataType.VEL));
+            V2Data.buildArrayParams();
+            this.buildNewDataFormatLine(unitsname, unitscode, "velocity    ");
+        }else {
+            V2Data.setRealArray(inVvals.getV2Array(V2DataType.DIS));
+            V2Data.setFieldWidth(REAL_FIELDWIDTH_V1);
+            V2Data.setPrecision(REAL_PRECISION_V1);
+            V2Data.setNumVals(inVvals.getV2ArrayLength(V2DataType.DIS));
+            V2Data.buildArrayParams();
+            this.buildNewDataFormatLine(unitsname, unitscode, "displacement");            
+        }
         
-        //update the headers with the V1 values
+        //update the headers with the V2 values
         this.intHeader.setIntValue(PROCESSING_STAGE_INDEX, V2_STAGE);
-        this.intHeader.setIntValue(V1_UNITS_INDEX, unitscode);
-        this.intHeader.setIntValue(PROCESSING_AGENCY, agency_code);
-        this.realHeader.setRealValue(MAX_VAL, inVvals.getMaxVal(V2DataType.ACC));
-        this.realHeader.setRealValue(AVG_VAL, inVvals.getAvgVal(V2DataType.ACC));
         this.realHeader.setRealValue(MAX_VAL_TIME, time);
-        
+        this.intHeader.setIntValue(V_UNITS_INDEX, unitscode);
+        if (procType == V2DataType.ACC) {
+            this.intHeader.setIntValue(DATA_PHYSICAL_PARAM_CODE, ACC_PARM_CODE);
+            this.realHeader.setRealValue(MAX_VAL, inVvals.getMaxVal(V2DataType.ACC));
+            this.realHeader.setRealValue(AVG_VAL, inVvals.getAvgVal(V2DataType.ACC));
+            eodname = " acceleration";
+        } else if (procType == V2DataType.VEL) {
+            this.intHeader.setIntValue(DATA_PHYSICAL_PARAM_CODE, VEL_PARM_CODE);
+            this.realHeader.setRealValue(MAX_VAL, inVvals.getMaxVal(V2DataType.VEL));
+            this.realHeader.setRealValue(AVG_VAL, inVvals.getAvgVal(V2DataType.VEL));
+            eodname = " velocity";
+        } else {
+            this.intHeader.setIntValue(DATA_PHYSICAL_PARAM_CODE, DIS_ABS_PARM_CODE);
+            this.realHeader.setRealValue(MAX_VAL, inVvals.getMaxVal(V2DataType.DIS));
+            this.realHeader.setRealValue(AVG_VAL, inVvals.getAvgVal(V2DataType.DIS));            
+            eodname = " displacement";
+        }
         //Update the end-of-data line with the new data type
         this.endOfData = eod.append(this.endOfData,0,END_OF_DATA_CHAN)
                             .append(" ")
-                            .append(String.valueOf(unitscode))
-                            .append(" acceleration").toString();
+                            .append(String.valueOf(this.channelNum))
+                            .append(eodname).toString();
     }
     public void buildNewDataFormatLine(String units, int unitscode, 
                                         String dataType) throws SmException {
         //calculate the time by multiplying the number of data values by delta t
         String line;
         double dtime = this.getRealHeaderValue(DELTA_T);
-        double calcTime = dtime * this.realHeader.getNumVals();
+        int numvals = V2Data.getNumVals();
+        double calcTime = dtime * numvals * MSEC_TO_SEC;
         String timeSec = Integer.toString((int)calcTime);
         line = String.format("%1$8s %2$13s pts, approx %3$4s secs, units=%4$7s(%5$02d), Format=",
-                                     String.valueOf(V2Data.getNumVals()),dataType,
+                                     String.valueOf(numvals),dataType,
                                                     timeSec, units, unitscode);
         V2Data.setFormatLine(line + V2Data.getNumberFormat());
     }

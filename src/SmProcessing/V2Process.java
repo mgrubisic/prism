@@ -18,7 +18,7 @@
 package SmProcessing;
 
 import COSMOSformat.V1Component;
-import static COSMOSformat.VFileConstants.DELTA_T;
+import static COSMOSformat.VFileConstants.*;
 import COSMOSformat.VFileConstants.V2DataType;
 import SmException.SmException;
 import SmUtilities.ConfigReader;
@@ -35,35 +35,40 @@ public class V2Process {
     private double AmaxVal;
     private int AmaxIndex;
     private double AavgVal;
+    private final int acc_unit_code;
+    private final String acc_units;
     
     private double[] velocity;
     private double VmaxVal;
     private int VmaxIndex;
     private double VavgVal;
+    private final int vel_unit_code;
+    private final String vel_units;
     
     private double[] displace;
     private double DmaxVal;
     private int DmaxIndex;
     private double DavgVal;
+    private final int dis_unit_code;
+    private final String dis_units;
     
     private final V1Component inV1;
-    private final int data_unit_code;
-    private final String data_units;
     private DataVals result;
     private final double delta_t;
     private final double noRealVal;
     
     public V2Process(final V1Component v1rec, final ConfigReader config) throws SmException {
         double epsilon = 0.0001;
-        double nodata = v1rec.getNoRealVal();
         this.inV1 = v1rec;
         
-        //Get config values with a default of cm/sec2 if not defined
-        String unitcode = config.getConfigValue(DATA_UNITS_CODE);
-        this.data_unit_code = (unitcode == null) ? 4 : Integer.parseInt(unitcode);
+        //Get config values to cm/sec2 (acc), cm/sec (vel), cm (dis)
+        this.acc_unit_code = CMSQSECN;
+        this.vel_unit_code = CMSECN;
+        this.dis_unit_code = CMN;
         
-        String unitname = config.getConfigValue(DATA_UNITS_NAME);
-        this.data_units = (unitname == null) ? "cm/sec2" : unitname;
+        this.acc_units = CMSQSECT;
+        this.vel_units = CMSECT;
+        this.dis_units = CMT;
         
         this.noRealVal = inV1.getNoRealVal();
         //verify that real header value delta t is defined and valid
@@ -188,10 +193,22 @@ public class V2Process {
         }
     }
     public int getDataUnitCode(V2DataType dType) {
-        return this.data_unit_code;
+        if (dType == V2DataType.ACC) {
+            return this.acc_unit_code;
+        } else if (dType == V2DataType.VEL) {
+            return this.vel_unit_code;
+        } else {
+            return this.dis_unit_code;
+        }
     }
     public String getDataUnits(V2DataType dType) {
-        return this.data_units;
+        if (dType == V2DataType.ACC) {
+            return this.acc_units;
+        } else if (dType == V2DataType.VEL) {
+            return this.vel_units;
+        } else {
+            return this.dis_units;
+        }
     }
     class DataVals {
         public final double[] array;

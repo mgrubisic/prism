@@ -118,7 +118,6 @@ public class V1Component extends COSMOScontentFormat {
         
         //Get the current processing time
         String val = proctime.getGMTdateTime();
-        System.out.println("+++ time: " + val);
         //update values in the text header
         this.textHeader[0] = UNCORACC.concat(this.textHeader[0].substring(END_OF_DATATYPE));
         this.textHeader[10] = sb.append("Processed:").append(val).append(", ")
@@ -138,7 +137,7 @@ public class V1Component extends COSMOScontentFormat {
         
         //update the headers with the V1 values
         this.intHeader.setIntValue(PROCESSING_STAGE_INDEX, V1_STAGE);
-        this.intHeader.setIntValue(V1_UNITS_INDEX, unitscode);
+        this.intHeader.setIntValue(V_UNITS_INDEX, unitscode);
         this.intHeader.setIntValue(DATA_PHYSICAL_PARAM_CODE, ACC_PARM_CODE);
         this.intHeader.setIntValue(PROCESSING_AGENCY, agency_code);
         this.realHeader.setRealValue(MEAN_ZERO, inVvals.getMeanToZero());

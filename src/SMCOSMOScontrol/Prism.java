@@ -7,6 +7,7 @@
 package SMCOSMOScontrol;
 
 import static COSMOSformat.VFileConstants.RAWACC;
+import static COSMOSformat.VFileConstants.UNCORACC;
 import java.io.*;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -32,7 +33,7 @@ import org.xml.sax.SAXException;
  * writing out the data in the different formats, either individually or bundled.
  * @author jmjones
  */
-public class SmController {
+public class Prism {
     private final String inFolder;
     private final String outFolder;
     private String configFile;
@@ -44,7 +45,7 @@ public class SmController {
     private SmProduct V2product;
     private SmProduct V3product;
 
-    public SmController (String[] args) throws SmException {
+    public Prism (String[] args) throws SmException {
         this.configFile = "";
         if (args.length > 1) {
             File inDir = new File(args[0]);
@@ -75,7 +76,7 @@ public class SmController {
         double NANO_TO_SECOND = 1.0e-9; //for timing tests
         // 
         try {
-            SmController smc = new SmController( args );    
+            Prism smc = new Prism( args );    
             
 //            int cores = Runtime.getRuntime().availableProcessors();
 //            System.out.println("Number of cores: " + cores);
@@ -120,6 +121,8 @@ public class SmController {
                     //create the directories for writing out.  Append directory
                     //names to writeOutProducts call?
                     smc.V1product.writeOutProducts();
+                    smc.V2product.writeOutProducts();
+                    smc.V2product.moveV0AfterProcessing();
 //                    long writeTime = System.nanoTime() - startTime;
                     //this is a mess!
 //                    System.out.println("+++ read time: " + readTime*NANO_TO_SECOND);

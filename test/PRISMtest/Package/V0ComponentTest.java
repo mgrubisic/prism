@@ -116,7 +116,11 @@ public class V0ComponentTest {
         org.junit.Assert.assertEquals(-222.0, v0.getNoRealVal(), delta);
         String[] check = v0.getTextHeader();
         org.junit.Assert.assertEquals(infile[0], check[0]);
-        org.junit.Assert.assertEquals(infile[12], check[12]);        
+        org.junit.Assert.assertEquals(infile[12], check[12]);
+        org.junit.Assert.assertEquals("", v0.getSensorLocation());
+        infile[8] = "Sta Chan  1: 360 deg (Rcrdr Chan  1) Location:8th Floor: Center";
+        lineNum = v0.loadComponent(0, infile);
+        org.junit.Assert.assertEquals("8th Floor: Center", v0.getSensorLocation());
     }
     @Rule public ExpectedException expectedEx = ExpectedException.none();
     @Test

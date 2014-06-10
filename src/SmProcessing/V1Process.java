@@ -12,6 +12,8 @@ import SmException.SmException;
 import SmUtilities.ConfigReader;
 import static SmUtilities.SmConfigConstants.DATA_UNITS_CODE;
 import static SmUtilities.SmConfigConstants.DATA_UNITS_NAME;
+import net.alomax.freq.ButterworthFilter;
+
 
 /**
  *
@@ -59,7 +61,7 @@ public class V1Process {
         //Get config values with a default of cm/sec2 if not defined
         //Where should the check for correct range go? !!!
         String unitcode = config.getConfigValue(DATA_UNITS_CODE);
-        this.data_unit_code = (unitcode == null) ? CMSQSECVAL : Integer.parseInt(unitcode);
+        this.data_unit_code = (unitcode == null) ? CMSQSECN : Integer.parseInt(unitcode);
         
         String unitname = config.getConfigValue(DATA_UNITS_NAME);
         this.data_units = (unitname == null) ? CMSQSECT : unitname;
@@ -72,17 +74,26 @@ public class V1Process {
     }
     
     public void processV1Data() {
+        //Get the units from the config file and calculate conversion factor
         double conv;
-        if (data_unit_code == CMSQSECVAL) {
+        if (data_unit_code == CMSQSECN) {
             conv = countToCMSConversion();
         } else {
             conv = countToGConversion();
         }
-        DataVals result = countsToValues(inV0.getDataArray(), conv);
+        
+        //convert counts to physical values
+        double[] physVal = countsToValues(inV0.getDataArray(), conv);
+        
+        //remove the mean
+        DataVals result = removeMean(physVal);
         V1Array = result.array;
         meanToZero = result.mean;
         maxVal = result.max;
         maxIndex = result.maxIndex;
+        
+        //filter the data
+        ButterworthFilter butter = new ButterworthFilter();
     }
     
     public double countToGConversion() {
@@ -100,7 +111,17 @@ public class V1Process {
         return result;
     }
     
-    private DataVals countsToValues(final int[] inArray, final double countConv) {
+    public double[] countsToValues(final int[] inArray, final double countConv) {
+        
+        int length = inArray.length;
+        double[] result = new double[length];
+        
+        for (int i = 0; i < length; i++) {
+            result[i] = inArray[i] * countConv;
+        }
+        return (result);
+    }
+    private DataVals removeMean(final double[] inArray) {
         
         int length = inArray.length;
         double[] result = new double[length];
@@ -108,19 +129,18 @@ public class V1Process {
         double maxhigh = Double.MIN_VALUE;
         double maxlow = Double.MAX_VALUE;
         double maxabs = Double.MIN_VALUE;
-        double firstMean = Double.MIN_VALUE;
+        double mean = Double.MIN_VALUE;
         int maxhighid = -1;
         int maxlowid = -1;
         int maxabsid = -1;
         
-        for (int i = 0; i < length; i++) {
-            result[i] = inArray[i] * countConv;
-            total = total + result[i];
+        for (double val : inArray ) {
+             total = total + val;
         }
-        firstMean = total / length;
+        mean = total / length;
         
         for (int i = 0; i < length; i++) {
-            result[i] = result[i] - firstMean;
+            result[i] = inArray[i] - mean;
             if (result[i] > maxhigh) {
                 maxhigh = result[i];
                 maxhighid = i;
@@ -138,7 +158,7 @@ public class V1Process {
             maxabsid = maxlowid;
             
         }
-        return (new DataVals( result, firstMean, maxabs, maxabsid));
+        return (new DataVals( result, mean, maxabs, maxabsid));
     }
 
     public double getMeanToZero() {

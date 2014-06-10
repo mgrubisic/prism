@@ -31,4 +31,16 @@ public class SmConfigConstants {
     
     public static final String DATA_UNITS_CODE = "PRISM/DataUnitsForCountConversion/DataUnitCodes/DataUnitCode";
     public static final String DATA_UNITS_NAME = "PRISM/DataUnitsForCountConversion/DataUnitCodes/DataUnitName";
+    
+    public static final String BASELINE_CORRECTION_TYPE = "PRISM/BaselineCorrectionType";
+    
+    public static final String QA_INITIAL_VELOCITY = "QAparameters/InitialVelocity";
+    public static final String QA_RESIDUAL_VELOCITY = "QAparameters/ResidualVelocity";
+    public static final String QA_RESIDUAL_DISPLACE = "QAparameters/ResidualDisplacement";
+    
+    public static final String STATION_FILTER_TABLE = "PRISM/StationFilterTable";
+    
+    public static final String BP_FILTER_ORDER = "PRISM/BandPassFilterParameters/BandPassFilterOrder";
+    public static final String BP_FILTER_CUTOFFHIGH = "PRISM/BandPassFilterParameters/BandPassFilterCutoff/CutoffHigh";
+    public static final String BP_FILTER_CUTOFFLOW = "PRISM/BandPassFilterParameters/BandPassFilterCutoff/CutoffLow";
 }

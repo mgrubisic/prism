@@ -19,6 +19,8 @@ public final class VFileConstants {
     public static final int NUM_HEAD_END = 48;
     
     public static final int MAX_LINE_LENGTH = 80;
+    public static final int SENSOR_LOCATION_LINE = 8;
+    public static final int SENSOR_LOCATION_START = 46;
     public static final int NODATA_LINE = 12;
     public static final int END_OF_DATA_CHAN = 21;
     
@@ -45,12 +47,11 @@ public final class VFileConstants {
     
     //units names and codes
     public static final String CMSQSECT = "cm/sec2";
-    public static final String CMSQSECN = "04";
-    public static final int CMSQSECVAL = 4;
+    public static final int CMSQSECN = 4;
     public static final String CMSECT = "cm/sec";
-    public static final String CMSECN = "05";
+    public static final int CMSECN = 5;
     public static final String CMT = "cm";
-    public static final String CMN = "06";
+    public static final int CMN = 6;
     
     public enum OutputStyle { SINGLE_CHANNEL, BUNDLED };
     
@@ -64,7 +65,7 @@ public final class VFileConstants {
     public static final int LENGTH_OF_RAW_RECORD = 34;
     public static final int PROCESSING_STAGE_INDEX = 0;
     public static final int DATA_PHYSICAL_PARAM_CODE = 1;
-    public static final int V1_UNITS_INDEX = 2;
+    public static final int V_UNITS_INDEX = 2;
     public static final int PROCESSING_AGENCY = 13;
     
     //real header index values
@@ -87,4 +88,6 @@ public final class VFileConstants {
     public static final double FROM_G_CONVERSION = 980.665; //cm per sq. sec per g
     public static final double MSEC_TO_SEC = 1e-3; //milliseconds to seconds
 
+    //filtering constants
+    public static final int NUM_POLES = 5;
 }

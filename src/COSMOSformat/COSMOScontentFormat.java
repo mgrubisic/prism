@@ -273,6 +273,14 @@ public class COSMOScontentFormat {
     public double getNoRealVal(){
         return noRealVal;
     }
+    public String getSensorLocation() {
+        String notFound = "";
+        String location = textHeader[SENSOR_LOCATION_LINE];
+        if (location.length() < SENSOR_LOCATION_START) {
+            return notFound;
+        }
+        return location.substring(SENSOR_LOCATION_START);
+    }
     /**
      * Setter for the channel number.  It sets the number to the channel value
      * in the integer header.

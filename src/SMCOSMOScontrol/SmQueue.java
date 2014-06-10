@@ -66,13 +66,13 @@ public class SmQueue {
                 currentLine = (returnLine > currentLine) ? returnLine : fileContents.length;
                 smlist.add(rec);
             } else if (dataType.equals( UNCORACC )){
-                V1Component rec = new V1Component( dataType, null );
+                V1Component rec = new V1Component( dataType );
                 returnLine = rec.loadComponent(currentLine, fileContents);
                 currentLine = (returnLine > currentLine) ? returnLine : fileContents.length;
                 smlist.add(rec);                
             } else if (dataType.equals( CORACC ) || dataType.equals( VELOCITY ) || 
                                                     dataType.equals( DISPLACE )) {
-                V2Component rec = new V2Component( dataType, null );
+                V2Component rec = new V2Component( dataType );
                 returnLine = rec.loadComponent(currentLine, fileContents);
                 currentLine = (returnLine > currentLine) ? returnLine : fileContents.length;
                 smlist.add(rec);                
@@ -86,7 +86,7 @@ public class SmQueue {
     }
     
     public void processQueueContents(SmProduct V1prod, SmProduct V2prod, ConfigReader config) 
-                                        throws FormatException, SmException {
+                                        throws FormatException, SmException, IOException {
         //under construction
         double[] array;
         for (COSMOScontentFormat rec : smlist) {
@@ -109,8 +109,17 @@ public class SmQueue {
             
             //create the V2 components to get the processing results
             V2Component V2acc = new V2Component( CORACC, v1rec );
+            V2acc.buildV2(V2DataType.ACC, v2val, config);
             V2Component V2vel = new V2Component( VELOCITY, v1rec );
+            V2vel.buildV2(V2DataType.VEL, v2val, config);
             V2Component V2dis = new V2Component( DISPLACE, v1rec );
+            V2dis.buildV2(V2DataType.DIS, v2val, config);
+            V2prod.addProduct(V2acc);
+            V2prod.addProduct(V2vel);
+            V2prod.addProduct(V2dis);
+            
+            //Create the V3 processing object and do the processing.  V3 processing
+            //produces 1  V3 object: response spectra.
         }
     }
 }
