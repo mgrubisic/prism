@@ -27,8 +27,8 @@ package net.alomax.timedom;
 
 public class TimeDomainMemory {
     
-    public float[] input = null;
-    public float[] output = null;
+    public double[] input = null;
+    public double[] output = null;
     
     
     /** constructor */
@@ -42,20 +42,20 @@ public class TimeDomainMemory {
     
     public TimeDomainMemory(int lengthInput, int lengthOutput) {
         
-        input = new float[lengthInput];
-        output = new float[lengthOutput];
+        input = new double[lengthInput];
+        output = new double[lengthOutput];
         
     }
     
     
     /** constructor */
     
-    public TimeDomainMemory(int lengthInput, float inputInitalValue, int lengthOutput, float outputInitalValue) {
+    public TimeDomainMemory(int lengthInput, double inputInitalValue, int lengthOutput, double outputInitalValue) {
         
-        input = new float[lengthInput];
+        input = new double[lengthInput];
         for (int i = 0; i < input.length; i++)
             input[i] = inputInitalValue;
-        output = new float[lengthOutput];
+        output = new double[lengthOutput];
         for (int i = 0; i < output.length; i++)
             output[i] = outputInitalValue;
         
@@ -65,11 +65,11 @@ public class TimeDomainMemory {
     
     /** constructor */
     
-    public TimeDomainMemory(float[] input, float[] output) {
+    public TimeDomainMemory(double[] input, double[] output) {
         
-        this.input = new float[input.length];
+        this.input = new double[input.length];
         System.arraycopy(input, 0, this.input, 0, input.length);
-        this.output = new float[output.length];
+        this.output = new double[output.length];
         System.arraycopy(output, 0, this.output, 0, output.length);
         
     }
@@ -81,11 +81,11 @@ public class TimeDomainMemory {
     public TimeDomainMemory(TimeDomainMemory tdm) {
         
         if (tdm.input != null) {
-            this.input = new float[tdm.input.length];
+            this.input = new double[tdm.input.length];
             System.arraycopy(tdm.input, 0, this.input, 0, tdm.input.length);
         }
         if (tdm.output != null) {
-            this.output = new float[tdm.output.length];
+            this.output = new double[tdm.output.length];
             System.arraycopy(tdm.output, 0, this.output, 0, tdm.output.length);
         }
         
@@ -95,7 +95,7 @@ public class TimeDomainMemory {
     
     /** update memory using specifed number of points from end of specified array */
     
-    protected void update(float[] array, float[] sample) {
+    protected void update(double[] array, double[] sample) {
         
         if (sample.length >= array.length) {
             int sampleIndex = sample.length - array.length;
@@ -123,7 +123,7 @@ public class TimeDomainMemory {
     
     /** update output memory using specifed number of points from end of specified array */
     
-    public void updateOutput(float[] sample) {
+    public void updateOutput(double[] sample) {
         
         update(output, sample);
         
@@ -133,7 +133,7 @@ public class TimeDomainMemory {
     
     /** update input memory using specifed number of points from end of specified array */
     
-    public void updateInput(float[] sample) {
+    public void updateInput(double[] sample) {
         
         update(input, sample);
         

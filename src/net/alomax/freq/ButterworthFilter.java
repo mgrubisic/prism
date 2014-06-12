@@ -144,5 +144,6 @@ public class ButterworthFilter extends BandpassFilter {
         return (cx);
 
     }
+
 }	// End class ButterworthFilter
 

@@ -100,8 +100,8 @@ public class ZeroCrossingPeriod extends TimeDomainProcess {
             }
         }
 
-        float sampleLast = 0.0f;
-        int lastZeroCrossingIndex = -1;
+        double sampleLast = 0.0f;
+        long lastZeroCrossingIndex = -1;
         double periodLast = 0.0;
         if (useMemory) { // using stored memory
             lastZeroCrossingIndex = Math.round(memory.output[0]);
@@ -145,6 +145,11 @@ public class ZeroCrossingPeriod extends TimeDomainProcess {
 
         return (true);
 
+    }
+
+    @Override
+    public double[] apply(double dt, double[] sample) throws TimeDomainException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }	// End class GaussianFilter
 

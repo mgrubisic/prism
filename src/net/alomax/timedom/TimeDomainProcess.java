@@ -27,7 +27,7 @@ import java.util.*;
  * TimeDomainProcess
  */
 /**
- * An abstract class representing processes that acts on time domain, float arrays.
+ * An abstract class representing processes that acts on time domain, double arrays.
  *
  * @author Anthony Lomax
  * @version %I%, %G%
@@ -43,10 +43,10 @@ public abstract class TimeDomainProcess {
      * Does processing in the time domain.
      *
      * @param dt the time-domain sampling interval in seconds.
-     * @param sample the array of float values to be processed.
-     * @return the processed float values.
+     * @param sample the array of double values to be processed.
+     * @return the processed double values.
      */
-    public abstract float[] apply(double dt, float[] sample) throws TimeDomainException;
+    public abstract double[] apply(double dt, double[] sample) throws TimeDomainException;
 
     /**
      * Update fields in TimeSeries object.

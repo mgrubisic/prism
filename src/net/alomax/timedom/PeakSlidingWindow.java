@@ -142,10 +142,10 @@ public class PeakSlidingWindow extends TimeDomainProcess {
     }
 
     /*** function to apply peakSlidingWindow  */
-    public final float[] apply(double dt, float[] sample) {
+    public final double[] apply(double dt, double[] sample) {
 
-        int istepIndex = 0;
-        float peakValue = 0.0f;
+        long istepIndex = 0;
+        double peakValue = 0.0f;
 
         if (useMemory) { // use stored memory
             if (memory == null) // no stored memory initialized
@@ -158,7 +158,7 @@ public class PeakSlidingWindow extends TimeDomainProcess {
 
         peakPicks = new Vector();
 
-        float[] newSample = new float[sample.length];
+        double[] newSample = new double[sample.length];
 
         int i1, i2;
         int icount;
@@ -187,7 +187,7 @@ public class PeakSlidingWindow extends TimeDomainProcess {
 
             peakValue = -Float.MAX_VALUE;
             icount = 0;
-            float value = 0.0f;
+            double value = 0.0f;
             for (int n = i1; n < i2; n++) {
                 if (useMemory && n < 0) {
                     value = memory.output[windowWidth + n];
@@ -257,6 +257,7 @@ public class PeakSlidingWindow extends TimeDomainProcess {
         return (true);
 
     }
+
 }	// End class GaussianFilter
 
 

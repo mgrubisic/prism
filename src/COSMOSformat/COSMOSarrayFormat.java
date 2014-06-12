@@ -33,7 +33,7 @@ abstract class COSMOSarrayFormat {
     private int precision;  //number of places after decimal point (reals)
     
     /**
-     * Constructor for this class simply initializes the shared instance variables
+     * Constructor for this class simply initializes the instance variables
      */
     public COSMOSarrayFormat(){
         this.numLines = 0;

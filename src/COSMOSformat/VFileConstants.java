@@ -84,10 +84,13 @@ public final class VFileConstants {
     public static final int V2_STAGE = 2;
     public static final int V3_STAGE = 3;
     
-    //processing - counts to physical values constants
-    public static final double FROM_G_CONVERSION = 980.665; //cm per sq. sec per g
+    //misc. constants
     public static final double MSEC_TO_SEC = 1e-3; //milliseconds to seconds
+    public static final double FROM_G_CONVERSION = 980.665; //cm per sq. sec per g
 
-    //filtering constants
+        //filtering constants
     public static final int NUM_POLES = 5;
+    public static final double DEFAULT_HIGHCUT = 0.5;
+    public static final double DEFAULT_LOWCUT = 30.0;
+
 }

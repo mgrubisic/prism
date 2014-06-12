@@ -576,6 +576,11 @@ public class TestPicker extends BasicPicker {
         return(sample);
         
     }
+
+    @Override
+    public double[] apply(double dt, double[] sample) throws TimeDomainException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
     
     
     

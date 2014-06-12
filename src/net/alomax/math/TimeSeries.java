@@ -326,7 +326,7 @@ public abstract class TimeSeries {
      *
      * @param vlast
      */
-    public abstract void differentiate(float vlast);
+    public abstract void differentiate(double vlast);
 
     /** Multiply each of the time series samples by a constant value.
      *

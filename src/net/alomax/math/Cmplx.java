@@ -16,6 +16,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ *
+ * Modified 2014-06-09, J. Jones, jmjones@usgs.gov, changed all floats to double
  */
 package net.alomax.math;
 
@@ -422,13 +424,13 @@ public final class Cmplx {
     public static double[] data = new double[0];
 
     /**
-     * Returns the complex array forward Fast Fourier Transform of a float array. The complex array will have a length that is the smallest power of 2
-     * greater than or equal to the length of the float array.
+     * Returns the complex array forward Fast Fourier Transform of a double array. The complex array will have a length that is the smallest power of 2
+     * greater than or equal to the length of the double array.
      *
-     * @param fdata the float array.
+     * @param fdata the double array.
      * @return the complex transform array.
      */
-    public static final Cmplx[] fft(float[] fdata) {
+    public static final Cmplx[] fft(double[] fdata) {
 
         // find power of two >= to num of points in fdata
         int nPointsPow2 = 1;
@@ -441,10 +443,10 @@ public final class Cmplx {
             data = new double[2 * nPointsPow2];
         }
 
-        // load float data to double array
+        // load double data to double array
         int i, j;
         for (i = 0, j = 0; i < fdata.length; i++) {
-            data[j++] = (double) fdata[i];
+            data[j++] = fdata[i];
             data[j++] = 0.0;
         }
         for (; j < 2 * nPointsPow2; j++) {
@@ -469,13 +471,13 @@ public final class Cmplx {
     }
 
     /**
-     * Returns the float array inverse Fast Fourier Transform of a complex array.
+     * Returns the double array inverse Fast Fourier Transform of a complex array.
      *
      * @param cdata the complex array.
-     * @param nPoints the desired length of the float array.
-     * @return the first nPoints of the float transform array.
+     * @param nPoints the desired length of the double array.
+     * @return the first nPoints of the double transform array.
      */
-    public static final float[] fftInverse(Cmplx[] cdata, int nPoints) {
+    public static final double[] fftInverse(Cmplx[] cdata, int nPoints) {
 
         // create double array if not large enough
         if (data.length < 2 * cdata.length) {
@@ -491,12 +493,12 @@ public final class Cmplx {
         // apply inverse FFT
         data = four1(data, -1, 2 * cdata.length);
 
-        // create float array
-        float[] fdata = new float[nPoints];
+        // create double array
+        double[] fdata = new double[nPoints];
 
-        // load double data to float array
+        // load double data to double array
         for (int i = 0, j = 0; i < nPoints; i++, j += 2) {
-            fdata[i] = (float) data[j];
+            fdata[i] = data[j];
         }
 
         return (fdata);

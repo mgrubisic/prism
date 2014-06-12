@@ -154,9 +154,9 @@ public class Smoothing extends TimeDomainProcess {
     }
 
     /*** function to apply smoothing  */
-    public final float[] apply(double dt, float[] sample) {
+    public final double[] apply(double dt, double[] sample) {
 
-        float[] newSample = sample;
+        double[] newSample = sample;
 
         // useMemory = true forces causal filter
         if (type == TYPE_CAUSAL_BOXCAR || type == TYPE_CAUSAL_TRIANGLE) {
@@ -191,10 +191,10 @@ public class Smoothing extends TimeDomainProcess {
      *
      */
     // WARNING: inefficient version with double loop
-    public final float[] applyBoxcar_OLD(double dt, float[] sample) {
+    public final double[] applyBoxcar_OLD(double dt, double[] sample) {
 
 
-        float[] newSample = new float[sample.length];
+        double[] newSample = new double[sample.length];
 
         int i1, i2;
         double sum;
@@ -220,7 +220,7 @@ public class Smoothing extends TimeDomainProcess {
 
             sum = 0.0;
             icount = 0;
-            float value = 0.0f;
+            double value = 0.0f;
             // 20110919 AJL  for (int n = i1; n < i2; n++) {
             for (int n = i1; n < i2 + 1; n++) {   // 20110919 AJL - bug fix, should inlcude sample i2 in initial sum
                 if (useMemory && n < 0) {
@@ -247,9 +247,9 @@ public class Smoothing extends TimeDomainProcess {
      *
      */
     // NOTE: efficient version with single loop (20110920 AJL - added)
-    public final float[] applyBoxcar(double dt, float[] sample) {
+    public final double[] applyBoxcar(double dt, double[] sample) {
 
-        float[] newSample = new float[sample.length];
+        double[] newSample = new double[sample.length];
 
         int i1, i2, i;
 
@@ -279,7 +279,7 @@ public class Smoothing extends TimeDomainProcess {
                 }
             }
 
-            float value = 0.0f;
+            double value = 0.0f;
             if (icount == 0) { // first pass, accumulate sum
                 int n;
                 // 20110919 AJL  for (n = i1; n < i2; n++) {
@@ -321,9 +321,9 @@ public class Smoothing extends TimeDomainProcess {
     }
 
     /*** function to apply smoothing  */
-    public final float[] applyTriangle(double dt, float[] sample) {
+    public final double[] applyTriangle(double dt, double[] sample) {
 
-        float[] newSample = new float[sample.length];
+        double[] newSample = new double[sample.length];
 
         int i1, i2, iwt;
         double sum;
@@ -357,7 +357,7 @@ public class Smoothing extends TimeDomainProcess {
 
             sum = 0.0;
             weight = 0.0;
-            float value = 0.0f;
+            double value = 0.0f;
             for (int n = i1; n < i2; n++) {
                 if (useMemory && n < 0) {
                     value = memory.input[2 * windowHalfWidth + n];
@@ -394,5 +394,6 @@ public class Smoothing extends TimeDomainProcess {
         return (true);
 
     }
+
 }	// End class GaussianFilter
 

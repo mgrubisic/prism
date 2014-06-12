@@ -113,5 +113,6 @@ public class AmplitudeFilter extends BandpassFilter {
         return (cx);
 
     }
+
 }	// End class AmplitudeFilter
 

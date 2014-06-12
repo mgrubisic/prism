@@ -194,14 +194,14 @@ public abstract class BandpassFilter implements FrequencyDomainProcess {
     /**
      * Does pre-processing on the time-domain data.
      */
-    public float[] preProcess(double dt, float[] x) {
+    public double[] preProcess(double dt, double[] x) {
         return (x);	// do nothing
     }
 
     /**
      * Does post-processing on the time-domain data.
      */
-    public float[] postProcess(double dt, float[] x) {
+    public double[] postProcess(double dt, double[] x) {
         return (x);	// do nothing
     }
 

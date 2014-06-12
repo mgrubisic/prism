@@ -616,6 +616,11 @@ public class FilterPicker5 extends BasicPicker {
 
     }
 
+    @Override
+    public double[] apply(double dt, double[] sample) throws TimeDomainException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
     /** custom memory class */
 // _DOC_ =============================
 // _DOC_ FilterPicker5_Memory object/structure

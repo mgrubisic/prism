@@ -31,7 +31,6 @@ public class TextFileWriter {
     }
     
     public void writeOutToFile() throws IOException {
-        System.out.println("writing, 1st line: " + contents[0]);
         try (BufferedWriter writer = Files.newBufferedWriter(outName, ENCODING)) {
             for (String line : contents) {
                 writer.write(line);
@@ -44,7 +43,6 @@ public class TextFileWriter {
         if (Files.notExists(outName)) {
             Files.createFile(outName);
         }
-        System.out.println("appending, 1st line: " + contents[0]);
         try (BufferedWriter writer = Files.newBufferedWriter(outName, ENCODING, 
                                                     StandardOpenOption.APPEND)) {
             for (String line : contents) {

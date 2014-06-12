@@ -92,7 +92,7 @@ public class TimeDomainProcesses extends TimeDomainProcess {
     /**  Method to apply time domain processes
      */
 
-    public float[] apply(double dt, float[] sample) {
+    public double[] apply(double dt, double[] sample) {
 
         /*
         if (processID == SQUARE)
@@ -108,9 +108,9 @@ public class TimeDomainProcesses extends TimeDomainProcess {
     /**  Method to calculate square of data values
      */
 
-    public float[] applySquare(double dt, float[] sample) {
+    public double[] applySquare(double dt, double[] sample) {
 
-        float ftemp;
+        double ftemp;
         for (int i = 0; i < sample.length; i++) {
             ftemp = sample[i];
             sample[i] = ftemp * ftemp;
@@ -222,13 +222,13 @@ public class TimeDomainProcesses extends TimeDomainProcess {
 
         if (this.useMemory && memory == null) {
             if (processID == INTEGRATE) {
-                float[] input = new float[0];
-                float[] output = {0.0f};
+                double[] input = new double[0];
+                double[] output = {0.0f};
                 memory = new TimeDomainMemory(input, output);
             }
             else if (processID == DIFFERENTIATE) {
-                float[] input = new float[0];
-                float[] output = {0.0f};
+                double[] input = new double[0];
+                double[] output = {0.0f};
                 memory = new TimeDomainMemory(input, output);
             }
         }

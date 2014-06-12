@@ -131,7 +131,7 @@ public class InstantPeriod extends TimeDomainProcess {
      *     Science, 300 (5620), 786-789, 2003.
      */
     
-    public final float[] apply(double dt, float[] sample) {
+    public final double[] apply(double dt, double[] sample) {
         
         if (useMemory) { // use stored memory
             if (memory == null) // no stored memory initialized
@@ -140,13 +140,13 @@ public class InstantPeriod extends TimeDomainProcess {
             }
         }
 
-        double twopi = (float) (2.0 * Math.PI);
-        float dtf = (float) dt;
-        float decayConst = (float) (1.0 - dt / alpha);
+        double twopi = 2.0 * Math.PI;
+        double dtf = dt;
+        double decayConst = (1.0 - dt / alpha);
         
-        float xval = 0.0f;
-        float dval = 0.0f;
-        float sampleLast = 0.0f;
+        double xval = 0.0f;
+        double dval = 0.0f;
+        double sampleLast = 0.0f;
         if (useMemory) { // using stored memory
             sampleLast = memory.input[0];
             xval = memory.output[0];
@@ -156,10 +156,10 @@ public class InstantPeriod extends TimeDomainProcess {
         for (int i = 0; i < sample.length; i++) {
             
             xval = xval * decayConst + sample[i] * sample[i];
-            float deriv = (sample[i] - sampleLast) / dtf;
+            double deriv = (sample[i] - sampleLast) / dtf;
             dval = dval * decayConst + deriv * deriv;
             sampleLast = sample[i];
-            sample[i] = (float) (twopi * Math.sqrt(xval / dval));
+            sample[i] = (twopi * Math.sqrt(xval / dval));
             
         }
         

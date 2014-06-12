@@ -45,7 +45,7 @@ public interface  FrequencyDomainProcess {
       * @return    the processed float values.
 	  */
  
-	public float[] preProcess(double dt, float[] x);
+	public double[] preProcess(double dt, double[] x);
 
 
         
@@ -57,7 +57,7 @@ public interface  FrequencyDomainProcess {
       * @return    the processed float values.
 	  */
  
-	public float[] postProcess(double dt, float[] x);
+	public double[] postProcess(double dt, double[] x);
         
         
 	/**  Returns true if pre-processing on the time-domain data changes samples.

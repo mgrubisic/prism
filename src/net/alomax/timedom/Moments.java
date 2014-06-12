@@ -134,9 +134,9 @@ public class Moments extends TimeDomainProcess {
     }
 
     /*** function to apply moments  */
-    public final float[] apply(double dt, float[] sample) {
+    public final double[] apply(double dt, double[] sample) {
 
-        float[] newSample = sample;
+        double[] newSample = sample;
 
         // useMemory = true forces causal filter
         //if (type == TYPE_CAUSAL_BOXCAR || type == TYPE_CAUSAL_TRIANGLE)
@@ -165,7 +165,7 @@ public class Moments extends TimeDomainProcess {
     /** function to apply moments  */
     // http://www.itl.nist.gov/div898/handbook/eda/section3/eda35b.htm
     
-    public final float[] applyMoment(double dt, float[] sample) {
+    public final double[] applyMoment(double dt, double[] sample) {
 
         if (windowWidth < 2) {
             return (sample);
@@ -173,7 +173,7 @@ public class Moments extends TimeDomainProcess {
 
         int order = 4;
 
-        float[] newSample = new float[sample.length];
+        double[] newSample = new double[sample.length];
 
         int i1, i2;
         double sum;
@@ -191,7 +191,7 @@ public class Moments extends TimeDomainProcess {
         i1 = -windowWidth;
         i2 = 0;     // causal boxcar of width windowWidth
 
-        float value = 0.0f;
+        double value = 0.0f;
         for (int n = i1; n < i2; n++) {
             // add new value
             if (n < 0) {
@@ -263,6 +263,7 @@ public class Moments extends TimeDomainProcess {
         return (true);
 
     }
+
 }	// End class GaussianFilter
 
 

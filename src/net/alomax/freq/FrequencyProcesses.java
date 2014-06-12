@@ -250,6 +250,16 @@ public class FrequencyProcesses implements FrequencyDomainProcess {
         }
         
     }
+
+    @Override
+    public double[] preProcess(double dt, double[] x) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public double[] postProcess(double dt, double[] x) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
     
     
     

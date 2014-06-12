@@ -187,5 +187,10 @@ public class DurationAmplitude extends TimeDomainProcess {
         return (true);
 
     }
+
+    @Override
+    public double[] apply(double dt, double[] sample) throws TimeDomainException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }	// End class GaussianFilter
 
