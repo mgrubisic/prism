@@ -14,8 +14,6 @@ import static SmUtilities.SmConfigConstants.BP_FILTER_CUTOFFHIGH;
 import static SmUtilities.SmConfigConstants.BP_FILTER_CUTOFFLOW;
 import static SmUtilities.SmConfigConstants.DATA_UNITS_CODE;
 import static SmUtilities.SmConfigConstants.DATA_UNITS_NAME;
-import net.alomax.freq.ButterworthFilter;
-import net.alomax.math.Cmplx;
 
 
 /**
@@ -25,7 +23,7 @@ import net.alomax.math.Cmplx;
 public class V1Process {
     private final double microToVolt = 1.0e-6;
     
-    private double[] V1Array;
+    private double[] accel;
     private double meanToZero;
     private double maxVal;
     private int maxIndex;
@@ -90,7 +88,7 @@ public class V1Process {
         this.avgVal = 0.0;
     }
     
-    public void processV1Data() {
+    public void processV1Data() throws SmException {
         //Get the units from the config file and calculate conversion factor
         double conv;
         if (data_unit_code == CMSQSECN) {
@@ -101,35 +99,54 @@ public class V1Process {
         
         //convert counts to physical values
         double[] physVal = countsToValues(inV0.getDataArray(), conv);
+        ArrayStats stat = new ArrayStats( physVal );
+        meanToZero = stat.getMean();
         
         //save a copy of the original array for pre-mean removal
         double[] accraw = new double[physVal.length];
         System.arraycopy( physVal, 0, accraw, 0, physVal.length);
         
         //remove the mean
-        DataVals result = removeMean(physVal);
-        V1Array = result.array;
-        meanToZero = result.mean;
-        maxVal = result.max;
-        maxIndex = result.maxIndex;
+        for (int i = 0; i < physVal.length; i++) {
+            physVal[i] = physVal[i] - meanToZero;
+        }
         
         //filter the data
         double dtime = delta_t * MSEC_TO_SEC;
-        double fNyquist = 1.0 / (2.0 * dtime);
-        double lp = lowcutoff / fNyquist;
-        double hp = highcutoff / fNyquist;
-        System.out.println("+++ dtime: " + dtime);
-        Cmplx[] complex = Cmplx.fft(result.array);
-        System.out.println("+++ length of complex array: " + complex.length);
-        System.out.println("+++ element: " + complex[5041].toString());
-        ButterworthFilter butter = new ButterworthFilter( lowcutoff, highcutoff, NUM_POLES);
-        complex = butter.apply(dtime, complex);
-        System.out.println("+++ element: " + complex[5041].toString());
-        V1Array = Cmplx.fftInverse(complex, V1Array.length);
-        result = getMeanMax( V1Array );
-        avgVal = result.mean;
-        maxVal = result.max;
-        maxIndex = result.maxIndex;
+        System.out.println("+++ deltat: " + delta_t);
+        System.out.println("+++ time step: " + dtime);
+        System.out.println("+++ F lowcut: " + lowcutoff);
+        System.out.println("+++ F highcut: " + highcutoff);
+        System.out.println("+++ length before filter: " + physVal.length);
+        
+        //set up the filter coefficients and run
+        ButterworthFilter filter = new ButterworthFilter();
+        boolean calcWorked = filter.calculateCoefficients(lowcutoff, highcutoff, dtime, NUM_POLES, true);
+        if (calcWorked) {
+            accel = filter.applyFilter(physVal);
+        } else {
+            throw new SmException("Invalid filter values");
+        }
+        
+        double[] b1 = filter.getB1();
+        double[] b2 = filter.getB2();
+        double[] fact = filter.getFact();
+        for (int jj = 0; jj < b1.length; jj++) {
+            System.out.format("+++ fact: %f  b1: %f  b2: %f%n", fact[jj],b1[jj],b2[jj]);
+        }
+        //P-wave picking
+        Ppicker pick = new Ppicker( dtime );
+        int startIndex = pick.pickPwave(accel);
+        
+        //Remove pre-event mean from acceleration record
+        
+        //Baseline correction (if needed)
+        
+        
+        stat = new ArrayStats( accel );
+        avgVal = stat.getMean();
+        maxVal = stat.getPeakVal();
+        maxIndex = stat.getPeakValIndex();
     }
     
     public double countToGConversion() {
@@ -157,79 +174,7 @@ public class V1Process {
         }
         return (result);
     }
-    private DataVals removeMean(final double[] inArray) {
-        
-        int length = inArray.length;
-        double[] result = new double[length];
-        double total = 0.0;
-        double maxhigh = Double.MIN_VALUE;
-        double maxlow = Double.MAX_VALUE;
-        double maxabs = Double.MIN_VALUE;
-        double mean = Double.MIN_VALUE;
-        int maxhighid = -1;
-        int maxlowid = -1;
-        int maxabsid = -1;
-        
-        for (double val : inArray ) {
-             total = total + val;
-        }
-        mean = total / length;
-        
-        for (int i = 0; i < length; i++) {
-            result[i] = inArray[i] - mean;
-            if (result[i] > maxhigh) {
-                maxhigh = result[i];
-                maxhighid = i;
-            }
-            if (result[i] < maxlow) {
-                maxlow = result[i];
-                maxlowid = i;
-            }
-        }
-        if (Math.abs(maxhigh) > Math.abs(maxlow)) {
-            maxabs =  maxhigh;
-            maxabsid = maxhighid;
-        } else {
-            maxabs =  maxlow;
-            maxabsid = maxlowid;
-            
-        }
-        return (new DataVals( result, mean, maxabs, maxabsid));
-    }
     
-    private DataVals getMeanMax( double[] inArray ) {
-        int length = inArray.length;
-        double total = 0.0;
-        double maxhigh = Double.MIN_VALUE;
-        double maxlow = Double.MAX_VALUE;
-        double maxabs = Double.MIN_VALUE;
-        double mean = Double.MIN_VALUE;
-        int maxhighid = -1;
-        int maxlowid = -1;
-        int maxabsid = -1;
-        for (int i = 0; i < length; i++) {
-            total = total + inArray[i];
-            if (inArray[i] > maxhigh) {
-                maxhigh = inArray[i];
-                maxhighid = i;
-            }
-            if (inArray[i] < maxlow) {
-                maxlow = inArray[i];
-                maxlowid = i;
-            }
-        }
-        if (Math.abs(maxhigh) > Math.abs(maxlow)) {
-            maxabs =  maxhigh;
-            maxabsid = maxhighid;
-        } else {
-            maxabs =  maxlow;
-            maxabsid = maxlowid;
-            
-        }
-        mean = total / length;
-        return (new DataVals (inArray, mean, maxabs, maxabsid));
-    }
-
     public double getMeanToZero() {
         return this.meanToZero;
     }
@@ -243,28 +188,15 @@ public class V1Process {
         return this.avgVal;
     }
     public double[] getV1Array() {
-        return this.V1Array;
+        return this.accel;
     }
     public int getV1ArrayLength() {
-        return this.V1Array.length;
+        return this.accel.length;
     }
     public int getDataUnitCode() {
         return this.data_unit_code;
     }
     public String getDataUnits() {
         return this.data_units;
-    }
-    class DataVals {
-        public final double[] array;
-        public final double max;
-        public final double mean;
-        public final int maxIndex;
-
-        public DataVals(double[] inArray, double inMean, double inMax, int inIndex) {
-            max = inMax;
-            mean = inMean;
-            maxIndex = inIndex;
-            array = inArray;
-        }
     }
 }

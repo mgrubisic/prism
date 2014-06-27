@@ -22,6 +22,8 @@ import static COSMOSformat.VFileConstants.*;
 import COSMOSformat.VFileConstants.V2DataType;
 import SmException.SmException;
 import SmUtilities.ConfigReader;
+import static SmUtilities.SmConfigConstants.BP_FILTER_CUTOFFHIGH;
+import static SmUtilities.SmConfigConstants.BP_FILTER_CUTOFFLOW;
 import static SmUtilities.SmConfigConstants.DATA_UNITS_CODE;
 import static SmUtilities.SmConfigConstants.DATA_UNITS_NAME;
 
@@ -42,6 +44,7 @@ public class V2Process {
     private double VmaxVal;
     private int VmaxIndex;
     private double VavgVal;
+    private double VmeanToZero;
     private final int vel_unit_code;
     private final String vel_units;
     
@@ -53,9 +56,10 @@ public class V2Process {
     private final String dis_units;
     
     private final V1Component inV1;
-    private DataVals result;
     private final double delta_t;
     private final double noRealVal;
+    private final double lowcutoff;
+    private final double highcutoff;
     
     public V2Process(final V1Component v1rec, final ConfigReader config) throws SmException {
         double epsilon = 0.0001;
@@ -77,76 +81,55 @@ public class V2Process {
             throw new SmException("Real header #62, delta t, is invalid: " + 
                                                                         delta_t);
         }        
+        String lowcut = config.getConfigValue(BP_FILTER_CUTOFFLOW);
+        this.lowcutoff = (lowcut == null) ? DEFAULT_LOWCUT : Double.parseDouble(lowcut);
+
+        String highcut = config.getConfigValue(BP_FILTER_CUTOFFHIGH);
+        this.highcutoff = (highcut == null) ? DEFAULT_HIGHCUT : Double.parseDouble(highcut);
     }
     
-    public void processV2Data() {        
-        //Integrate the V1 acceleration to get velocity.  Scale results for
-        //correct units if necessary.!!!
-        result = SmIntegrate( inV1.getDataArray(), delta_t);
-        velocity = result.array;
-        VmaxVal = result.max;
-        VmaxIndex = result.maxIndex;
-        VavgVal = result.mean;
+    public void processV2Data() throws SmException {   
+        SmInteDif op = new SmInteDif();
+        ArrayStats stat;
         
-        //Integrate the velcity to get displacement.
-        result = SmIntegrate( velocity, delta_t);
-        displace = result.array;
-        DmaxVal = result.max;
-        DmaxIndex = result.maxIndex;
-        DavgVal = result.mean;
-
-        //Differentiate the velocity to get corrected acceleration.
-        result = SmDifferentiate( velocity, delta_t);
-        accel = result.array;
-        AmaxVal = result.max;
-        AmaxIndex = result.maxIndex;
-        AavgVal = result.mean;    
-    }
-    private DataVals SmIntegrate( final double[] inArray, double deltat ){
-        double max  = 0.0;
-        double mean = 0.0;
-        int index = 0;
-        double total = 0.0;
-        double[] calc = new double[ inArray.length ];
-        double dt2 = deltat / 2.0;
-        calc[0] = 0.0;
-        for (int i = 1; i < calc.length; i++) {
-            calc[i] = calc[i-1] + (inArray[i-1] + inArray[i])*dt2;
-            total = total + calc[i];
-            if (calc[i] > max){
-                max = calc[i];
-                index = i;
-            }
+        //Filter the acceleration
+        double dtime = delta_t * MSEC_TO_SEC;
+        double[] acc = inV1.getDataArray();
+        
+        //set up the filter coefficients and run
+        ButterworthFilter filter = new ButterworthFilter();
+        filter.calculateCoefficients(lowcutoff, highcutoff, dtime, NUM_POLES, true);
+        accel = filter.applyFilter(acc);
+        
+        //Integrate the acceleration to get velocity.
+        velocity = op.Integrate( accel, delta_t);
+        
+        //Remove the mean from the velocity - make this static method
+        stat = new ArrayStats( velocity );
+        VmeanToZero = stat.getMean();
+        for (int i = 0; i < velocity.length; i++) {
+            velocity[i] = velocity[i] - VmeanToZero;
         }
-        mean = total / calc.length;
-        return (new DataVals(calc, mean, max, index ));
+        stat = new ArrayStats( velocity );
+        VmaxVal = stat.getPeakVal();
+        VmaxIndex = stat.getPeakValIndex();
+        VavgVal = stat.getMean();
+        
+        //Differentiate velocity for final acceleration
+        accel = op.Differentiate(velocity, delta_t);
+        stat = new ArrayStats( accel );
+        AmaxVal = stat.getPeakVal();
+        AmaxIndex = stat.getPeakValIndex();
+        AavgVal = stat.getMean();
+        
+        //Integrate the velocity to get displacement.
+        displace = op.Integrate( velocity, delta_t);
+        stat = new ArrayStats( displace );
+        DmaxVal = stat.getPeakVal();
+        DmaxIndex = stat.getPeakValIndex();
+        DavgVal = stat.getMean();
     }
-    private DataVals SmDifferentiate( final double[] inArray, double deltat ){
-        int len = inArray.length;
-        double[] calc = new double[ len ];
-        calc[0] = (inArray[1] - inArray[0]) / deltat;
-        double max  = calc[0];
-        double mean = calc[0];
-        int index = 0;
-        double total = calc[0];
-        for (int i = 1; i < len-2; i++) {
-            calc[i] = (inArray[i+1] - inArray[i-1]) / (deltat * 2.0);
-            total = total + calc[i];
-            if (calc[i] > max){
-                max = calc[i];
-                index = i;
-            }
-        }
-        calc[len-1] = (inArray[len-1] - inArray[len-2]) / deltat;
-        total = total + calc[len-1];
-        if (calc[len-1] > max) {
-            max = calc[len-1];
-            index = len-1;
-            
-        }
-        mean = total / calc.length;
-        return (new DataVals(calc, mean, max, index ));
-    }
+    
     public double getMaxVal(V2DataType dType) {
         if (dType == V2DataType.ACC) {
             return this.AmaxVal;
@@ -208,19 +191,6 @@ public class V2Process {
             return this.vel_units;
         } else {
             return this.dis_units;
-        }
-    }
-    class DataVals {
-        public final double[] array;
-        public final double max;
-        public final double mean;
-        public final int maxIndex;
-
-        public DataVals(double[] inArray, double inMean, double inMax, int inIndex) {
-            max = inMax;
-            mean = inMean;
-            maxIndex = inIndex;
-            array = inArray;
         }
     }
 }

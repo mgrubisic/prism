@@ -85,7 +85,7 @@ public final class VFileConstants {
     public static final int V3_STAGE = 3;
     
     //misc. constants
-    public static final double MSEC_TO_SEC = 1e-3; //milliseconds to seconds
+    public static final double MSEC_TO_SEC = 0.001; //milliseconds to seconds
     public static final double FROM_G_CONVERSION = 980.665; //cm per sq. sec per g
 
         //filtering constants
