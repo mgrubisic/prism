@@ -28,11 +28,13 @@ public final class VFileConstants {
     public static final int DEFAULT_NOINTVAL = -999;
     public static final double DEFAULT_NOREALVAL = -999.0;
     public static final int DEFAULT_INT_FIELDWIDTH = 8;
-    public static final int DEFAULT_REAL_FIELDWIDTH = 13;
+    public static final int DEFAULT_REAL_FIELDWIDTH = 15;
     public static final int DEFAULT_REAL_PRECISION = 6;
-    public static final int REAL_FIELDWIDTH_V1 = 10;
+    public static final int REAL_FIELDWIDTH_V1 = 12;
     public static final int REAL_PRECISION_V1 = 3;
-    public static final String DEFAULT_REAL_DISPLAYTYPE = "F";
+    public static final int REAL_FIELDWIDTH_V2 = 12;
+    public static final int REAL_PRECISION_V2 = 3;
+    public static final String DEFAULT_REAL_DISPLAYTYPE = "E";
     public static final String DEFAULT_INT_DISPLAYTYPE = "I";
     
     //data product names

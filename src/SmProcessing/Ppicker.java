@@ -31,8 +31,8 @@ public class Ppicker {
     private double coef_c; private double coef_d; 
     private double coef_e; private double coef_f;
     
-    //set up for integration and differentiation
-    SmInteDif op;
+    //set up for integration and differentiation, and for histogram
+    ArrayStats stat;
     
     //constructor
     public Ppicker(double deltaT) {
@@ -53,11 +53,13 @@ public class Ppicker {
         coef_e = AeB[0];
         coef_f = AeB[1];
         
-        op = new SmInteDif();
+        System.out.format("+++ a: %f  b: %f  c: %f  d:%f  e:%f  f:%f%n", coef_a,
+                coef_b,coef_c,coef_d,coef_e,coef_f);        
     }
     
-    public int pickPwave( double[] acc) {
+    public int pickPwave( final double[] acc) {
         int len = acc.length;
+        stat = new ArrayStats(acc);
         int found = 0;
         
         //Calculate the transient response of an oscillator with vibration period
@@ -81,7 +83,7 @@ public class Ppicker {
             Edi[i] = const_C * Math.pow(veloc[i], 2);
         }
         //Viscous damping energy over mass (m^2/sec^2)
-        double[] Edoverm = op.Integrate(Edi, deltaT);
+        double[] Edoverm = ArrayOps.Integrate(Edi, deltaT);
         
         //Spectral viscous damping energy over mass (m^2/sec^2)
         //find largest absolute value in array
@@ -99,28 +101,30 @@ public class Ppicker {
         }
         
         //Integrand of normalized damping energy (m^2/sec^3)
-        double[] PIM = op.Differentiate(EIM, 1.0);
+        double[] PIM = ArrayOps.Differentiate(EIM, deltaT);
         
-        // find the most common value in the lower and upper half of the range.
-        // R will hold 2 doubles, the first is the most frequently-occurring
-        // value in the lower half of the array min-max range, and the
-        // second is the most frequently-occurring value in the upper half.
-        double[] R = stateLevels(PIM);
-        double firstLevel = R[0];
-        
+        // find the most common value in the lower half of the range of PIM.
+        // The value returned is the most frequently-occurring
+        // value in the lower half of the array min-max range.
+        stat = new ArrayStats(PIM);
+        double lowerMode = stat.getModalMinimum(PIM);
+        System.out.println("+++ modalMin in ppicker: " + lowerMode);
         //Now find the index of the first occurrence in the array of a value
         //that is greater than the most frequently-occurring value.
         int peak = 0;
         for (int i = 0; i < len; i++) {
-            if (acc[i] > firstLevel) {
+            if (acc[i] > lowerMode) {
                 peak = i;
                 break;
             }
         }
+        System.out.println("+++ acc index of peak: " + peak);
         //In the array subset acc[0:peak], start at the end and work back to front
         //to find the index of the first zero-crossing.  This is the start of
-        //the P-Wave.
-        for (int k = peak; k < 0; k--) {
+        //the P-Wave.  The zero-crossing is identified by 2 consecutive values
+        //in the array with differing signs.
+        double temp = 0.0;
+        for (int k = peak; k > 0; k--) {
             if ((acc[k] * acc[k-1]) < 0.0) {
                 found = k-1;
                 break;
@@ -129,11 +133,5 @@ public class Ppicker {
         //Return the index into the acceleration array that marks the start of
         //the P-wave.
         return found;
-    }
-    
-    public double[] stateLevels( double[] array) {
-        double[] states = new double[2];
-        ///!!! under construction
-        return states;
     }
 }

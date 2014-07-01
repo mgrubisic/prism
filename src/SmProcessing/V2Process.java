@@ -89,7 +89,6 @@ public class V2Process {
     }
     
     public void processV2Data() throws SmException {   
-        SmInteDif op = new SmInteDif();
         ArrayStats stat;
         
         //Filter the acceleration
@@ -102,28 +101,24 @@ public class V2Process {
         accel = filter.applyFilter(acc);
         
         //Integrate the acceleration to get velocity.
-        velocity = op.Integrate( accel, delta_t);
+        velocity = ArrayOps.Integrate( accel, delta_t);
         
-        //Remove the mean from the velocity - make this static method
-        stat = new ArrayStats( velocity );
-        VmeanToZero = stat.getMean();
-        for (int i = 0; i < velocity.length; i++) {
-            velocity[i] = velocity[i] - VmeanToZero;
-        }
+        //Remove any linear trend from velocity
+        ArrayOps.removeLinearTrend( velocity, dtime);
         stat = new ArrayStats( velocity );
         VmaxVal = stat.getPeakVal();
         VmaxIndex = stat.getPeakValIndex();
         VavgVal = stat.getMean();
         
         //Differentiate velocity for final acceleration
-        accel = op.Differentiate(velocity, delta_t);
+        accel = ArrayOps.Differentiate(velocity, delta_t);
         stat = new ArrayStats( accel );
         AmaxVal = stat.getPeakVal();
         AmaxIndex = stat.getPeakValIndex();
         AavgVal = stat.getMean();
         
         //Integrate the velocity to get displacement.
-        displace = op.Integrate( velocity, delta_t);
+        displace = ArrayOps.Integrate( velocity, delta_t);
         stat = new ArrayStats( displace );
         DmaxVal = stat.getPeakVal();
         DmaxIndex = stat.getPeakValIndex();

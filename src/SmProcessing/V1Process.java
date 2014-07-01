@@ -14,6 +14,7 @@ import static SmUtilities.SmConfigConstants.BP_FILTER_CUTOFFHIGH;
 import static SmUtilities.SmConfigConstants.BP_FILTER_CUTOFFLOW;
 import static SmUtilities.SmConfigConstants.DATA_UNITS_CODE;
 import static SmUtilities.SmConfigConstants.DATA_UNITS_NAME;
+import java.util.Arrays;
 
 
 /**
@@ -107,12 +108,10 @@ public class V1Process {
         System.arraycopy( physVal, 0, accraw, 0, physVal.length);
         
         //remove the mean
-        for (int i = 0; i < physVal.length; i++) {
-            physVal[i] = physVal[i] - meanToZero;
-        }
+        double dtime = delta_t * MSEC_TO_SEC;
+        ArrayOps.removeLinearTrend( physVal, dtime);
         
         //filter the data
-        double dtime = delta_t * MSEC_TO_SEC;
         System.out.println("+++ deltat: " + delta_t);
         System.out.println("+++ time step: " + dtime);
         System.out.println("+++ F lowcut: " + lowcutoff);
@@ -120,28 +119,35 @@ public class V1Process {
         System.out.println("+++ length before filter: " + physVal.length);
         
         //set up the filter coefficients and run
+        double[] acc;
         ButterworthFilter filter = new ButterworthFilter();
         boolean calcWorked = filter.calculateCoefficients(lowcutoff, highcutoff, dtime, NUM_POLES, true);
         if (calcWorked) {
-            accel = filter.applyFilter(physVal);
+            acc = filter.applyFilter(physVal);
         } else {
             throw new SmException("Invalid filter values");
         }
         
-        double[] b1 = filter.getB1();
-        double[] b2 = filter.getB2();
-        double[] fact = filter.getFact();
-        for (int jj = 0; jj < b1.length; jj++) {
-            System.out.format("+++ fact: %f  b1: %f  b2: %f%n", fact[jj],b1[jj],b2[jj]);
-        }
+//        double[] b1 = filter.getB1();
+//        double[] b2 = filter.getB2();
+//        double[] fact = filter.getFact();
+//        for (int jj = 0; jj < b1.length; jj++) {
+//            System.out.format("+++ fact: %f  b1: %f  b2: %f%n", fact[jj],b1[jj],b2[jj]);
+//        }
         //P-wave picking
         Ppicker pick = new Ppicker( dtime );
-        int startIndex = pick.pickPwave(accel);
+        int startIndex = pick.pickPwave(acc);
+        System.out.println("+++ pick index: " + startIndex);
         
         //Remove pre-event mean from acceleration record
+        double[] subset = Arrays.copyOfRange( accraw, 0, startIndex );
+        stat = new ArrayStats( subset );
+        double premean = stat.getMean();
+        ArrayOps.removeMean(accraw, premean);
+        accel = accraw;
+        ArrayOps.removeLinearTrend( accel, dtime);
         
         //Baseline correction (if needed)
-        
         
         stat = new ArrayStats( accel );
         avgVal = stat.getMean();

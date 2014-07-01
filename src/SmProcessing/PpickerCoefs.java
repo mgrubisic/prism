@@ -69,13 +69,11 @@ public class PpickerCoefs {
     
     public double[] getAeBCoefs(double deltaT) {
         int key = (int)(deltaT * DELTAT_TO_INT);
-        System.out.println("+++ AeB key: " + key);
         return AeB.get(key);
     }
     
     public double[] getAeCoefs(double deltaT) {
         int key = (int)(deltaT * DELTAT_TO_INT);
-        System.out.println("+++ AeB key: " + key);
         return Ae.get(key);
     }
 }

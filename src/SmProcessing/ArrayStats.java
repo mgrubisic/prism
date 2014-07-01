@@ -89,21 +89,37 @@ public class ArrayStats {
         return histstep;
     }
     public int[] makeHistogram(double[] array, int numIntervals) {
-        //create the array for the histotram and fill with 0s
+        //create the array for the histogram and fill with 0s
         int[] hist = new int[numIntervals];
         Arrays.fill(hist, 0);
         //determine the range of values and the width of each bin
         double range = maxhigh - maxlow;
         histstep = range / numIntervals;
+        System.out.format("+++ maxhigh: %f  maxlow: %f%n", maxhigh, maxlow);
+        System.out.format("+++ range: %f  step: %f%n", range, histstep);
         //Go through the array, find which bin the current value belongs to, and
         //increment that bin.
         int index;
         for (double val : array) {
             index = (int)Math.ceil(Math.abs(val-maxlow)/histstep);
-            hist[index] += 1;
+            if (index >= numIntervals) {
+                hist[index-1] += 1;
+                System.out.format("+++ index: %d  val: %f%n", index, val);
+            } else {
+                hist[index] += 1;
+            }
         }
+//        for (int i = 0; i < hist.length; i++) {
+//            if (hist[i] > 0) {
+//                System.out.println("+++ hist: " + hist[i] + " for index: " + i);
+//            }
+//        }
         return hist;
     }
+    //Find the most frequently occurring value in the lower range of array values.
+    //This is done by making a histogram of the array values and, looking only
+    //at the lower half of the histogram, find the bin with the highest count.
+    //The minimum array value for this histogram bin is computed and returned.
     public double getModalMinimum(double[] array) {
         double modalMin = Double.MIN_VALUE;
         int NUM_BINS = 100;
@@ -111,7 +127,7 @@ public class ArrayStats {
         int mode = 0;
         int modeindex = -1;
         
-        //Find the bin in the first have of the histogram with the highest
+        //Find the bin in the first half of the histogram with the highest
         //count.  This is the modal value for the minimum.
         hist = makeHistogram( array, NUM_BINS);
         for (int i = 0; i < NUM_BINS/2; i++) {
@@ -120,7 +136,7 @@ public class ArrayStats {
                 modeindex = i;
             }
         }
-        
+        System.out.println("+++ found mode at index: " + modeindex);
         //!!!check this to make sure that the low end of the interval is getting
         //picked up and not the high end
         modalMin = maxlow + histstep * modeindex;

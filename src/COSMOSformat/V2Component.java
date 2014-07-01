@@ -129,22 +129,22 @@ public class V2Component extends COSMOScontentFormat {
         //transfer the data array and set all array values
         if (procType == V2DataType.ACC) {
             V2Data.setRealArray(inVvals.getV2Array(V2DataType.ACC));
-            V2Data.setFieldWidth(REAL_FIELDWIDTH_V1);
-            V2Data.setPrecision(REAL_PRECISION_V1);
+            V2Data.setFieldWidth(REAL_FIELDWIDTH_V2);
+            V2Data.setPrecision(REAL_PRECISION_V2);
             V2Data.setNumVals(inVvals.getV2ArrayLength(V2DataType.ACC));
             V2Data.buildArrayParams();
             this.buildNewDataFormatLine(unitsname, unitscode, "acceleration");
         } else if (procType == V2DataType.VEL) {
             V2Data.setRealArray(inVvals.getV2Array(V2DataType.VEL));
-            V2Data.setFieldWidth(REAL_FIELDWIDTH_V1);
-            V2Data.setPrecision(REAL_PRECISION_V1);
+            V2Data.setFieldWidth(REAL_FIELDWIDTH_V2);
+            V2Data.setPrecision(REAL_PRECISION_V2);
             V2Data.setNumVals(inVvals.getV2ArrayLength(V2DataType.VEL));
             V2Data.buildArrayParams();
             this.buildNewDataFormatLine(unitsname, unitscode, "velocity    ");
         }else {
             V2Data.setRealArray(inVvals.getV2Array(V2DataType.DIS));
-            V2Data.setFieldWidth(REAL_FIELDWIDTH_V1);
-            V2Data.setPrecision(REAL_PRECISION_V1);
+            V2Data.setFieldWidth(REAL_FIELDWIDTH_V2);
+            V2Data.setPrecision(REAL_PRECISION_V2);
             V2Data.setNumVals(inVvals.getV2ArrayLength(V2DataType.DIS));
             V2Data.buildArrayParams();
             this.buildNewDataFormatLine(unitsname, unitscode, "displacement");            
