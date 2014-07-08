@@ -91,8 +91,8 @@ public final class VFileConstants {
     public static final double FROM_G_CONVERSION = 980.665; //cm per sq. sec per g
 
         //filtering constants
-    public static final int NUM_POLES = 5;
+    public static final int NUM_POLES = 2;
     public static final double DEFAULT_HIGHCUT = 0.5;
     public static final double DEFAULT_LOWCUT = 30.0;
-
+    public static final double DEFAULT_PPICKBUFFER = 0.0;
 }

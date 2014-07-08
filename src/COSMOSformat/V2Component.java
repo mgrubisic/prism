@@ -9,7 +9,6 @@ package COSMOSformat;
 import static COSMOSformat.VFileConstants.*;
 import SmException.FormatException;
 import SmException.SmException;
-import SmProcessing.V1Process;
 import SmProcessing.V2Process;
 import SmUtilities.ConfigReader;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_ABBREV;

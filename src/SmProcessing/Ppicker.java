@@ -56,8 +56,9 @@ public class Ppicker {
         System.out.format("+++ a: %f  b: %f  c: %f  d:%f  e:%f  f:%f%n", coef_a,
                 coef_b,coef_c,coef_d,coef_e,coef_f);        
     }
-    
-    public int pickPwave( final double[] acc) {
+    //buffer has units of seconds and is used to increase the length of time
+    //between the detected P-wave and the reported start of waveform.
+    public int pickPwave( final double[] acc, double buffer) {
         int len = acc.length;
         stat = new ArrayStats(acc);
         int found = 0;
@@ -131,7 +132,12 @@ public class Ppicker {
             }
         }
         //Return the index into the acceleration array that marks the start of
-        //the P-wave.
-        return found;
+        //the P-wave, adjusted by the buffer
+        found = found - (int)(buffer/deltaT);
+        if (found < 0 ) {
+            return 0;
+        } else {
+            return found;
+        }
     }
 }

@@ -141,11 +141,10 @@ public class V1Component extends COSMOScontentFormat {
         this.intHeader.setIntValue(V_UNITS_INDEX, unitscode);
         this.intHeader.setIntValue(DATA_PHYSICAL_PARAM_CODE, ACC_PARM_CODE);
         this.intHeader.setIntValue(PROCESSING_AGENCY, agency_code);
-        this.realHeader.setRealValue(MEAN_ZERO, inVvals.getMeanToZero());
         this.realHeader.setRealValue(MAX_VAL, inVvals.getMaxVal());
         this.realHeader.setRealValue(AVG_VAL, inVvals.getAvgVal());
         this.realHeader.setRealValue(MAX_VAL_TIME, time);
-        this.realHeader.setRealValue(SCALING_FACTOR, FROM_G_CONVERSION);
+        this.realHeader.setRealValue(SCALING_FACTOR, inVvals.getConversionFactor());
         
         //Update the end-of-data line with the new data type
         this.endOfData = eod.append(this.endOfData,0,END_OF_DATA_CHAN)

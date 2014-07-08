@@ -17,6 +17,11 @@
 
 package SmProcessing;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import org.apache.commons.math3.fitting.PolynomialCurveFitter;
+import org.apache.commons.math3.fitting.WeightedObservedPoint;
+import org.apache.commons.math3.fitting.leastsquares.LeastSquaresProblem;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 
 /**
@@ -43,6 +48,24 @@ public class ArrayOps {
         
         //Remove the trend from the array
         for (int i = 0; i < len; i++) {
+            array [i] = array[i] - regression.predict(time[i]);
+        }
+    }
+    public static void removeLinearTrendFromSubArray( double[] array, 
+                                        double[] subarray, double timestep ) {
+        int lenfull = array.length;
+        int lensub = subarray.length;
+        double[] time = makeTimeArray( timestep, 0, lensub);
+        SimpleRegression regression = new SimpleRegression();
+        for(int i = 0; i < lensub; i++) {
+            regression.addData(time[i], subarray[i]);
+        }
+        System.out.println("trend slope: " + regression.getSlope());
+        System.out.println("trend intercept: " + regression.getIntercept());
+        
+        //Remove the trend from the large array
+        double[] fulltime = makeTimeArray( timestep, 0, lenfull);
+        for (int i = 0; i < lenfull; i++) {
             array [i] = array[i] - regression.predict(time[i]);
         }
     }
@@ -77,5 +100,20 @@ public class ArrayOps {
             calc[i] = calc[i] / (dt + dt);
         }
         return calc;
+    }
+    public static void removePolynomialTrend(double[] array, int degree, double timestep) {
+        int len = array.length;
+        double[] time = makeTimeArray( timestep, 0, len);
+        ArrayList<WeightedObservedPoint> points = new ArrayList<>();
+        for (int i = 0; i < len; i++ ){
+            points.add(new WeightedObservedPoint( 1.0, time[i], array[i]));
+        }
+        
+        PolynomialCurveFitter fitter = PolynomialCurveFitter.create(degree);
+        double[] coefs = fitter.fit(points);
+        
+        for (double each : coefs) {
+            System.out.println("poly coef: " + each);
+        }
     }
 }

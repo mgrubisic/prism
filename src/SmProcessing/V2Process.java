@@ -24,8 +24,11 @@ import SmException.SmException;
 import SmUtilities.ConfigReader;
 import static SmUtilities.SmConfigConstants.BP_FILTER_CUTOFFHIGH;
 import static SmUtilities.SmConfigConstants.BP_FILTER_CUTOFFLOW;
+import static SmUtilities.SmConfigConstants.BP_FILTER_ORDER;
 import static SmUtilities.SmConfigConstants.DATA_UNITS_CODE;
 import static SmUtilities.SmConfigConstants.DATA_UNITS_NAME;
+import static SmUtilities.SmConfigConstants.PPICKER_BUFFER;
+import java.util.Arrays;
 
 /**
  *
@@ -36,6 +39,7 @@ public class V2Process {
     private double[] accel;
     private double AmaxVal;
     private int AmaxIndex;
+    private double AmeanToZero;
     private double AavgVal;
     private final int acc_unit_code;
     private final String acc_units;
@@ -44,7 +48,6 @@ public class V2Process {
     private double VmaxVal;
     private int VmaxIndex;
     private double VavgVal;
-    private double VmeanToZero;
     private final int vel_unit_code;
     private final String vel_units;
     
@@ -56,14 +59,19 @@ public class V2Process {
     private final String dis_units;
     
     private final V1Component inV1;
+    private final int data_unit_code;
     private final double delta_t;
     private final double noRealVal;
     private final double lowcutoff;
     private final double highcutoff;
     
+    private final double buffer;
+    private final int numpoles;  // the filter order is 2*numpoles
+    
     public V2Process(final V1Component v1rec, final ConfigReader config) throws SmException {
         double epsilon = 0.0001;
         this.inV1 = v1rec;
+        this.AmeanToZero = 0.0;
         
         //Get config values to cm/sec2 (acc), cm/sec (vel), cm (dis)
         this.acc_unit_code = CMSQSECN;
@@ -81,24 +89,85 @@ public class V2Process {
             throw new SmException("Real header #62, delta t, is invalid: " + 
                                                                         delta_t);
         }        
-        String lowcut = config.getConfigValue(BP_FILTER_CUTOFFLOW);
-        this.lowcutoff = (lowcut == null) ? DEFAULT_LOWCUT : Double.parseDouble(lowcut);
+        try {
+            String unitcode = config.getConfigValue(DATA_UNITS_CODE);
+            this.data_unit_code = (unitcode == null) ? CMSQSECN : Integer.parseInt(unitcode);
 
-        String highcut = config.getConfigValue(BP_FILTER_CUTOFFHIGH);
-        this.highcutoff = (highcut == null) ? DEFAULT_HIGHCUT : Double.parseDouble(highcut);
+            String lowcut = config.getConfigValue(BP_FILTER_CUTOFFLOW);
+            this.lowcutoff = (lowcut == null) ? DEFAULT_LOWCUT : Double.parseDouble(lowcut);
+
+            String highcut = config.getConfigValue(BP_FILTER_CUTOFFHIGH);
+            this.highcutoff = (highcut == null) ? DEFAULT_HIGHCUT : Double.parseDouble(highcut);
+
+            //The Butterworth filter implementation requires an even number of poles (and order)
+            String filorder = config.getConfigValue(BP_FILTER_ORDER);
+            this.numpoles = (filorder == null) ? NUM_POLES : Integer.parseInt(filorder)/2;
+            
+            String pbuf = config.getConfigValue(PPICKER_BUFFER);
+            this.buffer = (pbuf == null) ? DEFAULT_PPICKBUFFER : Double.parseDouble(pbuf);
+        } catch (NumberFormatException err) {
+            throw new SmException("Error extracting numeric values from configuration file");
+        }
     }
     
     public void processV2Data() throws SmException {   
         ArrayStats stat;
+
+        //save a copy of the original array for pre-mean removal
+        double[] accraw = inV1.getDataArray();
+        double[] acc = new double[accraw.length];
+        System.arraycopy( accraw, 0, acc, 0, accraw.length);
         
-        //Filter the acceleration
+        //Pick P-wave and remove baseline
+        
+        //remove the mean
         double dtime = delta_t * MSEC_TO_SEC;
-        double[] acc = inV1.getDataArray();
+        ArrayOps.removeLinearTrend( acc, dtime);
+        
+        //filter the data
+        System.out.println("+++ deltat: " + delta_t);
+        System.out.println("+++ time step: " + dtime);
         
         //set up the filter coefficients and run
         ButterworthFilter filter = new ButterworthFilter();
+        boolean calcWorked = filter.calculateCoefficients(lowcutoff, highcutoff, 
+                                                                dtime, numpoles, true);
+        if (calcWorked) {
+            acc = filter.applyFilter(acc);
+        } else {
+            throw new SmException("Invalid filter values");
+        }
+        
+//        double[] b1 = filter.getB1();
+//        double[] b2 = filter.getB2();
+//        double[] fact = filter.getFact();
+//        for (int jj = 0; jj < b1.length; jj++) {
+//            System.out.format("+++ fact: %f  b1: %f  b2: %f%n", fact[jj],b1[jj],b2[jj]);
+//        }
+        //Find the start of the wave
+        Ppicker pick = new Ppicker( dtime );
+        int startIndex = pick.pickPwave(acc, buffer);
+        System.out.println("+++ pick index: " + startIndex);
+        
+        //Remove pre-event mean from acceleration record
+        double[] subset = new double[startIndex];
+        subset = Arrays.copyOfRange( accraw, 0, startIndex );
+        stat = new ArrayStats( subset );
+        double premean = stat.getMean();
+        
+        //Not sure of the next steps here???  Directions are to work with accraw
+        //to remove either the pre-event mean from the record or the linear trend
+        ArrayOps.removeMean(accraw, premean);
+//        ArrayOps.removeLinearTrend( accraw, dtime);
+        
+        //Baseline correction (if needed), how decided if needed???
+        ArrayOps.removePolynomialTrend(accraw, 2, dtime);
+        
+        //determine new filter coefs based on earthquake moment mag. and epicentral
+        //distance.???
+        filter = new ButterworthFilter();
         filter.calculateCoefficients(lowcutoff, highcutoff, dtime, NUM_POLES, true);
-        accel = filter.applyFilter(acc);
+        accel = filter.applyFilter(accraw);
         
         //Integrate the acceleration to get velocity.
         velocity = ArrayOps.Integrate( accel, delta_t);
@@ -125,6 +194,9 @@ public class V2Process {
         DavgVal = stat.getMean();
     }
     
+    public double getMeanToZero() {
+        return this.AmeanToZero;
+    }
     public double getMaxVal(V2DataType dType) {
         if (dType == V2DataType.ACC) {
             return this.AmaxVal;
