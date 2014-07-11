@@ -21,7 +21,7 @@ package SmProcessing;
  *
  * @author jmjones
  */
-public class Ppicker {
+public class EventOnsetDetection {
     private static final double XI = 0.5;  //damping ratio
     private static final double TN = 0.01; //vibration period
     private final double omegan;
@@ -31,17 +31,14 @@ public class Ppicker {
     private double coef_c; private double coef_d; 
     private double coef_e; private double coef_f;
     
-    //set up for integration and differentiation, and for histogram
-    ArrayStats stat;
-    
     //constructor
-    public Ppicker(double deltaT) {
+    public EventOnsetDetection(double deltaT) {
         this.deltaT = deltaT;
         omegan= 2.0 * Math.PI / TN;
         const_C = 2.0 * XI * omegan;
 
         //Get the matrix coefficients for the specific sampling interval
-        PpickerCoefs pickCoef = new PpickerCoefs();
+        EventOnsetCoefs pickCoef = new EventOnsetCoefs();
         double[] Ae;
         double[] AeB;
         Ae = pickCoef.getAeCoefs(deltaT);
@@ -58,9 +55,8 @@ public class Ppicker {
     }
     //buffer has units of seconds and is used to increase the length of time
     //between the detected P-wave and the reported start of waveform.
-    public int pickPwave( final double[] acc, double buffer) {
+    public int findEventOnset( final double[] acc, double buffer) {
         int len = acc.length;
-        stat = new ArrayStats(acc);
         int found = 0;
         
         //Calculate the transient response of an oscillator with vibration period
@@ -107,8 +103,8 @@ public class Ppicker {
         // find the most common value in the lower half of the range of PIM.
         // The value returned is the most frequently-occurring
         // value in the lower half of the array min-max range.
-        stat = new ArrayStats(PIM);
-        double lowerMode = stat.getModalMinimum(PIM);
+        ArrayStats statPIM = new ArrayStats(PIM);
+        double lowerMode = statPIM.getModalMinimum();
         System.out.println("+++ modalMin in ppicker: " + lowerMode);
         //Now find the index of the first occurrence in the array of a value
         //that is greater than the most frequently-occurring value.

@@ -69,9 +69,10 @@ public class VRealArrayTest {
     }
     @Test
     public void testConstructor()  {
-        org.junit.Assert.assertEquals(13, hi.getFieldWidth());
+        org.junit.Assert.assertEquals(15, hi.getFieldWidth());
         org.junit.Assert.assertEquals(6, hi.getPrecision());
-        org.junit.Assert.assertEquals("F", hi.getDisplayType());
+        org.junit.Assert.assertEquals("E", hi.getDisplayType());
+        hi.setDisplayType("F");
     }
     
     @Test
@@ -130,6 +131,9 @@ public class VRealArrayTest {
     }
     @Test
     public void testArrayToText() throws FormatException {
+        hi.setFieldWidth(13);
+        hi.setPrecision(6);
+        hi.setDisplayType("F");
         hi.parseNumberFormatLine(header[0]);
         hi.parseValues(0, header);
         ArrayList<String> textList = hi.arrayToText();
@@ -150,6 +154,9 @@ public class VRealArrayTest {
     }
     @Test
     public void testNumberSectionToTextH() throws FormatException {
+        hi.setFieldWidth(13);
+        hi.setPrecision(6);
+        hi.setDisplayType("F");
         hi.parseNumberFormatLine(header[0]);
         hi.parseValues(0, header);
         String[] textList = hi.numberSectionToText();
@@ -157,6 +164,9 @@ public class VRealArrayTest {
     }
     @Test
     public void testNumberSectionToTextD() throws FormatException {
+        di.setFieldWidth(13);
+        di.setPrecision(6);
+        di.setDisplayType("F");
         di.parseNumberFormatLine(data[0]);
         di.parseValues(0, data);
         String[] textList = di.numberSectionToText();

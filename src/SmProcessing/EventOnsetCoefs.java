@@ -24,7 +24,7 @@ import java.util.Map;
  *
  * @author jmjones
  */
-public class PpickerCoefs {
+public class EventOnsetCoefs {
 
     private static final int DELTAT_TO_INT = 10000;
     
@@ -55,7 +55,7 @@ public class PpickerCoefs {
                                       2.8894260e-06, 
                                       1.5608976e-04};
     
-    public PpickerCoefs() {
+    public EventOnsetCoefs() {
         AeB = new HashMap<>();
         AeB.put(100, aeb_01);
         AeB.put(200, aeb_02);

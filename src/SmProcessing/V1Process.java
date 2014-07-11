@@ -11,8 +11,6 @@ import static COSMOSformat.VFileConstants.*;
 import SmException.SmException;
 import SmUtilities.ConfigReader;
 import static SmUtilities.SmConfigConstants.*;
-import java.util.Arrays;
-
 
 /**
  *

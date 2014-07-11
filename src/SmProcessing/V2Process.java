@@ -67,7 +67,7 @@ public class V2Process {
     
     private final double buffer;
     private final int numpoles;  // the filter order is 2*numpoles
-    
+        
     public V2Process(final V1Component v1rec, final ConfigReader config) throws SmException {
         double epsilon = 0.0001;
         this.inV1 = v1rec;
@@ -111,7 +111,7 @@ public class V2Process {
     }
     
     public void processV2Data() throws SmException {   
-        ArrayStats stat;
+        //!!!! Check for units of g and adjust before proceeding.
 
         //save a copy of the original array for pre-mean removal
         double[] accraw = inV1.getDataArray();
@@ -133,27 +133,27 @@ public class V2Process {
         boolean calcWorked = filter.calculateCoefficients(lowcutoff, highcutoff, 
                                                                 dtime, numpoles, true);
         if (calcWorked) {
-            acc = filter.applyFilter(acc);
+            filter.applyFilter(acc);  //filtered values are returned in acc
         } else {
             throw new SmException("Invalid filter values");
         }
         
-//        double[] b1 = filter.getB1();
-//        double[] b2 = filter.getB2();
-//        double[] fact = filter.getFact();
-//        for (int jj = 0; jj < b1.length; jj++) {
-//            System.out.format("+++ fact: %f  b1: %f  b2: %f%n", fact[jj],b1[jj],b2[jj]);
-//        }
+        System.out.println("f1: " + lowcutoff + " f2: " + highcutoff + " numpoles: " + numpoles);
+        double[] b1 = filter.getB1();
+        double[] b2 = filter.getB2();
+        double[] fact = filter.getFact();
+        for (int jj = 0; jj < b1.length; jj++) {
+            System.out.format("+++ fact: %f  b1: %f  b2: %f%n", fact[jj],b1[jj],b2[jj]);
+        }
         //Find the start of the wave
-        Ppicker pick = new Ppicker( dtime );
-        int startIndex = pick.pickPwave(acc, buffer);
+        EventOnsetDetection pick = new EventOnsetDetection( dtime );
+        int startIndex = pick.findEventOnset(acc, buffer);
         System.out.println("+++ pick index: " + startIndex);
         
         //Remove pre-event mean from acceleration record
-        double[] subset = new double[startIndex];
-        subset = Arrays.copyOfRange( accraw, 0, startIndex );
-        stat = new ArrayStats( subset );
-        double premean = stat.getMean();
+        double[] subset = Arrays.copyOfRange( accraw, 0, startIndex );
+        ArrayStats statSub = new ArrayStats( subset );
+        double premean = statSub.getMean();
         
         //Not sure of the next steps here???  Directions are to work with accraw
         //to remove either the pre-event mean from the record or the linear trend
@@ -167,31 +167,34 @@ public class V2Process {
         //distance.???
         filter = new ButterworthFilter();
         filter.calculateCoefficients(lowcutoff, highcutoff, dtime, NUM_POLES, true);
-        accel = filter.applyFilter(accraw);
+        filter.applyFilter(accraw);
+        accel = accraw;
         
         //Integrate the acceleration to get velocity.
         velocity = ArrayOps.Integrate( accel, delta_t);
         
         //Remove any linear trend from velocity
         ArrayOps.removeLinearTrend( velocity, dtime);
-        stat = new ArrayStats( velocity );
-        VmaxVal = stat.getPeakVal();
-        VmaxIndex = stat.getPeakValIndex();
-        VavgVal = stat.getMean();
+        ArrayStats statAcc = new ArrayStats( velocity );
+        VmaxVal = statAcc.getPeakVal();
+        VmaxIndex = statAcc.getPeakValIndex();
+        VavgVal = statAcc.getMean();
         
         //Differentiate velocity for final acceleration
         accel = ArrayOps.Differentiate(velocity, delta_t);
-        stat = new ArrayStats( accel );
-        AmaxVal = stat.getPeakVal();
-        AmaxIndex = stat.getPeakValIndex();
-        AavgVal = stat.getMean();
+        ArrayStats statVel = new ArrayStats( accel );
+        AmaxVal = statVel.getPeakVal();
+        AmaxIndex = statVel.getPeakValIndex();
+        AavgVal = statVel.getMean();
         
         //Integrate the velocity to get displacement.
         displace = ArrayOps.Integrate( velocity, delta_t);
-        stat = new ArrayStats( displace );
-        DmaxVal = stat.getPeakVal();
-        DmaxIndex = stat.getPeakValIndex();
-        DavgVal = stat.getMean();
+        ArrayStats statDis = new ArrayStats( displace );
+        DmaxVal = statDis.getPeakVal();
+        DmaxIndex = statDis.getPeakValIndex();
+        DavgVal = statDis.getMean();
+        
+        
     }
     
     public double getMeanToZero() {

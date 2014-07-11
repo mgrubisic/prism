@@ -147,8 +147,8 @@ public class ButterworthFilter {
             System.arraycopy(arrayS,0,filteredS,npad,arrayS.length);
             
             //initialize the padded array values to first/last array value
-            Arrays.fill( filteredS, 0, npad, arrayS[0]);
-            Arrays.fill( filteredS, arrayS.length+npad, arrayS.length+(2*npad), arrayS[arrayS.length-1]);
+            Arrays.fill( filteredS, 0, npad, 0.0);
+            Arrays.fill( filteredS, arrayS.length+npad, arrayS.length+(2*npad), 0.0);
             
         } else {  //causal filter, filtered array is same length as input array
             np2 = arrayS.length;
@@ -194,7 +194,7 @@ public class ButterworthFilter {
             System.arraycopy(filteredS,0,arrayS,0,np2);
         }
         
-        return arrayS;
+        return filteredS;
     }
     
     public double[] getFact() {
