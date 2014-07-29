@@ -41,8 +41,9 @@ public class SmConfigConstants {
     public static final String STATION_FILTER_TABLE = "PRISM/StationFilterTable";
     
     public static final String BP_FILTER_ORDER = "PRISM/BandPassFilterParameters/BandPassFilterOrder";
+    public static final String BP_TAPER_LENGTH = "PRISM/BandPassFilterParameters/BandPassTaperLength";
     public static final String BP_FILTER_CUTOFFHIGH = "PRISM/BandPassFilterParameters/BandPassFilterCutoff/CutoffHigh";
     public static final String BP_FILTER_CUTOFFLOW = "PRISM/BandPassFilterParameters/BandPassFilterCutoff/CutoffLow";
     
-    public static final String PPICKER_BUFFER = "PRISM/PpickerBufferAmount";
+    public static final String EVENT_ONSET_BUFFER = "PRISM/EventOnsetBufferAmount";
 }

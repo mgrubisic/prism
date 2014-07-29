@@ -98,6 +98,10 @@ public class V1Component extends COSMOScontentFormat {
         
         //verify that real header value delta t is defined and valid
         //this check has also happened in the V1process !!!
+        this.realHeader.setFieldWidth(DEFAULT_REAL_FIELDWIDTH);
+        this.realHeader.buildArrayParams();
+        this.setRealHeaderFormatLine();
+        
         double delta_t = this.realHeader.getRealValue(DELTA_T);
         if (((delta_t - this.noRealVal) < epsilon) || (delta_t < 0.0)){
             throw new SmException("Real header #62, delta t, is invalid: " + 

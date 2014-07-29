@@ -9,7 +9,6 @@ package SMCOSMOScontrol;
 
 import COSMOSformat.V0Component;
 import COSMOSformat.COSMOScontentFormat;
-import SmUtilities.TextFileWriter;
 import COSMOSformat.V1Component;
 import COSMOSformat.V2Component;
 import static COSMOSformat.VFileConstants.*;
@@ -70,8 +69,17 @@ public class SmQueue {
                 returnLine = rec.loadComponent(currentLine, fileContents);
                 currentLine = (returnLine > currentLine) ? returnLine : fileContents.length;
                 smlist.add(rec);                
-            } else if (dataType.equals( CORACC ) || dataType.equals( VELOCITY ) || 
-                                                    dataType.equals( DISPLACE )) {
+            } else if ((dataType.equals( CORACC )) || (dataType.equals( VELOCITY )) ||
+                                                 (dataType.equals( DISPLACE ))) {
+                //Peek at current line to see what piece of V2 is next.
+                if (fileContents[currentLine].matches("(?s).*(?i)Velocity.*")) {
+                    dataType = VELOCITY;
+                } else if (fileContents[currentLine].matches("(?s).*(?i)Displace.*"))  {
+                    dataType = DISPLACE;
+                } else {
+                    dataType = CORACC;
+                }
+                System.out.println("+++ parsing V2 section: datatype is " + dataType);
                 V2Component rec = new V2Component( dataType );
                 returnLine = rec.loadComponent(currentLine, fileContents);
                 currentLine = (returnLine > currentLine) ? returnLine : fileContents.length;
@@ -121,5 +129,8 @@ public class SmQueue {
             //Create the V3 processing object and do the processing.  V3 processing
             //produces 1  V3 object: response spectra.
         }
+    }
+    public ArrayList<COSMOScontentFormat> getSmList() {
+        return smlist;
     }
 }

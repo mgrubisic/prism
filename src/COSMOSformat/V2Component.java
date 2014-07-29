@@ -68,6 +68,21 @@ public class V2Component extends COSMOScontentFormat {
     public V1Component getParent() {
         return this.parentV1;
     }
+    /**
+     * Getter for the length of the data array
+     * @return the number of values in the data array
+     */
+    public int getDataLength() {
+        return V2Data.getNumVals();
+    }
+    /**
+     * Getter for a copy of the data array reference.  Used to access the entire
+     * array during data processing.
+     * @return a copy of the array reference
+     */
+    public double[] getDataArray() {
+        return V2Data.getRealArray();
+    }
     public void buildV2( V2DataType procType, V2Process inVvals, ConfigReader config) throws SmException, FormatException {
         Double epsilon = 0.001;
         StringBuilder sb = new StringBuilder(MAX_LINE_LENGTH);
@@ -128,13 +143,15 @@ public class V2Component extends COSMOScontentFormat {
         //transfer the data array and set all array values
         if (procType == V2DataType.ACC) {
             V2Data.setRealArray(inVvals.getV2Array(V2DataType.ACC));
-            V2Data.setFieldWidth(REAL_FIELDWIDTH_V2);
+            V2Data.setFieldWidth(80);
+//            V2Data.setFieldWidth(REAL_FIELDWIDTH_V2);
             V2Data.setPrecision(REAL_PRECISION_V2);
             V2Data.setNumVals(inVvals.getV2ArrayLength(V2DataType.ACC));
             V2Data.buildArrayParams();
             this.buildNewDataFormatLine(unitsname, unitscode, "acceleration");
         } else if (procType == V2DataType.VEL) {
             V2Data.setRealArray(inVvals.getV2Array(V2DataType.VEL));
+//            V2Data.setFieldWidth(80);
             V2Data.setFieldWidth(REAL_FIELDWIDTH_V2);
             V2Data.setPrecision(REAL_PRECISION_V2);
             V2Data.setNumVals(inVvals.getV2ArrayLength(V2DataType.VEL));
@@ -142,6 +159,7 @@ public class V2Component extends COSMOScontentFormat {
             this.buildNewDataFormatLine(unitsname, unitscode, "velocity    ");
         }else {
             V2Data.setRealArray(inVvals.getV2Array(V2DataType.DIS));
+//            V2Data.setFieldWidth(80);
             V2Data.setFieldWidth(REAL_FIELDWIDTH_V2);
             V2Data.setPrecision(REAL_PRECISION_V2);
             V2Data.setNumVals(inVvals.getV2ArrayLength(V2DataType.DIS));

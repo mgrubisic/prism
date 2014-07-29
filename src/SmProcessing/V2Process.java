@@ -25,9 +25,9 @@ import SmUtilities.ConfigReader;
 import static SmUtilities.SmConfigConstants.BP_FILTER_CUTOFFHIGH;
 import static SmUtilities.SmConfigConstants.BP_FILTER_CUTOFFLOW;
 import static SmUtilities.SmConfigConstants.BP_FILTER_ORDER;
+import static SmUtilities.SmConfigConstants.BP_TAPER_LENGTH;
 import static SmUtilities.SmConfigConstants.DATA_UNITS_CODE;
-import static SmUtilities.SmConfigConstants.DATA_UNITS_NAME;
-import static SmUtilities.SmConfigConstants.PPICKER_BUFFER;
+import static SmUtilities.SmConfigConstants.EVENT_ONSET_BUFFER;
 import java.util.Arrays;
 
 /**
@@ -67,6 +67,7 @@ public class V2Process {
     
     private final double buffer;
     private final int numpoles;  // the filter order is 2*numpoles
+    private final double taperlength;
         
     public V2Process(final V1Component v1rec, final ConfigReader config) throws SmException {
         double epsilon = 0.0001;
@@ -102,9 +103,13 @@ public class V2Process {
             //The Butterworth filter implementation requires an even number of poles (and order)
             String filorder = config.getConfigValue(BP_FILTER_ORDER);
             this.numpoles = (filorder == null) ? NUM_POLES : Integer.parseInt(filorder)/2;
+
+            //The Butterworth filter taper length for the half cosine taper
+            String taplen = config.getConfigValue(BP_TAPER_LENGTH);
+            this.taperlength = (taplen == null) ? DEFAULT_TAPER_LENGTH : Double.parseDouble(taplen);
             
-            String pbuf = config.getConfigValue(PPICKER_BUFFER);
-            this.buffer = (pbuf == null) ? DEFAULT_PPICKBUFFER : Double.parseDouble(pbuf);
+            String pbuf = config.getConfigValue(EVENT_ONSET_BUFFER);
+            this.buffer = (pbuf == null) ? DEFAULT_EVENT_ONSET_BUFFER : Double.parseDouble(pbuf);
         } catch (NumberFormatException err) {
             throw new SmException("Error extracting numeric values from configuration file");
         }
@@ -114,7 +119,9 @@ public class V2Process {
         //!!!! Check for units of g and adjust before proceeding.
 
         //save a copy of the original array for pre-mean removal
-        double[] accraw = inV1.getDataArray();
+        double[] V1Array = inV1.getDataArray();
+        double[] accraw = new double[V1Array.length];
+        System.arraycopy( V1Array, 0, accraw, 0, V1Array.length);
         double[] acc = new double[accraw.length];
         System.arraycopy( accraw, 0, acc, 0, accraw.length);
         
@@ -130,12 +137,11 @@ public class V2Process {
         
         //set up the filter coefficients and run
         ButterworthFilter filter = new ButterworthFilter();
-        boolean calcWorked = filter.calculateCoefficients(lowcutoff, highcutoff, 
-                                                                dtime, numpoles, true);
-        if (calcWorked) {
-            filter.applyFilter(acc);  //filtered values are returned in acc
+        boolean valid = filter.calculateCoefficients(lowcutoff, highcutoff, dtime, numpoles, true);
+        if (valid) {
+            filter.applyFilter(acc, taperlength);  //filtered values are returned in acc
         } else {
-            throw new SmException("Invalid filter values");
+            throw new SmException("Invalid bandpass filter input parameters");
         }
         
         System.out.println("f1: " + lowcutoff + " f2: " + highcutoff + " numpoles: " + numpoles);
@@ -160,14 +166,14 @@ public class V2Process {
         ArrayOps.removeMean(accraw, premean);
 //        ArrayOps.removeLinearTrend( accraw, dtime);
         
-        //Baseline correction (if needed), how decided if needed???
-        ArrayOps.removePolynomialTrend(accraw, 2, dtime);
-        
-        //determine new filter coefs based on earthquake moment mag. and epicentral
-        //distance.???
-        filter = new ButterworthFilter();
-        filter.calculateCoefficients(lowcutoff, highcutoff, dtime, NUM_POLES, true);
-        filter.applyFilter(accraw);
+//        //Baseline correction (if needed), how decided if needed???
+//        ArrayOps.removePolynomialTrend(accraw, 2, dtime);
+//        
+//        //determine new filter coefs based on earthquake moment mag. and epicentral
+//        //distance.???
+//        filter = new ButterworthFilter();
+//        valid = filter.calculateCoefficients(lowcutoff, highcutoff, dtime, NUM_POLES, true);
+//        filter.applyFilter(accraw,taperlength);
         accel = accraw;
         
         //Integrate the acceleration to get velocity.
@@ -181,7 +187,7 @@ public class V2Process {
         VavgVal = statAcc.getMean();
         
         //Differentiate velocity for final acceleration
-        accel = ArrayOps.Differentiate(velocity, delta_t);
+//        accel = ArrayOps.Differentiate(velocity, delta_t);
         ArrayStats statVel = new ArrayStats( accel );
         AmaxVal = statVel.getPeakVal();
         AmaxIndex = statVel.getPeakValIndex();

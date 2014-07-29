@@ -154,7 +154,7 @@ public class VRealArray extends COSMOSarrayFormat {
     @Override
     public ArrayList<String> arrayToText() {
         String outType = ("e".compareToIgnoreCase(this.displayType) == 0) ? "e" : "f";
-        //!!update this line for floating pt. format
+        //!!!update this line for floating pt. format
         String formatting = "%" + String.valueOf(this.getFieldWidth()) + "." +
                                 String.valueOf(this.getPrecision())+ outType;
         ArrayList <String> textVals = new ArrayList<>();

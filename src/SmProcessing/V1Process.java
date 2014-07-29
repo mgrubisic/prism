@@ -76,6 +76,7 @@ public class V1Process {
             conv = countToGConversion();
         }
         conversion_factor = conv;
+        System.out.println("+++ V1 conversion: " + conv);
         
         //convert counts to physical values
         accel = countsToValues(inV0.getDataArray(), conv);

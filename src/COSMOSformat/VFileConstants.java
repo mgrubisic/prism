@@ -94,5 +94,6 @@ public final class VFileConstants {
     public static final int NUM_POLES = 2;
     public static final double DEFAULT_HIGHCUT = 0.5;
     public static final double DEFAULT_LOWCUT = 30.0;
-    public static final double DEFAULT_PPICKBUFFER = 0.0;
+    public static final double DEFAULT_EVENT_ONSET_BUFFER = 0.0;
+    public static final double DEFAULT_TAPER_LENGTH = 1.0;
 }

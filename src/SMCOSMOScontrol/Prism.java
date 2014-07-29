@@ -6,6 +6,7 @@
 
 package SMCOSMOScontrol;
 
+import static COSMOSformat.VFileConstants.CORACC;
 import static COSMOSformat.VFileConstants.RAWACC;
 import static COSMOSformat.VFileConstants.UNCORACC;
 import java.io.*;
@@ -104,6 +105,12 @@ public class Prism {
                 try {
 //                    long startTime = System.nanoTime();
                     smc.smqueue.readInFile( each );
+                    
+                    //This if stmt is used to test v2 reads only
+//                    if (each.toString().endsWith("2")) {
+//                        recordCount = smc.smqueue.parseVFile( CORACC );
+//                        continue;
+//                    }
 //                    long readTime = System.nanoTime() - startTime;
                     // parse the raw acceleration file into channel record(s)
 //                    startTime = System.nanoTime();
@@ -166,7 +173,7 @@ public class Prism {
             }
             File[] finalList = new File[inList.size()];
             if (inList.isEmpty()) {
-                throw new IOException("No " + exten + " files found in directory " + this.inFolder);
+                throw new IOException("No files found in directory " + this.inFolder);
             }
             return inList.toArray(finalList);
         }

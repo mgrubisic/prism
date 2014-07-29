@@ -97,7 +97,12 @@ public class ButterworthFilter {
                                                 || (numberPoles > MAXPOLES)){
             return false;
         }
+        double nyquist = (1 / delt) / 2.0;
+        if ((Math.abs(f1 - nyquist) < epsilon) || (Math.abs(f2 - nyquist) < epsilon)) {
+            return false;
+        }
         
+        //for w1 and w2 calc., the 2 in the num. and denom. can be deleted !!!
         double w1 = 2.0 * Math.tan(((2.0*pi*f1)*delt)/2.0) / delt;
         double w2 = 2.0 * Math.tan(((2.0*pi*f2)*delt)/2.0) / delt;
         
@@ -128,15 +133,26 @@ public class ButterworthFilter {
         return true;
     }
     
-    public double[] applyFilter( double[] arrayS ) {
+    public double[] applyFilter( double[] arrayS, double taplength ) {
         
         int npad = 0; int np1; int np2;
         double[] filteredS;
         double x1; double x2; double y1; double y2; double xp; double yp;
         
+        int numsamples = (int)(taplength / delt); 
+        //make taperlength an even number
+        int taperlength = ((numsamples % 2) == 0) ? numsamples : numsamples + 1;
+        
         //Copy the input array into a return array.  If the filter was configured
-        //as acausal, then pad the length of the array by the value calculated below
+        //as acausal, then pad the length of the array by the value calculated below.
+        //Before padding, apply a cosine taper to the front and back of the 
+        //array.
         if (icaus) {
+            if (taperlength > 0) {
+                applyCosineTaper( arrayS, taperlength);
+                System.out.println("+++ before filter, arrayS[0] = " + arrayS[0]);
+                System.out.println("+++ before filter, arrayS[end] = " + arrayS[arrayS.length-1]);
+            }
             npad = (int)Math.floor(3.0 * (nroll / (f1*delt)));
             int check = (int)Math.floor(6.0 * (nroll / ((f2-f1)*delt)));
             if (npad < check) {
@@ -146,7 +162,7 @@ public class ButterworthFilter {
             filteredS = new double[np2];
             System.arraycopy(arrayS,0,filteredS,npad,arrayS.length);
             
-            //initialize the padded array values to first/last array value
+            //initialize the padded array values to 0
             Arrays.fill( filteredS, 0, npad, 0.0);
             Arrays.fill( filteredS, arrayS.length+npad, arrayS.length+(2*npad), 0.0);
             
@@ -193,8 +209,36 @@ public class ButterworthFilter {
         } else {
             System.arraycopy(filteredS,0,arrayS,0,np2);
         }
-        
+        System.out.println("+++ after filter, arrayS[0] = " + arrayS[0]);
+        System.out.println("+++ after filter, arrayS[end] = " + arrayS[arrayS.length-1]);
         return filteredS;
+    }
+    
+    public void applyCosineTaper( double[] array, int range ) {
+        //The interval is the number of elements at the front and back of the
+        //array that the taper should be applied to.  This could also be a
+        //proportion of the array
+        
+        int len = array.length;
+        //range is N, the number of samples over which to apply the taper,
+        //and m is the length of the half cosine taper itself.
+        int m = range / 2;
+        
+        double[] taper = new double[m];
+        for (int i = 0; i < m; i++) {
+            taper[i] = 0.5 * (1.0 - Math.cos(2 * pi * i / (range-1)));
+        }
+        
+        //apply at the front
+        for (int i = 0; i < m; i++) {
+            array[i] = array[i] * taper[i];
+        }
+        //apply at the end
+        int k = m-1;
+        for (int i = len-m; i < len; i++) {
+            array[i] = array[i] * taper[k];
+            k--;
+        }
     }
     
     public double[] getFact() {

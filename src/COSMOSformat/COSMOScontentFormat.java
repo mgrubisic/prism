@@ -324,6 +324,19 @@ public class COSMOScontentFormat {
         
     }
     /**
+     * Setter for the real header format line, calls getters to get the number
+     * of values, the number of lines, and the number format and updates the
+     * format line.
+     */
+    public void setRealHeaderFormatLine() {
+        String numvals = String.valueOf(realHeader.getNumVals());
+        String numlines = String.valueOf(realHeader.getNumLines());
+        String numberformat = realHeader.getNumberFormat();
+        String line = String.format("%1$4s Real-header values follow on %2$3s lines, Format= ", 
+                                                                numvals, numlines);
+        realHeader.setFormatLine(line + numberformat);
+    }
+    /**
      * Getter for individual values from the integer header.  
      * @param index location in integer header to pick up value
      * @return the value from the header

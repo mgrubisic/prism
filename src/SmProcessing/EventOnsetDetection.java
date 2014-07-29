@@ -26,10 +26,13 @@ public class EventOnsetDetection {
     private static final double TN = 0.01; //vibration period
     private final double omegan;
     private final double const_C;
-    private double deltaT;
-    private double coef_a; private double coef_b; 
-    private double coef_c; private double coef_d; 
-    private double coef_e; private double coef_f;
+    private final double deltaT;
+    private final double coef_a; 
+    private final double coef_b; 
+    private final double coef_c; 
+    private final double coef_d; 
+    private final double coef_e; 
+    private final double coef_f;
     
     //constructor
     public EventOnsetDetection(double deltaT) {
@@ -118,9 +121,8 @@ public class EventOnsetDetection {
         System.out.println("+++ acc index of peak: " + peak);
         //In the array subset acc[0:peak], start at the end and work back to front
         //to find the index of the first zero-crossing.  This is the start of
-        //the P-Wave.  The zero-crossing is identified by 2 consecutive values
+        //the P-wave.  The zero-crossing is identified by 2 consecutive values
         //in the array with differing signs.
-        double temp = 0.0;
         for (int k = peak; k > 0; k--) {
             if ((acc[k] * acc[k-1]) < 0.0) {
                 found = k-1;
@@ -128,7 +130,7 @@ public class EventOnsetDetection {
             }
         }
         //Return the index into the acceleration array that marks the start of
-        //the P-wave, adjusted by the buffer
+        //the P-wave, adjusted by the buffer amount
         found = found - (int)(buffer/deltaT);
         if (found < 0 ) {
             return 0;
