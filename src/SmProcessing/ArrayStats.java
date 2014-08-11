@@ -160,13 +160,13 @@ public class ArrayStats {
             for (int i = 0; i < numIntervals; i++ ) {
                 //Catch the highest value since the upper test for a value in
                 //a bin is exclusive while the lower test is inclusive.
-                if ((maxhigh - val) < HIST_EPSILON) {
+                if (Math.abs(maxhigh - val) < HIST_EPSILON) {
                     hist[numIntervals-1] += 1;
                     break;
                 }
                 lowvalue = maxlow + i * histstep;
                 highvalue = maxlow + (i + 1) * histstep;
-                if ((val > lowvalue) || ((val - lowvalue) < HIST_EPSILON)) {
+                if ((val > lowvalue) || (Math.abs(val - lowvalue) < HIST_EPSILON)) {
                     if (val < highvalue) {
                         hist[i] += 1;
                         break;
@@ -174,8 +174,10 @@ public class ArrayStats {
                 }
             }
         }
+//        System.out.println("+++ hist maxhigh: " + maxhigh + " maxlow: " + maxlow);
 //        for (int i = 0; i < hist.length; i++) {
 //            if (hist[i] > 0) {
+//                System.out.println("+++ hist low: " + (maxlow + i*histstep) + " hist high: " + (maxlow + (i+1)*histstep));
 //                System.out.println("+++ hist: " + hist[i] + " for index: " + i);
 //            }
 //        }
@@ -194,7 +196,7 @@ public class ArrayStats {
      */
     public double getModalMinimum() {
         double modalMin = Double.MIN_VALUE;
-        int NUM_BINS = 100;
+        int NUM_BINS = 200;
         int[] hist;
         int mode = 0;
         int modeindex = -1;
@@ -202,7 +204,22 @@ public class ArrayStats {
         //Find the bin in the first half of the histogram with the highest
         //count.  This is the modal value for the minimum.
         hist = makeHistogram( NUM_BINS );
-        for (int i = 0; i < NUM_BINS/2; i++) {
+        
+        int startbin = 0;
+        int stopbin = NUM_BINS;
+        for (int i = 0; i < NUM_BINS; i++) {
+            if (hist[i] > 0) {
+                startbin = i;
+                break;
+            }
+        }
+        for (int i = hist.length-1;  i <= 0; i-- ) {
+            if (hist[i] > 0) {
+                stopbin = i;
+                break;
+            }
+        }
+        for (int i = startbin; i < (stopbin-startbin)/2; i++) {
             if (hist[i] >= mode) {
                 mode = hist[i];
                 modeindex = i;
@@ -210,8 +227,10 @@ public class ArrayStats {
         }
 //        System.out.println("+++ found mode at index: " + modeindex);
 //
-        modalMin = maxlow + histstep * modeindex;
+        //returns the center point value of the range
+        modalMin = maxlow + histstep * 0.5;
         
         return modalMin;
     }
 }
+

@@ -103,7 +103,7 @@ public class V1Component extends COSMOScontentFormat {
         this.setRealHeaderFormatLine();
         
         double delta_t = this.realHeader.getRealValue(DELTA_T);
-        if (((delta_t - this.noRealVal) < epsilon) || (delta_t < 0.0)){
+        if ((Math.abs(delta_t - this.noRealVal) < epsilon) || (delta_t < 0.0)){
             throw new SmException("Real header #62, delta t, is invalid: " + 
                                                                         delta_t);
         }        

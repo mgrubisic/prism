@@ -14,6 +14,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
 /**
@@ -23,11 +24,19 @@ import java.nio.file.StandardOpenOption;
 public class TextFileWriter {
     private final Path outName;
     private final String[] contents;
+    private final double[] array;
     private final Charset ENCODING = StandardCharsets.UTF_8;
     
     public TextFileWriter( Path outfilename, String[] contents) {
         this.contents = contents;
         this.outName = outfilename;
+        this.array = new double[0];
+    }
+    
+    public TextFileWriter( String dir, String outname, double[] array) { //debug
+        this.array = array;
+        this.contents = new String[ array.length ];
+        this.outName = Paths.get(dir, outname);
     }
     
     public void writeOutToFile() throws IOException {
@@ -38,7 +47,6 @@ public class TextFileWriter {
             }
         }
     }
-    
     public void appendToFile() throws IOException {
         if (Files.notExists(outName)) {
             Files.createFile(outName);
@@ -50,6 +58,13 @@ public class TextFileWriter {
                 writer.newLine();
             }
         }
+    }
+    public void writeOutArray( ) throws IOException {  //mainly for debug
+        int len = array.length;
+        for (int i = 0; i < len; i++) {
+            contents[i] = Double.toString(array[i]);
+        }
+        writeOutToFile();
     }
 }
 

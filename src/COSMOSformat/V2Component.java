@@ -98,7 +98,7 @@ public class V2Component extends COSMOScontentFormat {
         
         //verify that real header value delta t is defined and valid
         double delta_t = this.realHeader.getRealValue(DELTA_T);
-        if (((delta_t - this.noRealVal) < epsilon) || (delta_t < 0.0)){
+        if ((Math.abs(delta_t - this.noRealVal) < epsilon) || (delta_t < 0.0)){
             throw new SmException("Real header #62, delta t, is invalid: " + 
                                                                         delta_t);
         }  
@@ -143,8 +143,8 @@ public class V2Component extends COSMOScontentFormat {
         //transfer the data array and set all array values
         if (procType == V2DataType.ACC) {
             V2Data.setRealArray(inVvals.getV2Array(V2DataType.ACC));
-            V2Data.setFieldWidth(80);
-//            V2Data.setFieldWidth(REAL_FIELDWIDTH_V2);
+//            V2Data.setFieldWidth(80);
+            V2Data.setFieldWidth(REAL_FIELDWIDTH_V2);
             V2Data.setPrecision(REAL_PRECISION_V2);
             V2Data.setNumVals(inVvals.getV2ArrayLength(V2DataType.ACC));
             V2Data.buildArrayParams();

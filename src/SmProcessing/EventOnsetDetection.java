@@ -17,12 +17,17 @@
 
 package SmProcessing;
 
+import SmUtilities.TextFileWriter;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 /**
  *
  * @author jmjones
  */
 public class EventOnsetDetection {
-    private static final double XI = 0.5;  //damping ratio
+    private static final double XI = 0.6;  //damping ratio
     private static final double TN = 0.01; //vibration period
     private final double omegan;
     private final double const_C;
@@ -52,15 +57,28 @@ public class EventOnsetDetection {
         coef_d = Ae[3];
         coef_e = AeB[0];
         coef_f = AeB[1];
-        
-        System.out.format("+++ a: %f  b: %f  c: %f  d:%f  e:%f  f:%f%n", coef_a,
-                coef_b,coef_c,coef_d,coef_e,coef_f);        
+    }
+    public double[] showCoefficients() {  //for debug
+        double[] coefs = new double[6];
+        coefs[0] = coef_a;
+        coefs[1] = coef_b;
+        coefs[2] = coef_c;
+        coefs[3] = coef_d;
+        coefs[4] = coef_e;
+        coefs[5] = coef_f;
+        return coefs;
     }
     //buffer has units of seconds and is used to increase the length of time
     //between the detected P-wave and the reported start of waveform.
     public int findEventOnset( final double[] acc, double buffer) {
         int len = acc.length;
         int found = 0;
+        
+        System.out.println("deltaT: " + deltaT);
+        System.out.println("const_C: " + const_C);
+        System.out.println("coef_a: " + coef_a + " coef_b: " + coef_b);
+        System.out.println("coef_c: " + coef_c + " coef_d: " + coef_d);
+        System.out.println("coef_e: " + coef_e + " coef_f: " + coef_f);
         
         //Calculate the transient response of an oscillator with vibration period
         //TN and damping ratio XI subjected to support acceleration (array acc)
@@ -93,6 +111,7 @@ public class EventOnsetDetection {
                 Edoverm_max = Math.abs(each);
             }
         }
+        System.out.println("Edoverm_max: " + Edoverm_max);
         
         //normalize the array by dividing all vals by the max
         double[] EIM = new double[Edoverm.length];
@@ -102,6 +121,15 @@ public class EventOnsetDetection {
         
         //Integrand of normalized damping energy (m^2/sec^3)
         double[] PIM = ArrayOps.Differentiate(EIM, deltaT);
+        
+        //!!!Debug 
+        TextFileWriter textout = new TextFileWriter( "D:/PRISM/filter_test/junit", "ppick_pim.txt", PIM);
+        try {
+            textout.writeOutArray();
+        } catch (IOException err) {
+            System.out.println("Error printing out PIM in EventOnsetDetection");
+        }
+        //!!!Debug
         
         // find the most common value in the lower half of the range of PIM.
         // The value returned is the most frequently-occurring
@@ -113,12 +141,12 @@ public class EventOnsetDetection {
         //that is greater than the most frequently-occurring value.
         int peak = 0;
         for (int i = 0; i < len; i++) {
-            if (acc[i] > lowerMode) {
+            if (PIM[i] > lowerMode) {
                 peak = i;
                 break;
             }
         }
-        System.out.println("+++ acc index of peak: " + peak);
+        System.out.println("+++ PIM index of peak: " + peak);
         //In the array subset acc[0:peak], start at the end and work back to front
         //to find the index of the first zero-crossing.  This is the start of
         //the P-wave.  The zero-crossing is identified by 2 consecutive values
@@ -129,6 +157,7 @@ public class EventOnsetDetection {
                 break;
             }
         }
+        System.out.println("+++ start of zero crossing: " + found);
         //Return the index into the acceleration array that marks the start of
         //the P-wave, adjusted by the buffer amount
         found = found - (int)(buffer/deltaT);

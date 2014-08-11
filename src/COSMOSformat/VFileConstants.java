@@ -80,6 +80,7 @@ public final class VFileConstants {
     public static final int RECORDER_FSI = 22;  //recorder full scale input in volts
     public static final int SENSOR_SENSITIVITY = 41; //in volts per g
     public static final int SCALING_FACTOR = 87;
+    public static final int LOCAL_MAGNITUDE = 14;
     
     //Processing stages
     public static final int V1_STAGE = 1;
@@ -90,10 +91,15 @@ public final class VFileConstants {
     public static final double MSEC_TO_SEC = 0.001; //milliseconds to seconds
     public static final double FROM_G_CONVERSION = 980.665; //cm per sq. sec per g
 
-        //filtering constants
+    //filtering constants
     public static final int NUM_POLES = 2;
     public static final double DEFAULT_HIGHCUT = 0.5;
     public static final double DEFAULT_LOWCUT = 30.0;
     public static final double DEFAULT_EVENT_ONSET_BUFFER = 0.0;
     public static final double DEFAULT_TAPER_LENGTH = 1.0;
+    
+    //QA check constants
+    public static final double DEFAULT_QA_INITIAL_VELOCITY = 0.002;
+    public static final double DEFAULT_QA_RESIDUAL_VELOCITY = 0.002;
+    public static final double DEFAULT_QA_RESIDUAL_DISPLACE = 0.001;
 }

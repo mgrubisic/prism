@@ -74,6 +74,10 @@ public class ArrayOps {
         for(int i = 0; i < len; i++) {
             regression.addData(time[i], array[i]);
         }
+        System.out.println("+++ slopeA: " + regression.getSlope());
+        System.out.println("+++ interceptA: " + regression.getIntercept());
+        System.out.println("+++ slope errorA: " + regression.getSlopeStdErr());
+        System.out.println("+++ intercept errorA: " + regression.getInterceptStdErr());
         //Remove the trend from the array
         for (int i = 0; i < len; i++) {
             array [i] = array[i] - regression.predict(time[i]);
@@ -94,15 +98,20 @@ public class ArrayOps {
                                         double[] subarray, double timestep ) {
         int lenfull = array.length;
         int lensub = subarray.length;
+        System.out.println("+++ array length: " + lenfull + " subarray length: " + lensub);
         double[] time = makeTimeArray( timestep, lensub);
         SimpleRegression regression = new SimpleRegression();
         for(int i = 0; i < lensub; i++) {
             regression.addData(time[i], subarray[i]);
         }
+        System.out.println("+++ slopeB: " + regression.getSlope());
+        System.out.println("+++ interceptB: " + regression.getIntercept());
+        System.out.println("+++ slope errorB: " + regression.getSlopeStdErr());
+        System.out.println("+++ intercept errorB: " + regression.getInterceptStdErr());
         //Remove the trend from the first array
         double[] fulltime = makeTimeArray( timestep, lenfull);
         for (int i = 0; i < lenfull; i++) {
-            array [i] = array[i] - regression.predict(time[i]);
+            array [i] = array[i] - regression.predict(fulltime[i]);
         }
     }
     /**
@@ -145,7 +154,7 @@ public class ArrayOps {
      * @return new array containing the approximate derivative of the input points
      */
     public static double[] Differentiate( double[] array, double dt) {
-        if ((dt - 0.0) < OPS_EPSILON) {
+        if (Math.abs(dt - 0.0) < OPS_EPSILON) {
             return new double[0];
         }
         int len = array.length;

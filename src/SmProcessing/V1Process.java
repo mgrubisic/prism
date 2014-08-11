@@ -39,11 +39,11 @@ public class V1Process {
         //extract needed values from the V0 record and check if defined
         this.lsb = v0rec.getRealHeaderValue(RECORER_LSB);
         this.sensitivity = v0rec.getRealHeaderValue(SENSOR_SENSITIVITY);
-        if  (((lsb - 0.0) < epsilon) || ((lsb - nodata) < epsilon)){
+        if  ((Math.abs(lsb - 0.0) < epsilon) || (Math.abs(lsb - nodata) < epsilon)){
             throw new SmException("Real header #" + (RECORER_LSB + 1) + 
                             ", recorder least sig. bit, is invalid: " + lsb);
         }
-        if (((sensitivity - 0.0) < epsilon) || ((sensitivity - nodata) < epsilon)){
+        if ((Math.abs(sensitivity - 0.0) < epsilon) || (Math.abs(sensitivity - nodata) < epsilon)){
             throw new SmException("Real header #" + (SENSOR_SENSITIVITY + 1) + 
                             ", sensor sensitivity, is invalid: " + sensitivity);
         }

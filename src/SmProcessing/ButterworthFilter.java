@@ -107,7 +107,7 @@ public class ButterworthFilter {
         double w2 = 2.0 * Math.tan(((2.0*pi*f2)*delt)/2.0) / delt;
         
         for (int k = 1; k < nroll+1; k++) {
-            pre = Math.sin((pi*(2.0*k - 1)) / (4.0*nroll));
+            pre = (-1.0) * Math.sin((pi*(2.0*k - 1)) / (4.0*nroll));
             pim = Math.cos((pi*(2.0*k - 1)) / (4.0*nroll));
             
             argre = (((Math.pow(pre,2.0) - Math.pow(pim,2.0)) * Math.pow((w2-w1),2.0)) / 4.0) - (w1 * w2);
@@ -120,7 +120,7 @@ public class ButterworthFilter {
                 sjre = (pre * (w2-w1)/2.0) + (Math.pow(-1,i) * rho * ((-1.0)*Math.sin(theta-(pi/2.0))));
                 sjim = (pim * (w2-w1)/2.0) + (Math.pow(-1,i) * rho * (Math.cos(theta-(pi/2.0))));
                 
-                bj = 2.0 * sjre;
+                bj = (-2.0) * sjre;
                 cj = Math.pow(sjre,2) + Math.pow(sjim,2);
                 con = 1.0 / ((2.0/delt) + bj + (cj*delt/2.0));
                 
@@ -139,9 +139,10 @@ public class ButterworthFilter {
         double[] filteredS;
         double x1; double x2; double y1; double y2; double xp; double yp;
         
-        int numsamples = (int)(taplength / delt); 
-        //make taperlength an even number
-        int taperlength = ((numsamples % 2) == 0) ? numsamples : numsamples + 1;
+        int taperlength = 2 * (int)(taplength / delt); 
+        System.out.println("+++ taperlength: " + taperlength);
+        System.out.println("+++ before filter, arrayS[0] = " + arrayS[0]);
+        System.out.println("+++ before filter, arrayS[end] = " + arrayS[arrayS.length-1]);
         
         //Copy the input array into a return array.  If the filter was configured
         //as acausal, then pad the length of the array by the value calculated below.
@@ -150,27 +151,24 @@ public class ButterworthFilter {
         if (icaus) {
             if (taperlength > 0) {
                 applyCosineTaper( arrayS, taperlength);
-                System.out.println("+++ before filter, arrayS[0] = " + arrayS[0]);
-                System.out.println("+++ before filter, arrayS[end] = " + arrayS[arrayS.length-1]);
             }
-            npad = (int)Math.floor(3.0 * (nroll / (f1*delt)));
-            int check = (int)Math.floor(6.0 * (nroll / ((f2-f1)*delt)));
+            npad = (int)Math.floor(3.0 * (nroll / (f1 * delt)));
+            int check = (int)Math.floor(6.0 * (nroll / ((f2 - f1) * delt)));
             if (npad < check) {
                 npad = check;
             }
-            np2 = arrayS.length + 2*npad;
+            System.out.println("+++ npad: " + npad + " array: " + arrayS.length);
+            np2 = arrayS.length + 2 * npad;
             filteredS = new double[np2];
-            System.arraycopy(arrayS,0,filteredS,npad,arrayS.length);
-            
-            //initialize the padded array values to 0
-            Arrays.fill( filteredS, 0, npad, 0.0);
-            Arrays.fill( filteredS, arrayS.length+npad, arrayS.length+(2*npad), 0.0);
+            Arrays.fill(filteredS, 0.0);
+            System.arraycopy(arrayS, 0, filteredS, npad, arrayS.length);
             
         } else {  //causal filter, filtered array is same length as input array
             np2 = arrayS.length;
             filteredS = new double[np2];
-            System.arraycopy(arrayS,0,filteredS,0,np2);
+            System.arraycopy(arrayS, 0, filteredS, 0, np2);
         }
+        
         //filter the array
         for (int k = 0; k < 2*nroll; k++) {
             x1 = 0.0;
@@ -207,7 +205,7 @@ public class ButterworthFilter {
             }
             System.arraycopy(filteredS, npad, arrayS, 0, arrayS.length);
         } else {
-            System.arraycopy(filteredS,0,arrayS,0,np2);
+            System.arraycopy(filteredS, 0, arrayS, 0, np2);
         }
         System.out.println("+++ after filter, arrayS[0] = " + arrayS[0]);
         System.out.println("+++ after filter, arrayS[end] = " + arrayS[arrayS.length-1]);

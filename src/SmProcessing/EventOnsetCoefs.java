@@ -31,8 +31,8 @@ public class EventOnsetCoefs {
     private final Map<Integer, double[]> AeB;
     private final Map<Integer, double[]> Ae;
     
-    private final double[] aeb_01 = {-5.9231919e-05, 
-                                      4.7394384e-02};
+    private final double[] aeb_01 = { 0.0256E-4, 
+                                     -0.4362E-4};
     
     private final double[] aeb_02 = {-3.4101151e-06, 
                                       8.6115879e-04};
@@ -40,10 +40,10 @@ public class EventOnsetCoefs {
     private final double[] aeb_005 = {1.5608976e-04, 
                                      -2.3877377e-01};
     
-    private final double[] ae_01 = {1.0177871e-02, 
-                                    2.3383825e+01, 
-                                    2.5072487e-06, 
-                                   -5.9231919e-05};
+    private final double[] ae_01 = {-0.0093, 
+                                     0.0, 
+                                     17.2205, 
+                                     0.0236};
     
     private final double[] ae_02 = {-1.2814798e-03, 
                                      1.3462595e+00, 

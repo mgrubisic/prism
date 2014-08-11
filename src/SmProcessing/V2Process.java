@@ -28,6 +28,9 @@ import static SmUtilities.SmConfigConstants.BP_FILTER_ORDER;
 import static SmUtilities.SmConfigConstants.BP_TAPER_LENGTH;
 import static SmUtilities.SmConfigConstants.DATA_UNITS_CODE;
 import static SmUtilities.SmConfigConstants.EVENT_ONSET_BUFFER;
+import static SmUtilities.SmConfigConstants.QA_INITIAL_VELOCITY;
+import static SmUtilities.SmConfigConstants.QA_RESIDUAL_DISPLACE;
+import static SmUtilities.SmConfigConstants.QA_RESIDUAL_VELOCITY;
 import java.util.Arrays;
 
 /**
@@ -64,10 +67,15 @@ public class V2Process {
     private final double noRealVal;
     private final double lowcutoff;
     private final double highcutoff;
+    private final double localmag;
     
-    private final double buffer;
+    private double buffer;
     private final int numpoles;  // the filter order is 2*numpoles
-    private final double taperlength;
+    private double taperlength;
+    
+    private final double qavelocityinit;
+    private final double qavelocityend;
+    private final double qadisplacend;
         
     public V2Process(final V1Component v1rec, final ConfigReader config) throws SmException {
         double epsilon = 0.0001;
@@ -85,11 +93,16 @@ public class V2Process {
         
         this.noRealVal = inV1.getNoRealVal();
         //verify that real header value delta t is defined and valid
-        delta_t = inV1.getRealHeaderValue(DELTA_T);
-        if (((delta_t - noRealVal) < epsilon) || (delta_t < 0.0)){
+        this.delta_t = inV1.getRealHeaderValue(DELTA_T);
+        if ((Math.abs(delta_t - noRealVal) < epsilon) || (delta_t < 0.0)){
             throw new SmException("Real header #62, delta t, is invalid: " + 
                                                                         delta_t);
-        }        
+        }
+        this.localmag = inV1.getRealHeaderValue(LOCAL_MAGNITUDE);
+        if ((Math.abs(localmag - noRealVal) < epsilon) || (localmag < 0.0)){
+            throw new SmException("Real header #15, local magnitude, is invalid: " + 
+                                                                     localmag);
+        }
         try {
             String unitcode = config.getConfigValue(DATA_UNITS_CODE);
             this.data_unit_code = (unitcode == null) ? CMSQSECN : Integer.parseInt(unitcode);
@@ -110,9 +123,20 @@ public class V2Process {
             
             String pbuf = config.getConfigValue(EVENT_ONSET_BUFFER);
             this.buffer = (pbuf == null) ? DEFAULT_EVENT_ONSET_BUFFER : Double.parseDouble(pbuf);
+            
+            String qainitvel = config.getConfigValue(QA_INITIAL_VELOCITY);
+            this.qavelocityinit = (qainitvel == null) ? DEFAULT_QA_INITIAL_VELOCITY : Double.parseDouble(qainitvel);
+            
+            String qaendvel = config.getConfigValue(QA_RESIDUAL_VELOCITY);
+            this.qavelocityend = (qaendvel == null) ? DEFAULT_QA_RESIDUAL_VELOCITY : Double.parseDouble(qaendvel);
+            
+            String qaenddis = config.getConfigValue(QA_RESIDUAL_DISPLACE);
+            this.qadisplacend = (qaenddis == null) ? DEFAULT_QA_RESIDUAL_DISPLACE : Double.parseDouble(qaenddis);
         } catch (NumberFormatException err) {
             throw new SmException("Error extracting numeric values from configuration file");
         }
+        this.buffer = (this.buffer < 0.0) ? DEFAULT_EVENT_ONSET_BUFFER : this.buffer;
+        this.taperlength = (this.taperlength < 0.0) ? DEFAULT_TAPER_LENGTH : this.taperlength;
     }
     
     public void processV2Data() throws SmException {   
@@ -137,7 +161,8 @@ public class V2Process {
         
         //set up the filter coefficients and run
         ButterworthFilter filter = new ButterworthFilter();
-        boolean valid = filter.calculateCoefficients(lowcutoff, highcutoff, dtime, numpoles, true);
+        boolean valid = filter.calculateCoefficients(lowcutoff, highcutoff, 
+                                                        dtime, numpoles, true);
         if (valid) {
             filter.applyFilter(acc, taperlength);  //filtered values are returned in acc
         } else {
@@ -145,62 +170,95 @@ public class V2Process {
         }
         
         System.out.println("f1: " + lowcutoff + " f2: " + highcutoff + " numpoles: " + numpoles);
-        double[] b1 = filter.getB1();
-        double[] b2 = filter.getB2();
-        double[] fact = filter.getFact();
-        for (int jj = 0; jj < b1.length; jj++) {
-            System.out.format("+++ fact: %f  b1: %f  b2: %f%n", fact[jj],b1[jj],b2[jj]);
-        }
+//        double[] b1 = filter.getB1();
+//        double[] b2 = filter.getB2();
+//        double[] fact = filter.getFact();
+//        for (int jj = 0; jj < b1.length; jj++) {
+//            System.out.format("+++ fact: %f  b1: %f  b2: %f%n", fact[jj],b1[jj],b2[jj]);
+//        }
         //Find the start of the wave
         EventOnsetDetection pick = new EventOnsetDetection( dtime );
         int startIndex = pick.findEventOnset(acc, buffer);
         System.out.println("+++ pick index: " + startIndex);
         
-        //Remove pre-event mean from acceleration record
-        double[] subset = Arrays.copyOfRange( accraw, 0, startIndex );
-        ArrayStats statSub = new ArrayStats( subset );
-        double premean = statSub.getMean();
-        
-        //Not sure of the next steps here???  Directions are to work with accraw
-        //to remove either the pre-event mean from the record or the linear trend
-        ArrayOps.removeMean(accraw, premean);
-//        ArrayOps.removeLinearTrend( accraw, dtime);
-        
-//        //Baseline correction (if needed), how decided if needed???
-//        ArrayOps.removePolynomialTrend(accraw, 2, dtime);
-//        
-//        //determine new filter coefs based on earthquake moment mag. and epicentral
-//        //distance.???
-//        filter = new ButterworthFilter();
-//        valid = filter.calculateCoefficients(lowcutoff, highcutoff, dtime, NUM_POLES, true);
-//        filter.applyFilter(accraw,taperlength);
-        accel = accraw;
-        
+        //Remove pre-event linear trend from acceleration record
+        System.out.println("+++ start accraw before linear trend: " + accraw[0] + " end: " + accraw[accraw.length-1]);
+        if (startIndex > 0) {
+            double[] subset = Arrays.copyOfRange( accraw, 0, startIndex );
+            ArrayOps.removeLinearTrendFromSubArray(accraw, subset, dtime);
+        }
+        else {
+            ArrayStats accmean = new ArrayStats( accraw );  //!!! test
+            ArrayOps.removeMean(accraw, accmean.getMean());  //!!! test
+        }
+        System.out.println("+++ start accraw after linear trend: " + accraw[0] + " end: " + accraw[accraw.length-1]);
+
         //Integrate the acceleration to get velocity.
-        velocity = ArrayOps.Integrate( accel, delta_t);
+        velocity = ArrayOps.Integrate( accraw, delta_t);
+        int vellen = velocity.length;
+        System.out.println("+++ start after integrate: " + velocity[0] + " end: " + velocity[vellen-1]);
         
         //Remove any linear trend from velocity
         ArrayOps.removeLinearTrend( velocity, dtime);
-        ArrayStats statAcc = new ArrayStats( velocity );
-        VmaxVal = statAcc.getPeakVal();
-        VmaxIndex = statAcc.getPeakValIndex();
-        VavgVal = statAcc.getMean();
+
+        //perform first QA check on velocity, check first and last values of
+        //velocity array - should be close to 0.0 with tolerances.  If not,
+        //perform adaptive baseline correction.
+
+        if ((Math.abs(velocity[0]) > qavelocityinit) || 
+                                (Math.abs(velocity[vellen-1]) > qavelocityend)) {
+            //!!! Adaptive baseline correction here.
+            System.out.println("+++ Adaptive baseline correction!!!");
+            System.out.println("+++ start: " + velocity[0] + " end: " + velocity[vellen-1]);
+        }
         
-        //Differentiate velocity for final acceleration
-//        accel = ArrayOps.Differentiate(velocity, delta_t);
-        ArrayStats statVel = new ArrayStats( accel );
-        AmaxVal = statVel.getPeakVal();
-        AmaxIndex = statVel.getPeakValIndex();
-        AavgVal = statVel.getMean();
+        //determine new filter coefs based on earthquake local magnitude
+        //distance.
+        filter = new ButterworthFilter();
+        FilterCutOffThresholds threshold = new FilterCutOffThresholds( localmag );
+        System.out.println("+++ Adj f1: " + threshold.getLowCutOff() + "adj f2: " + threshold.getHighCutOff());
+        valid = filter.calculateCoefficients(threshold.getLowCutOff(), 
+                                            threshold.getHighCutOff(), 
+                                            dtime, NUM_POLES, true);
+        if (valid) {
+            filter.applyFilter(velocity, taperlength);
+        } else {
+            throw new SmException("Invalid bandpass filter calculated parameters");
+        }
+        
+        ArrayStats statVel = new ArrayStats( velocity );
+        VmaxVal = statVel.getPeakVal();
+        VmaxIndex = statVel.getPeakValIndex();
+        VavgVal = statVel.getMean();
         
         //Integrate the velocity to get displacement.
         displace = ArrayOps.Integrate( velocity, delta_t);
+        
         ArrayStats statDis = new ArrayStats( displace );
         DmaxVal = statDis.getPeakVal();
         DmaxIndex = statDis.getPeakValIndex();
         DavgVal = statDis.getMean();
-        
-        
+
+        //Differentiate velocity for final acceleration
+        accel = ArrayOps.Differentiate(velocity, delta_t);
+
+        ArrayStats statAcc = new ArrayStats( accel );
+        AmaxVal = statAcc.getPeakVal();
+        AmaxIndex = statAcc.getPeakValIndex();
+        AavgVal = statAcc.getMean();
+
+        //perform second QA check on velocity and displacement, check first and 
+        //last values of velocity array and last value of displacement array. 
+        //They should be close to 0.0 with tolerances.  If not, flag as
+        //needing additional processing.
+        vellen = velocity.length;
+        int dislen = displace.length;
+        if ((Math.abs(velocity[0]) > qavelocityinit) || 
+                            (Math.abs(velocity[vellen-1]) > qavelocityend) ||
+                                (Math.abs(displace[dislen-1]) > qadisplacend)) {
+            //!!! Move V1 to trouble folder  !!! Flag exit status or change result location?.
+            System.out.println("+++ 2nd QA test failed - move to Trouble folder");
+        }
     }
     
     public double getMeanToZero() {
