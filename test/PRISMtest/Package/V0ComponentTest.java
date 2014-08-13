@@ -18,9 +18,9 @@
 package PRISMtest.Package;
 
 import COSMOSformat.V0Component;
-import static COSMOSformat.VFileConstants.DEFAULT_NOINTVAL;
-import static COSMOSformat.VFileConstants.RAWACC;
-import static COSMOSformat.VFileConstants.STATION_CHANNEL_NUMBER;
+import static SmConstants.VFileConstants.DEFAULT_NOINTVAL;
+import static SmConstants.VFileConstants.RAWACC;
+import static SmConstants.VFileConstants.STATION_CHANNEL_NUMBER;
 import SmException.FormatException;
 import SmException.SmException;
 import java.util.Arrays;

@@ -21,10 +21,7 @@ import SmUtilities.ConfigReader;
 import SmUtilities.PrismXMLReader;
 import java.io.IOException;
 import javax.xml.parsers.ParserConfigurationException;
-import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import org.junit.Rule;
@@ -36,16 +33,15 @@ import org.xml.sax.SAXException;
  * @author jmjones
  */
 public class PrismXMLReaderTest {
-    ConfigReader config;
+    ConfigReader config = ConfigReader.INSTANCE;
     
     public PrismXMLReaderTest() {
-        config = new ConfigReader();
     }
     @Test
     public void TestReadFile() throws ParserConfigurationException, IOException, SAXException {
         String filename = "D:\\PRISM\\config_files\\prism_config.xml";
         PrismXMLReader xml = new PrismXMLReader();
-        config = xml.readFile(filename);
+        xml.readFile(filename);
         org.junit.Assert.assertEquals("2", config.getConfigValue("PRISM/ProcessingAgency/StrongMotionNetworkCode/AgencyCode"));
         org.junit.Assert.assertEquals("U.S. Geological Survey", config.getConfigValue("PRISM/ProcessingAgency/StrongMotionNetworkCode/AgencyFullName"));
         org.junit.Assert.assertEquals("USGS", config.getConfigValue("PRISM/ProcessingAgency/StrongMotionNetworkCode/AgencyAbbreviation"));
@@ -54,26 +50,24 @@ public class PrismXMLReaderTest {
         org.junit.Assert.assertEquals("04", config.getConfigValue("PRISM/DataUnitsForCountConversion/DataUnitCodes/DataUnitCode"));
         org.junit.Assert.assertEquals("cm/sec2", config.getConfigValue("PRISM/DataUnitsForCountConversion/DataUnitCodes/DataUnitName"));    
     }
+    
     @Rule public ExpectedException expectedEx = ExpectedException.none();
     @Test
     public void TestIOExceptionOnRead()  throws ParserConfigurationException, IOException, SAXException {
         expectedEx.expect(IOException.class);
         String filename = "D:\\PRISM\\config_files\\bad_name.xml";
         PrismXMLReader xml = new PrismXMLReader();
-        config = xml.readFile(filename);
+        xml.readFile(filename);
     }
     @Test
     public void TestSAXExceptionOnRead()  throws ParserConfigurationException, IOException, SAXException {
         expectedEx.expect(SAXException.class);
         String filename = "D:\\PRISM\\config_files\\bad_config.xml";
         PrismXMLReader xml = new PrismXMLReader();
-        config = xml.readFile(filename);
+        xml.readFile(filename);
     }
     @Test
     public void TestEmptyOnRead()  throws ParserConfigurationException, IOException, SAXException {
-        String filename = "D:\\PRISM\\config_files\\empty_config.xml";
-        PrismXMLReader xml = new PrismXMLReader();
-        config = xml.readFile(filename);
-        org.junit.Assert.assertEquals(null, config.getConfigValue("PRISM/DataUnitsForCountConversion/DataUnitCodes/DataUnitName"));    
+        org.junit.Assert.assertEquals(null, config.getConfigValue("NoSuchTagInTheFile"));    
     }    
 }

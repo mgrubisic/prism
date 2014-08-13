@@ -18,7 +18,7 @@
 package PRISMtest.Package;
 
 import COSMOSformat.V0Component;
-import static COSMOSformat.VFileConstants.RAWACC;
+import static SmConstants.VFileConstants.RAWACC;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;

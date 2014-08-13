@@ -18,8 +18,10 @@
 package SmProcessing;
 
 import COSMOSformat.V1Component;
-import static COSMOSformat.VFileConstants.*;
-import COSMOSformat.VFileConstants.V2DataType;
+import static SmConstants.VFileConstants.*;
+import SmConstants.VFileConstants.MagnitudeType;
+import static SmConstants.VFileConstants.MagnitudeType.*;
+import SmConstants.VFileConstants.V2DataType;
 import SmException.SmException;
 import SmUtilities.ConfigReader;
 import static SmUtilities.SmConfigConstants.BP_FILTER_CUTOFFHIGH;
@@ -31,6 +33,8 @@ import static SmUtilities.SmConfigConstants.EVENT_ONSET_BUFFER;
 import static SmUtilities.SmConfigConstants.QA_INITIAL_VELOCITY;
 import static SmUtilities.SmConfigConstants.QA_RESIDUAL_DISPLACE;
 import static SmUtilities.SmConfigConstants.QA_RESIDUAL_VELOCITY;
+import SmUtilities.TextFileWriter;
+import java.io.IOException;
 import java.util.Arrays;
 
 /**
@@ -42,7 +46,6 @@ public class V2Process {
     private double[] accel;
     private double AmaxVal;
     private int AmaxIndex;
-    private double AmeanToZero;
     private double AavgVal;
     private final int acc_unit_code;
     private final String acc_units;
@@ -67,7 +70,10 @@ public class V2Process {
     private final double noRealVal;
     private final double lowcutoff;
     private final double highcutoff;
-    private final double localmag;
+    private double lowcutadj;
+    private double highcutadj;
+    private double magnitude;
+    private MagnitudeType magtype;
     
     private double buffer;
     private final int numpoles;  // the filter order is 2*numpoles
@@ -77,10 +83,12 @@ public class V2Process {
     private final double qavelocityend;
     private final double qadisplacend;
         
-    public V2Process(final V1Component v1rec, final ConfigReader config) throws SmException {
+    public V2Process(final V1Component v1rec) throws SmException {
         double epsilon = 0.0001;
         this.inV1 = v1rec;
-        this.AmeanToZero = 0.0;
+        this.lowcutadj = 0.0;
+        this.highcutadj = 0.0;
+        ConfigReader config = ConfigReader.INSTANCE;
         
         //Get config values to cm/sec2 (acc), cm/sec (vel), cm (dis)
         this.acc_unit_code = CMSQSECN;
@@ -98,11 +106,31 @@ public class V2Process {
             throw new SmException("Real header #62, delta t, is invalid: " + 
                                                                         delta_t);
         }
-        this.localmag = inV1.getRealHeaderValue(LOCAL_MAGNITUDE);
-        if ((Math.abs(localmag - noRealVal) < epsilon) || (localmag < 0.0)){
-            throw new SmException("Real header #15, local magnitude, is invalid: " + 
-                                                                     localmag);
+        //Get the earthquake magnitude from the real header array.  The order of
+        //precedence for magnitude values is MOMENT, LOCAL, SURFACE, OTHER.
+        //If all values are undefined or invalid, flag as an error.
+        this.magnitude = inV1.getRealHeaderValue(MOMENT_MAGNITUDE);
+        if ((Math.abs(magnitude - noRealVal) < epsilon) || (magnitude < 0.0)){
+            this.magnitude = inV1.getRealHeaderValue(LOCAL_MAGNITUDE);
+            if ((Math.abs(magnitude - noRealVal) < epsilon) || (magnitude < 0.0)){
+                this.magnitude = inV1.getRealHeaderValue(SURFACE_MAGNITUDE);
+                if ((Math.abs(magnitude - noRealVal) < epsilon) || (magnitude < 0.0)){
+                    this.magnitude = inV1.getRealHeaderValue(OTHER_MAGNITUDE);
+                    if ((Math.abs(magnitude - noRealVal) < epsilon) || (magnitude < 0.0)){
+                        throw new SmException("All earthquake magnitude real header values are invalid.");
+                    } else {
+                        this.magtype = M_OTHER;
+                    }
+                } else {
+                    this.magtype = SURFACE;
+                }
+            } else {
+                this.magtype = M_LOCAL;
+            }
+        } else {
+            this.magtype = MOMENT;
         }
+        
         try {
             String unitcode = config.getConfigValue(DATA_UNITS_CODE);
             this.data_unit_code = (unitcode == null) ? CMSQSECN : Integer.parseInt(unitcode);
@@ -115,7 +143,7 @@ public class V2Process {
 
             //The Butterworth filter implementation requires an even number of poles (and order)
             String filorder = config.getConfigValue(BP_FILTER_ORDER);
-            this.numpoles = (filorder == null) ? NUM_POLES : Integer.parseInt(filorder)/2;
+            this.numpoles = (filorder == null) ? DEFAULT_NUM_POLES : Integer.parseInt(filorder)/2;
 
             //The Butterworth filter taper length for the half cosine taper
             String taplen = config.getConfigValue(BP_TAPER_LENGTH);
@@ -139,19 +167,26 @@ public class V2Process {
         this.taperlength = (this.taperlength < 0.0) ? DEFAULT_TAPER_LENGTH : this.taperlength;
     }
     
-    public void processV2Data() throws SmException {   
-        //!!!! Check for units of g and adjust before proceeding.
-
+    public boolean processV2Data() throws SmException {   
+        boolean success;
+        double[] accraw = new double[0];
         //save a copy of the original array for pre-mean removal
         double[] V1Array = inV1.getDataArray();
-        double[] accraw = new double[V1Array.length];
-        System.arraycopy( V1Array, 0, accraw, 0, V1Array.length);
+        //Check for units of g and adjust before proceeding.
+        if (data_unit_code == CMSQSECN) {
+            accraw = new double[V1Array.length];
+            System.arraycopy( V1Array, 0, accraw, 0, V1Array.length);
+        } else if (data_unit_code == GLN) {
+            accraw = ArrayOps.convertArrayUnits(V1Array, FROM_G_CONVERSION);
+        } else {
+            throw new SmException("V1 file units are unsupported for processing");
+        }
         double[] acc = new double[accraw.length];
         System.arraycopy( accraw, 0, acc, 0, accraw.length);
         
         //Pick P-wave and remove baseline
         
-        //remove the mean
+        //remove linear trend before finding event onset
         double dtime = delta_t * MSEC_TO_SEC;
         ArrayOps.removeLinearTrend( acc, dtime);
         
@@ -180,23 +215,38 @@ public class V2Process {
         EventOnsetDetection pick = new EventOnsetDetection( dtime );
         int startIndex = pick.findEventOnset(acc, buffer);
         System.out.println("+++ pick index: " + startIndex);
-        
+
         //Remove pre-event linear trend from acceleration record
-        System.out.println("+++ start accraw before linear trend: " + accraw[0] + " end: " + accraw[accraw.length-1]);
+        System.out.println("+++ accraw before linear trend, start: " + accraw[0] + " end: " + accraw[accraw.length-1]);
         if (startIndex > 0) {
+//            double[] subset = Arrays.copyOfRange( accraw, 0, startIndex );
+//            ArrayStats accsub = new ArrayStats( subset );
+//            ArrayOps.removeMean(accraw, accsub.getMean());
             double[] subset = Arrays.copyOfRange( accraw, 0, startIndex );
             ArrayOps.removeLinearTrendFromSubArray(accraw, subset, dtime);
-        }
+       }
         else {
-            ArrayStats accmean = new ArrayStats( accraw );  //!!! test
-            ArrayOps.removeMean(accraw, accmean.getMean());  //!!! test
+            ArrayStats accmean = new ArrayStats( accraw );
+            ArrayOps.removeMean(accraw, accmean.getMean());
         }
-        System.out.println("+++ start accraw after linear trend: " + accraw[0] + " end: " + accraw[accraw.length-1]);
+        System.out.println("+++ accraw after preevent mean removal, start: " + accraw[0] + " end: " + accraw[accraw.length-1]);
+        
+//        //Now remove any linear trend
+//        ArrayOps.removeLinearTrend(accraw, dtime);
+//        System.out.println("+++ accraw after linear trend, start: " + accraw[0] + " end: " + accraw[accraw.length-1]);
+//        
+//        System.out.println("Writing out file justRemoveLinearTrend.txt");
+//        TextFileWriter textout = new TextFileWriter( "D:/PRISM/V2process_test", "justRemoveLinearTrend.txt", accraw);
+//        try {
+//            textout.writeOutArray();
+//        } catch (IOException err) {
+//            System.out.println("Error in debug print");
+//        }
 
         //Integrate the acceleration to get velocity.
         velocity = ArrayOps.Integrate( accraw, delta_t);
         int vellen = velocity.length;
-        System.out.println("+++ start after integrate: " + velocity[0] + " end: " + velocity[vellen-1]);
+        System.out.println("+++ velocity after integrate, start: " + velocity[0] + " end: " + velocity[vellen-1]);
         
         //Remove any linear trend from velocity
         ArrayOps.removeLinearTrend( velocity, dtime);
@@ -215,11 +265,13 @@ public class V2Process {
         //determine new filter coefs based on earthquake local magnitude
         //distance.
         filter = new ButterworthFilter();
-        FilterCutOffThresholds threshold = new FilterCutOffThresholds( localmag );
-        System.out.println("+++ Adj f1: " + threshold.getLowCutOff() + "adj f2: " + threshold.getHighCutOff());
-        valid = filter.calculateCoefficients(threshold.getLowCutOff(), 
-                                            threshold.getHighCutOff(), 
-                                            dtime, NUM_POLES, true);
+        FilterCutOffThresholds threshold = new FilterCutOffThresholds( magnitude );
+        lowcutadj = threshold.getLowCutOff();
+        highcutadj = threshold.getHighCutOff();
+        System.out.println("+++ magnitude: " + magnitude + " and type used: " + magtype);
+        System.out.println("+++ Adj f1: " + lowcutadj + "  adj f2: " + highcutadj);
+        valid = filter.calculateCoefficients(lowcutadj, highcutadj, 
+                                            dtime, numpoles, true);
         if (valid) {
             filter.applyFilter(velocity, taperlength);
         } else {
@@ -256,13 +308,12 @@ public class V2Process {
         if ((Math.abs(velocity[0]) > qavelocityinit) || 
                             (Math.abs(velocity[vellen-1]) > qavelocityend) ||
                                 (Math.abs(displace[dislen-1]) > qadisplacend)) {
-            //!!! Move V1 to trouble folder  !!! Flag exit status or change result location?.
             System.out.println("+++ 2nd QA test failed - move to Trouble folder");
+            success = false;
+        } else {
+            success = true;
         }
-    }
-    
-    public double getMeanToZero() {
-        return this.AmeanToZero;
+        return success;
     }
     public double getMaxVal(V2DataType dType) {
         if (dType == V2DataType.ACC) {
@@ -326,5 +377,11 @@ public class V2Process {
         } else {
             return this.dis_units;
         }
+    }
+    public double getLowCut() {
+        return this.lowcutadj;
+    }
+    public double getHighCut() {
+        return this.highcutadj;
     }
 }

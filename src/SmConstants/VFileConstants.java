@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-package COSMOSformat;
+package SmConstants;
 
 /**
  * This class defines the constants used during strong motion processing, including
@@ -45,7 +45,7 @@ public final class VFileConstants {
     public static final String DISPLACE = "Displacement data        ";
     public static final String SPECTRA =  "Response spectra         ";
     
-    public enum V2DataType { ACC, VEL, DIS }
+    public enum V2DataType { ACC, VEL, DIS };
     
     //units names and codes
     public static final String CMSQSECT = "cm/sec2";
@@ -54,6 +54,8 @@ public final class VFileConstants {
     public static final int CMSECN = 5;
     public static final String CMT = "cm";
     public static final int CMN = 6;
+    public static final String GUNITST = "g";
+    public static final int GLN = 2;
     
     public enum OutputStyle { SINGLE_CHANNEL, BUNDLED };
     
@@ -80,7 +82,13 @@ public final class VFileConstants {
     public static final int RECORDER_FSI = 22;  //recorder full scale input in volts
     public static final int SENSOR_SENSITIVITY = 41; //in volts per g
     public static final int SCALING_FACTOR = 87;
+    
+    public enum MagnitudeType { MOMENT, M_LOCAL, SURFACE, M_OTHER };
+    
     public static final int LOCAL_MAGNITUDE = 14;
+    public static final int MOMENT_MAGNITUDE = 12;
+    public static final int SURFACE_MAGNITUDE = 13;
+    public static final int OTHER_MAGNITUDE = 15;
     
     //Processing stages
     public static final int V1_STAGE = 1;
@@ -92,7 +100,7 @@ public final class VFileConstants {
     public static final double FROM_G_CONVERSION = 980.665; //cm per sq. sec per g
 
     //filtering constants
-    public static final int NUM_POLES = 2;
+    public static final int DEFAULT_NUM_POLES = 2;
     public static final double DEFAULT_HIGHCUT = 0.5;
     public static final double DEFAULT_LOWCUT = 30.0;
     public static final double DEFAULT_EVENT_ONSET_BUFFER = 0.0;

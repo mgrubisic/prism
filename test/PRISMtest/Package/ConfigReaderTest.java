@@ -25,14 +25,13 @@ import org.junit.Test;
  * @author jmjones
  */
 public class ConfigReaderTest {
-    ConfigReader config;
+    ConfigReader config = ConfigReader.INSTANCE;
     
     public ConfigReaderTest() {
     }
         
     @Test
     public void TestSetConfigValue() {
-        config = new ConfigReader();
         config.setConfigValue("a", "1");
         config.setConfigValue("b", "2");
         config.setConfigValue("c", "3");
@@ -42,8 +41,8 @@ public class ConfigReaderTest {
         org.junit.Assert.assertEquals("3", config.getConfigValue("c"));
         org.junit.Assert.assertEquals("4", config.getConfigValue("d"));
     }
+    @Test
     public void TestGetConfigValue() {
-        config = new ConfigReader();
         config.setConfigValue("PRISM/ProcessingAgency/StrongMotionNetworkCode/AgencyCode", "2");
         config.setConfigValue("PRISM/ProcessingAgency/StrongMotionNetworkCode/AgencyFullName", "U.S. Geological Survey");
         config.setConfigValue("PRISM/ProcessingAgency/StrongMotionNetworkCode/AgencyAbbreviation", "USGS");
@@ -59,5 +58,13 @@ public class ConfigReaderTest {
         org.junit.Assert.assertEquals("Single", config.getConfigValue("PRISM/OutputFileFormat"));
         org.junit.Assert.assertEquals("04", config.getConfigValue("PRISM/DataUnitsForCountConversion/DataUnitCodes/DataUnitCode"));
         org.junit.Assert.assertEquals("cm/sec/sec", config.getConfigValue("PRISM/DataUnitsForCountConversion/DataUnitCodes/DataUnitName"));
+    }
+    @Test
+    public void TestSingleton() {
+        ConfigReader con1 = ConfigReader.INSTANCE;
+        ConfigReader con2 = ConfigReader.INSTANCE;
+        org.junit.Assert.assertEquals(true, (con1 == con2));
+        con1.setConfigValue("a", "1");
+        org.junit.Assert.assertEquals("1", con2.getConfigValue("a"));
     }
 }

@@ -6,7 +6,7 @@
 
 package COSMOSformat;
 
-import static COSMOSformat.VFileConstants.*;
+import static SmConstants.VFileConstants.*;
 import SmException.FormatException;
 import SmException.SmException;
 import SmProcessing.V2Process;
@@ -83,18 +83,21 @@ public class V2Component extends COSMOScontentFormat {
     public double[] getDataArray() {
         return V2Data.getRealArray();
     }
-    public void buildV2( V2DataType procType, V2Process inVvals, ConfigReader config) throws SmException, FormatException {
+    public void buildV2( V2DataType procType, V2Process inVvals) 
+                                            throws SmException, FormatException {
         Double epsilon = 0.001;
         StringBuilder sb = new StringBuilder(MAX_LINE_LENGTH);
         StringBuilder eod = new StringBuilder(MAX_LINE_LENGTH);
         final double MSEC_TO_SEC = 1e-3;
         String realformat = "%8.3f";
+        String freqformat = "%5.2f";
         double time;
         String unitsname;
         int unitscode;
         String eodname;
 
         SmTimeFormatter proctime = new SmTimeFormatter();
+        ConfigReader config = ConfigReader.INSTANCE;
         
         //verify that real header value delta t is defined and valid
         double delta_t = this.realHeader.getRealValue(DELTA_T);
@@ -128,22 +131,42 @@ public class V2Component extends COSMOScontentFormat {
         //update values in the text header
         if (procType == V2DataType.ACC) {
             this.textHeader[0] = CORACC.concat(this.textHeader[0].substring(END_OF_DATATYPE));
-        } else if (procType == V2DataType.VEL) {
-            this.textHeader[0] = VELOCITY.concat(this.textHeader[0].substring(END_OF_DATATYPE));
-        } else {
-            this.textHeader[0] = DISPLACE.concat(this.textHeader[0].substring(END_OF_DATATYPE));
-        }
-        this.textHeader[10] = sb.append("Processed:").append(val).append(", ")
+            this.textHeader[10] = sb.append("Processed:").append(val).append(", ")
                                 .append(agabbrev).append(", Max = ")
                                 .append(String.format(realformat,inVvals.getMaxVal(V2DataType.ACC)))
                                 .append(" ").append(unitsname).append(" at ")
                                 .append(String.format(realformat,time))
                                 .append(" sec").toString();
+        } else if (procType == V2DataType.VEL) {
+            this.textHeader[0] = VELOCITY.concat(this.textHeader[0].substring(END_OF_DATATYPE));
+            this.textHeader[10] = sb.append("Processed:").append(val).append(", ")
+                                .append(agabbrev).append(", Max = ")
+                                .append(String.format(realformat,inVvals.getMaxVal(V2DataType.VEL)))
+                                .append(" ").append(unitsname).append(" at ")
+                                .append(String.format(realformat,time))
+                                .append(" sec").toString();
+        } else {
+            this.textHeader[0] = DISPLACE.concat(this.textHeader[0].substring(END_OF_DATATYPE));
+            this.textHeader[10] = sb.append("Processed:").append(val).append(", ")
+                                .append(agabbrev).append(", Max = ")
+                                .append(String.format(realformat,inVvals.getMaxVal(V2DataType.DIS)))
+                                .append(" ").append(unitsname).append(" at ")
+                                .append(String.format(realformat,time))
+                                .append(" sec").toString();
+        }
+        sb = new StringBuilder(MAX_LINE_LENGTH);
+        this.textHeader[11] = sb.append("Record filtered below ")
+                                .append(String.format(freqformat,inVvals.getLowCut()))
+                                .append(" Hz (periods over ")
+                                .append(String.format(freqformat,(1.0/inVvals.getLowCut())))
+                                .append(" secs), and above ")
+                                .append(String.format(freqformat,inVvals.getHighCut()))
+                                .append(" Hz")
+                                .toString();
         
         //transfer the data array and set all array values
         if (procType == V2DataType.ACC) {
             V2Data.setRealArray(inVvals.getV2Array(V2DataType.ACC));
-//            V2Data.setFieldWidth(80);
             V2Data.setFieldWidth(REAL_FIELDWIDTH_V2);
             V2Data.setPrecision(REAL_PRECISION_V2);
             V2Data.setNumVals(inVvals.getV2ArrayLength(V2DataType.ACC));
@@ -151,7 +174,6 @@ public class V2Component extends COSMOScontentFormat {
             this.buildNewDataFormatLine(unitsname, unitscode, "acceleration");
         } else if (procType == V2DataType.VEL) {
             V2Data.setRealArray(inVvals.getV2Array(V2DataType.VEL));
-//            V2Data.setFieldWidth(80);
             V2Data.setFieldWidth(REAL_FIELDWIDTH_V2);
             V2Data.setPrecision(REAL_PRECISION_V2);
             V2Data.setNumVals(inVvals.getV2ArrayLength(V2DataType.VEL));
@@ -159,7 +181,6 @@ public class V2Component extends COSMOScontentFormat {
             this.buildNewDataFormatLine(unitsname, unitscode, "velocity    ");
         }else {
             V2Data.setRealArray(inVvals.getV2Array(V2DataType.DIS));
-//            V2Data.setFieldWidth(80);
             V2Data.setFieldWidth(REAL_FIELDWIDTH_V2);
             V2Data.setPrecision(REAL_PRECISION_V2);
             V2Data.setNumVals(inVvals.getV2ArrayLength(V2DataType.DIS));

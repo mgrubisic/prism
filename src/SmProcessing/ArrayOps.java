@@ -76,8 +76,7 @@ public class ArrayOps {
         }
         System.out.println("+++ slopeA: " + regression.getSlope());
         System.out.println("+++ interceptA: " + regression.getIntercept());
-        System.out.println("+++ slope errorA: " + regression.getSlopeStdErr());
-        System.out.println("+++ intercept errorA: " + regression.getInterceptStdErr());
+        System.out.println("+++ mean sq. errorA: " + regression.getMeanSquareError());
         //Remove the trend from the array
         for (int i = 0; i < len; i++) {
             array [i] = array[i] - regression.predict(time[i]);
@@ -106,8 +105,7 @@ public class ArrayOps {
         }
         System.out.println("+++ slopeB: " + regression.getSlope());
         System.out.println("+++ interceptB: " + regression.getIntercept());
-        System.out.println("+++ slope errorB: " + regression.getSlopeStdErr());
-        System.out.println("+++ intercept errorB: " + regression.getInterceptStdErr());
+        System.out.println("+++ mean sq. errorB: " + regression.getMeanSquareError());
         //Remove the trend from the first array
         double[] fulltime = makeTimeArray( timestep, lenfull);
         for (int i = 0; i < lenfull; i++) {
@@ -130,7 +128,7 @@ public class ArrayOps {
         return time;
     }
     /**
-     * Calculates the approximate of the input array using the trapezoidal 
+     * Calculates the approximate integral of the input array using the trapezoidal 
      * method.  The spacing between each point is dt
      * 
      * @param array array to be integrated
@@ -205,4 +203,37 @@ public class ArrayOps {
             array[i] = array[i] - value;
         }
     }
+    /**
+     * 
+     * @param inArray
+     * @param countConv
+     * @return 
+     */
+    public static double[] countsToPhysicalValues(final int[] inArray, final double countConv) {
+        
+        int length = inArray.length;
+        double[] result = new double[length];
+        
+        for (int i = 0; i < length; i++) {
+            result[i] = inArray[i] * countConv;
+        }
+        return result;
+    }
+    /**
+     * 
+     * @param inArray
+     * @param countConv
+     * @return 
+     */
+    public static double[] convertArrayUnits(final double[] inArray, final double conversion) {
+        
+        int length = inArray.length;
+        double[] result = new double[length];
+        
+        for (int i = 0; i < length; i++) {
+            result[i] = inArray[i] * conversion;
+        }
+        return result;
+    }
+    
 }

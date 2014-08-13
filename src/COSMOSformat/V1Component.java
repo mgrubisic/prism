@@ -6,7 +6,7 @@
 
 package COSMOSformat;
 
-import static COSMOSformat.VFileConstants.*;
+import static SmConstants.VFileConstants.*;
 import SmException.FormatException;
 import SmException.SmException;
 import SmProcessing.V1Process;
@@ -87,7 +87,7 @@ public class V1Component extends COSMOScontentFormat {
 
     //Once in this method, the V1Process object is no longer needed and its array
     //is transferred to the V1component object
-    public void buildV1 (V1Process inVvals, ConfigReader config) throws 
+    public void buildV1 (V1Process inVvals) throws 
                                                 SmException, FormatException {
         Double epsilon = 0.001;
         StringBuilder sb = new StringBuilder(MAX_LINE_LENGTH);
@@ -95,6 +95,7 @@ public class V1Component extends COSMOScontentFormat {
         String realformat = "%8.3f";
 
         SmTimeFormatter proctime = new SmTimeFormatter();
+        ConfigReader config = ConfigReader.INSTANCE;
         
         //verify that real header value delta t is defined and valid
         //this check has also happened in the V1process !!!
@@ -145,10 +146,12 @@ public class V1Component extends COSMOScontentFormat {
         this.intHeader.setIntValue(V_UNITS_INDEX, unitscode);
         this.intHeader.setIntValue(DATA_PHYSICAL_PARAM_CODE, ACC_PARM_CODE);
         this.intHeader.setIntValue(PROCESSING_AGENCY, agency_code);
+        
         this.realHeader.setRealValue(MAX_VAL, inVvals.getMaxVal());
         this.realHeader.setRealValue(AVG_VAL, inVvals.getAvgVal());
         this.realHeader.setRealValue(MAX_VAL_TIME, time);
         this.realHeader.setRealValue(SCALING_FACTOR, inVvals.getConversionFactor());
+        this.realHeader.setRealValue(MEAN_ZERO, inVvals.getMeanToZero());
         
         //Update the end-of-data line with the new data type
         this.endOfData = eod.append(this.endOfData,0,END_OF_DATA_CHAN)
@@ -160,11 +163,11 @@ public class V1Component extends COSMOScontentFormat {
      * This method creates a new data format line for the V1 component data array.
      * It calculates the time based on the number of data values and delta t
      * and gets the physical units from the configuration file.
-     * @param units
-     * @param unitscode
-     * @throws SmException.SmException
+     * @param units the numeric code for the type of units, COSMOS table 2
+     * @param unitsCode code containing the type of units (cm, cm/sec, etc.)
+     * @throws SmException from setFormatLine
      */
-    public void buildNewDataFormatLine(String units, int unitscode) throws SmException {
+    public void buildNewDataFormatLine(String units, int unitsCode) throws SmException {
         //calculate the time by multiplying the number of data values by delta t
         String line;
         double dtime = this.getRealHeaderValue(DELTA_T);
@@ -174,7 +177,7 @@ public class V1Component extends COSMOScontentFormat {
         String datType = "acceleration";
         line = String.format("%1$8s %2$13s pts, approx %3$4s secs, units=%4$7s(%5$02d), Format=",
                                      String.valueOf(numvals),datType,
-                                                    timeSec, units, unitscode);
+                                                    timeSec, units, unitsCode);
         V1Data.setFormatLine(line + V1Data.getNumberFormat());
     }
     /**

@@ -23,25 +23,22 @@ import java.util.Map;
 /**
  * This class provides a collection to hold the configuration file parameters.
  * It wraps a Map collection that uses keys and values to store data and retrieve
- * by key.
+ * by key.  It is set up according to the singleton design pattern so the keys
+ * and values can be loaded once and accessed by different classes as needed.
+ * The actual reading in of the values from the file is done with the 
+ * PrismXMLReader, which then loads the keys and values into the ConfigReader.
  * @author jmjones
  */
 public class ConfigReader {
     private Map<String, String> contents;
+    public final static ConfigReader INSTANCE = new ConfigReader();
 /**
- * Constructor for the Configuration file reader uses a hash map set with
- * defaults of expected upper limit of 16 entries.
- */    
-    public ConfigReader() {
-        contents = new HashMap<>(); //default of 16 entries
-    }
-/**
- * Constructor for the configuration file reader that allows setting the
- * number of entries expected from the file.
- * @param length number of entries to be put into the config file reader
+ * Constructor for the configuration file reader is private as part of the
+ * singleton implementation.  Access to the reader is through the INSTANCE 
+ * variable:  ConfigReader config = ConfigReader.INSTANCE.
  */
-    public ConfigReader(int length) {
-        contents = new HashMap<>(length);
+    private ConfigReader() {
+        contents = new HashMap<>();
     }
 /**
  * Getter for the value stored for the given key.

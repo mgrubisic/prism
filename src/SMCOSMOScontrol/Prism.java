@@ -6,9 +6,9 @@
 
 package SMCOSMOScontrol;
 
-import static COSMOSformat.VFileConstants.CORACC;
-import static COSMOSformat.VFileConstants.RAWACC;
-import static COSMOSformat.VFileConstants.UNCORACC;
+import static SmConstants.VFileConstants.CORACC;
+import static SmConstants.VFileConstants.RAWACC;
+import static SmConstants.VFileConstants.UNCORACC;
 import java.io.*;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import SmException.SmException;
 import SmException.FormatException;
 import SmUtilities.ConfigReader;
-import SmUtilities.TextFileReader;
 import SmUtilities.PrismXMLReader;
 import javax.xml.parsers.ParserConfigurationException;
 import org.xml.sax.SAXException;
@@ -30,7 +29,7 @@ import org.xml.sax.SAXException;
  * automatically by other software.  This class takes an input folder as a param.,
  * reads in *.V0 files in the folder and then processes each file in turn.
  * Processing involves reading in the file and parsing into record(s), running
- * the signal processing algorithms to create the other data products, and then
+ * the waveform processing algorithms to create the other data products, and then
  * writing out the data in the different formats, either individually or bundled.
  * @author jmjones
  */
@@ -38,7 +37,7 @@ public class Prism {
     private final String inFolder;
     private final String outFolder;
     private String configFile;
-    private ConfigReader config;
+
     // data structures for the controller
     private File[] inVList;
     private SmQueue smqueue;
@@ -99,8 +98,8 @@ public class Prism {
             //Attempt to process all the files in the list.
             for (File each: smc.inVList){
                 smc.smqueue = new SmQueue( each );
-                smc.V1product = new SmProduct(each, "V1", smc.outFolder, smc.config);
-                smc.V2product = new SmProduct(each, "V2", smc.outFolder, smc.config);
+                smc.V1product = new SmProduct(each, "V1", smc.outFolder);
+                smc.V2product = new SmProduct(each, "V2", smc.outFolder);
                 //add V3 products eventually
                 try {
 //                    long startTime = System.nanoTime();
@@ -118,8 +117,7 @@ public class Prism {
 //                    long parseTime = System.nanoTime() - startTime;
                     //next is to process the records, then write out results
 //                    startTime = System.nanoTime();
-                    smc.smqueue.processQueueContents(smc.V1product, smc.V2product,
-                                                                    smc.config);
+                    smc.smqueue.processQueueContents(smc.V1product, smc.V2product);
 //                    long processTime = System.nanoTime() - startTime;
 //                    startTime = System.nanoTime();
 
@@ -153,7 +151,7 @@ public class Prism {
 
         try {
             PrismXMLReader xml = new PrismXMLReader();
-            config = xml.readFile(filename);
+            xml.readFile(filename);
         } catch (ParserConfigurationException | SAXException err) {
             throw new SmException("Unable to parse configuration file " + filename);
         } catch (IOException err) {

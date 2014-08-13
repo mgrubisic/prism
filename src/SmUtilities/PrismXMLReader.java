@@ -71,12 +71,11 @@ public class PrismXMLReader {
  * paths to each text node, and enters each key-value pair in the config reader
  * object.
  * @param filename The xml file to read and parse
- * the xml file
  * @throws IOException if unable to read in the file
  * @throws ParserConfigurationException if parser configuration is incorrect
  * @throws SAXException if unable to correctly parse the xml
  */
-    public ConfigReader readFile( String filename ) throws IOException, 
+    public void readFile( String filename ) throws IOException, 
                                     ParserConfigurationException,SAXException {
         ArrayList<String> tagtrail = new ArrayList<>();
         String[] keyvalue;
@@ -91,12 +90,11 @@ public class PrismXMLReader {
         
         //Separate each tag trail into a key, value pair and enter into the 
         //config reader
-        ConfigReader config = new ConfigReader(tagtrail.size());
+        ConfigReader config = ConfigReader.INSTANCE;
         for (String each : tagtrail) {
             keyvalue = each.split("///");
             config.setConfigValue(keyvalue[0], keyvalue[1]);
         }
-        return config;
     }
 /**
  * Recursive method to find all the child nodes of each node until a text node
@@ -109,15 +107,25 @@ public class PrismXMLReader {
     private void findSubNode( String name, Node inNode, ArrayList<String> trail) {
         StringBuilder result = new StringBuilder();
         String value;
+        
+        //Skip the node if it has no children
         if ( inNode.hasChildNodes()) {
             NodeList list = inNode.getChildNodes();
+            
+            //Check each subnode of the current node
             for (int i=0; i<list.getLength(); i++) {
                 Node subnode = list.item(i);
                 result.setLength(0);
+                
+                //If it's an element node, continue walking down after saving 
+                //the current node name in the key string being built.
                 if (subnode.getNodeType() == Node.ELEMENT_NODE) {
                     result.append(name).append("/").append(subnode.getNodeName());
                     findSubNode(result.toString(), subnode, trail);
                 } 
+                
+                //If it's a text node, it's the end of the line - append
+                //the text entry as the value in the key-value pair.
                 else if (subnode.getNodeType() == Node.TEXT_NODE) {
                     value = subnode.getTextContent().trim();
                     if (!value.isEmpty()) {

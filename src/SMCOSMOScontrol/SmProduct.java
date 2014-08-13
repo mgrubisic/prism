@@ -9,13 +9,11 @@ package SMCOSMOScontrol;
 import COSMOSformat.COSMOScontentFormat;
 import COSMOSformat.V1Component;
 import COSMOSformat.V2Component;
-import COSMOSformat.VFileConstants;
-import static COSMOSformat.VFileConstants.MAX_LINE_LENGTH;
-import COSMOSformat.VFileConstants.OutputStyle;
+import static SmConstants.VFileConstants.MAX_LINE_LENGTH;
+import SmConstants.VFileConstants.OutputStyle;
 import SmUtilities.ConfigReader;
 import static SmUtilities.SmConfigConstants.OUT_FILE_FORMAT;
 import SmUtilities.TextFileWriter;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -45,11 +43,12 @@ public class SmProduct {
     //The products package assumes a file name structure for the V0 files.
     //
     public SmProduct(final File inFileName, final String newExt, 
-                        final String newFolder, final ConfigReader config) {
+                                                    final String newFolder) {
         this.fileName = inFileName;
         this.productList = new ArrayList<>();
         this.fileExtension = newExt;
         this.outFolder = newFolder;
+        ConfigReader config = ConfigReader.INSTANCE;
         String outStyle = config.getConfigValue(OUT_FILE_FORMAT);
         if (outStyle.compareToIgnoreCase("bundled") == 0) {
             this.bundleFlag = OutputStyle.BUNDLED;
@@ -102,7 +101,7 @@ public class SmProduct {
             outName = buildFilename(bundleFlag, 0);
             Files.deleteIfExists(outName);
         }
-        String[] contents = new String[0];
+        String[] contents;
         System.out.println("productlist length: " + this.productList.size());
         
         Iterator iter = this.productList.iterator();

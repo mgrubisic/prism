@@ -7,7 +7,7 @@
 package SmProcessing;
 
 import COSMOSformat.V0Component;
-import static COSMOSformat.VFileConstants.*;
+import static SmConstants.VFileConstants.*;
 import SmException.SmException;
 import SmUtilities.ConfigReader;
 import static SmUtilities.SmConfigConstants.*;
@@ -17,9 +17,10 @@ import static SmUtilities.SmConfigConstants.*;
  * @author jmjones
  */
 public class V1Process {
-    private final double microToVolt = 1.0e-6;
+    private final double MICRO_TO_VOLT = 1.0e-6;
     
     private double[] accel;
+    private double meanToZero;
     private double maxVal;
     private int maxIndex;
     private double avgVal;
@@ -31,10 +32,12 @@ public class V1Process {
     private final double sensitivity;
     private double conversion_factor;
     
-    public V1Process(final V0Component v0rec, final ConfigReader config) throws SmException {
+    public V1Process(final V0Component v0rec) throws SmException {
         double epsilon = 0.0001;
         double nodata = v0rec.getNoRealVal();
         this.inV0 = v0rec;
+        this.meanToZero = 0.0;
+        ConfigReader config = ConfigReader.INSTANCE;
         
         //extract needed values from the V0 record and check if defined
         this.lsb = v0rec.getRealHeaderValue(RECORER_LSB);
@@ -79,7 +82,13 @@ public class V1Process {
         System.out.println("+++ V1 conversion: " + conv);
         
         //convert counts to physical values
-        accel = countsToValues(inV0.getDataArray(), conv);
+        accel = ArrayOps.countsToPhysicalValues(inV0.getDataArray(), conv);
+        
+        //Remove the mean from the array and save for the Real Header
+        ArrayStats accmean = new ArrayStats( accel );
+        meanToZero = accmean.getMean();
+        ArrayOps.removeMean(accel, meanToZero);
+        
         ArrayStats stat = new ArrayStats( accel );
         avgVal = stat.getMean();
         maxVal = stat.getPeakVal();
@@ -87,7 +96,7 @@ public class V1Process {
     }
     
     public double countToGConversion() {
-        double result = ( lsb * microToVolt) / sensitivity;
+        double result = ( lsb * MICRO_TO_VOLT) / sensitivity;
         return result;        
     }
     
@@ -96,21 +105,12 @@ public class V1Process {
         //countToCMS units are cm per sq. sec per count
         //This is multiplied by each count to get the sensor value in cm per sq. sec
         
-        double result = (( lsb * microToVolt) / sensitivity) * FROM_G_CONVERSION;
+        double result = (( lsb * MICRO_TO_VOLT) / sensitivity) * FROM_G_CONVERSION;
         return result;
     }
-    
-    public double[] countsToValues(final int[] inArray, final double countConv) {
-        
-        int length = inArray.length;
-        double[] result = new double[length];
-        
-        for (int i = 0; i < length; i++) {
-            result[i] = inArray[i] * countConv;
-        }
-        return (result);
-    }
-    
+    public double getMeanToZero() {
+        return this.meanToZero;
+    }    
     public double getMaxVal() {
         return this.maxVal;
     }

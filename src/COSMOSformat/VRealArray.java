@@ -6,7 +6,7 @@
 
 package COSMOSformat;
 
-import static COSMOSformat.VFileConstants.*;
+import static SmConstants.VFileConstants.*;
 import SmException.FormatException;
 import java.util.ArrayList;
 

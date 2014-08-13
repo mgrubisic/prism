@@ -11,7 +11,7 @@ import COSMOSformat.V0Component;
 import COSMOSformat.COSMOScontentFormat;
 import COSMOSformat.V1Component;
 import COSMOSformat.V2Component;
-import static COSMOSformat.VFileConstants.*;
+import static SmConstants.VFileConstants.*;
 import java.io.*;
 import java.util.ArrayList;
 
@@ -93,7 +93,7 @@ public class SmQueue {
         return smlist.size();
     }
     
-    public void processQueueContents(SmProduct V1prod, SmProduct V2prod, ConfigReader config) 
+    public void processQueueContents(SmProduct V1prod, SmProduct V2prod) 
                                         throws FormatException, SmException, IOException {
         //under construction
         double[] array;
@@ -102,26 +102,26 @@ public class SmQueue {
             V0Component v0rec = (V0Component)rec;
             
             //create the V1 processing object and do the processing          
-            V1Process v1val = new V1Process(v0rec, config);
+            V1Process v1val = new V1Process(v0rec);
             v1val.processV1Data();
             
             //create a V1 component to get the processing results
             V1Component v1rec = new V1Component( UNCORACC, v0rec);
-            v1rec.buildV1(v1val, config);
+            v1rec.buildV1(v1val);
             V1prod.addProduct(v1rec);
            
             //Create the V2 processing object and do the processing.  V2 processing
             //produces 3 V2 objects: corrected acceleration, velocity, and displacement
-            V2Process v2val = new V2Process(v1rec, config);
-            v2val.processV2Data();
+            V2Process v2val = new V2Process(v1rec);
+            boolean complete = v2val.processV2Data();
             
             //create the V2 components to get the processing results
             V2Component V2acc = new V2Component( CORACC, v1rec );
-            V2acc.buildV2(V2DataType.ACC, v2val, config);
+            V2acc.buildV2(V2DataType.ACC, v2val);
             V2Component V2vel = new V2Component( VELOCITY, v1rec );
-            V2vel.buildV2(V2DataType.VEL, v2val, config);
+            V2vel.buildV2(V2DataType.VEL, v2val);
             V2Component V2dis = new V2Component( DISPLACE, v1rec );
-            V2dis.buildV2(V2DataType.DIS, v2val, config);
+            V2dis.buildV2(V2DataType.DIS, v2val);
             V2prod.addProduct(V2acc);
             V2prod.addProduct(V2vel);
             V2prod.addProduct(V2dis);
