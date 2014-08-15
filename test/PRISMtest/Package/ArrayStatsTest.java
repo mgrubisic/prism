@@ -111,8 +111,8 @@ public class ArrayStatsTest {
     }
     @Test
     public void testModalMinimum() {
-        org.junit.Assert.assertEquals(-9.8, statmode.getModalMinimum(), EPSILON);
-        org.junit.Assert.assertEquals(10.0, stata1.getModalMinimum(), EPS2);
-        org.junit.Assert.assertEquals(-1.4, stata2.getModalMinimum(), EPS2);
+        org.junit.Assert.assertEquals(-8.93, statmode.getModalMinimum(10), EPSILON);
+        org.junit.Assert.assertEquals(10.0, stata1.getModalMinimum(5), EPS2);
+        org.junit.Assert.assertEquals(-1.4, stata2.getModalMinimum(5), EPS2);
     }
 }

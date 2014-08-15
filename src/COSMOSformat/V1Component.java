@@ -108,7 +108,7 @@ public class V1Component extends COSMOScontentFormat {
             throw new SmException("Real header #62, delta t, is invalid: " + 
                                                                         delta_t);
         }        
-        double time = (inVvals.getMaxIndex()) * MSEC_TO_SEC * delta_t;
+        double time = (inVvals.getPeakIndex()) * MSEC_TO_SEC * delta_t;
 
         //Get the processing agency info from the config. data
         String agabbrev = config.getConfigValue(PROC_AGENCY_ABBREV);
@@ -128,7 +128,7 @@ public class V1Component extends COSMOScontentFormat {
         this.textHeader[0] = UNCORACC.concat(this.textHeader[0].substring(END_OF_DATATYPE));
         this.textHeader[10] = sb.append("Processed:").append(val).append(", ")
                                 .append(agabbrev).append(", Max = ")
-                                .append(String.format(realformat,inVvals.getMaxVal()))
+                                .append(String.format(realformat,inVvals.getPeakVal()))
                                 .append(" ").append(unitsname).append(" at ")
                                 .append(String.format(realformat,time))
                                 .append(" sec").toString();
@@ -147,9 +147,9 @@ public class V1Component extends COSMOScontentFormat {
         this.intHeader.setIntValue(DATA_PHYSICAL_PARAM_CODE, ACC_PARM_CODE);
         this.intHeader.setIntValue(PROCESSING_AGENCY, agency_code);
         
-        this.realHeader.setRealValue(MAX_VAL, inVvals.getMaxVal());
+        this.realHeader.setRealValue(PEAK_VAL, inVvals.getPeakVal());
         this.realHeader.setRealValue(AVG_VAL, inVvals.getAvgVal());
-        this.realHeader.setRealValue(MAX_VAL_TIME, time);
+        this.realHeader.setRealValue(PEAK_VAL_TIME, time);
         this.realHeader.setRealValue(SCALING_FACTOR, inVvals.getConversionFactor());
         this.realHeader.setRealValue(MEAN_ZERO, inVvals.getMeanToZero());
         

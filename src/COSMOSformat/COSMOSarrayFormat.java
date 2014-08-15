@@ -311,7 +311,7 @@ abstract class COSMOSarrayFormat {
     }
     /**
      * Setter for the field width for converting numbers to text in the arrays
-     * @param fieldWidth 
+     * @param fieldWidth field width for converting numbers to text
      */
     public void setFieldWidth( int fieldWidth ) {
         this.fieldWidth = fieldWidth;

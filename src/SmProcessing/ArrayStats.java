@@ -190,24 +190,23 @@ public class ArrayStats {
      * This bin corresponds to a range of values in the array, and the lower end
      * value of the range is calculated and returned as the modal minimum.  The
      * number of bins used in the estimate is internally set at 100.
-     * 
+     * @param numbins the number of bins to use for the histogram
      * @return the approximate array value representing the most frequently
      * seen low range value.
      */
-    public double getModalMinimum() {
+    public double getModalMinimum( int numbins ) {
         double modalMin = Double.MIN_VALUE;
-        int NUM_BINS = 200;
         int[] hist;
         int mode = 0;
         int modeindex = -1;
         
         //Find the bin in the first half of the histogram with the highest
         //count.  This is the modal value for the minimum.
-        hist = makeHistogram( NUM_BINS );
+        hist = makeHistogram( numbins );
         
         int startbin = 0;
-        int stopbin = NUM_BINS;
-        for (int i = 0; i < NUM_BINS; i++) {
+        int stopbin = numbins;
+        for (int i = 0; i < numbins; i++) {
             if (hist[i] > 0) {
                 startbin = i;
                 break;

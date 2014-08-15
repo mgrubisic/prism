@@ -18,7 +18,9 @@ public class V0Component extends COSMOScontentFormat {
     private VIntArray V0Data;  //raw acceleration counts
     /**
      * Default constructor
-     * @param procType 
+     * @param procType identifies the data type of raw accel., uncorrected 
+     * accel., etc. of this component object (see data product names in 
+     * VFileConstants)
      */
     public V0Component( String procType){
         super( procType );

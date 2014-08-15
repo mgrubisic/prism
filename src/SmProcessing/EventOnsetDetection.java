@@ -27,6 +27,7 @@ import java.nio.file.Paths;
  * @author jmjones
  */
 public class EventOnsetDetection {
+    private static final int NUM_BINS = 200;
     private static final double XI = 0.6;  //damping ratio
     private static final double TN = 0.01; //vibration period
     private final double omegan;
@@ -135,7 +136,7 @@ public class EventOnsetDetection {
         // The value returned is the most frequently-occurring
         // value in the lower half of the array min-max range.
         ArrayStats statPIM = new ArrayStats(PIM);
-        double lowerMode = statPIM.getModalMinimum();
+        double lowerMode = statPIM.getModalMinimum(NUM_BINS);
         System.out.println("+++ modalMin in ppicker: " + lowerMode);
         //Now find the index of the first occurrence in the array of a value
         //that is greater than the most frequently-occurring value.

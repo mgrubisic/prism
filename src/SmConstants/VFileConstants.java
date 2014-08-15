@@ -75,8 +75,8 @@ public final class VFileConstants {
     //real header index values
     public static final int MEAN_ZERO = 35;
     public static final int DELTA_T = 61;
-    public static final int MAX_VAL = 63;
-    public static final int MAX_VAL_TIME = 64;
+    public static final int PEAK_VAL = 63;
+    public static final int PEAK_VAL_TIME = 64;
     public static final int AVG_VAL = 65;
     public static final int RECORER_LSB = 21;  //recorder least significant bit in microvolts
     public static final int RECORDER_FSI = 22;  //recorder full scale input in volts

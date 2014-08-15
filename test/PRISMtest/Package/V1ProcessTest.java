@@ -18,10 +18,30 @@
 package PRISMtest.Package;
 
 import COSMOSformat.V0Component;
+import static SmConstants.VFileConstants.FROM_G_CONVERSION;
+import static SmConstants.VFileConstants.GLN;
 import static SmConstants.VFileConstants.RAWACC;
-import org.junit.Before;
-import org.junit.Test;
+import static SmConstants.VFileConstants.RECORER_LSB;
+import static SmConstants.VFileConstants.SENSOR_SENSITIVITY;
+import SmException.FormatException;
+import SmException.SmException;
+import SmProcessing.ArrayOps;
+import SmProcessing.ArrayStats;
+import SmProcessing.RawTraceConversion;
+import SmProcessing.V1Process;
+import SmUtilities.ConfigReader;
+import SmUtilities.PrismXMLReader;
+import static SmUtilities.SmConfigConstants.DATA_UNITS_CODE;
+import static SmUtilities.SmConfigConstants.DATA_UNITS_NAME;
+import java.io.IOException;
+import javax.xml.parsers.ParserConfigurationException;
 import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.xml.sax.SAXException;
 
 /**
  *
@@ -30,14 +50,27 @@ import static org.junit.Assert.*;
 public class V1ProcessTest {
     String[] infile;
     V0Component v0;
+    V1Process v1p;
+    V1Process v2p;
+    V1Process v3p;
+    V1Process v4p;
+    V1Process v5p;
+    double EPSILON = 0.001;
     double delta = 0.0001;
+    int[] counts = {3284,3334,3296,3284,3308,3242,3236,3324,3322,3262,
+                    3300,3334,3302,3266,3322,3336,3312,3298,3254};
+    
+    double[] cmsvals = new double[19];
+    double[] gvals = new double[19];
+    
+    ConfigReader config = ConfigReader.INSTANCE;
     
     public V1ProcessTest() {
         this.infile = new String[48];
     }
     
     @Before
-    public void setUp() {
+    public void setUp() throws SmException, FormatException {
         infile[0] = "Raw acceleration counts   (Format v01.20 with 13 text lines) Src: 921az039.evt";
         infile[1] = "Rcrd of Wed Jan 15, 2014 01:35:00.0 PST";
         infile[2] = "Hypocenter: To be determined    H=   km       ML=     Mw= ";
@@ -88,8 +121,109 @@ public class V1ProcessTest {
         infile[47]= "End-of-data for Chan  1 acceleration";
         
         v0 = new V0Component(RAWACC);
+        
+        double lsb = 0.298023;
+        double sensitivity = 0.627;
+        double conv1 = RawTraceConversion.countToCMS(lsb, sensitivity, FROM_G_CONVERSION);
+        double conv2 = RawTraceConversion.countToG(lsb, sensitivity);
+        for (int i=0; i < counts.length; i++) {
+            cmsvals[i] = counts[i] * conv1;
+            gvals[i] = counts[i] * conv2;
+        }
+        ArrayStats cmsstat = new ArrayStats( cmsvals );
+        ArrayOps.removeMean(cmsvals, cmsstat.getMean());
+        ArrayStats gstat = new ArrayStats( gvals );
+        ArrayOps.removeMean(gvals, gstat.getMean());
     }
 
-     @Test
-     public void hello() {}
+    @Test
+    public void TestV1ProcessCMS() throws FormatException, SmException {
+        try {
+            String filename = "D:/PRISM/config_files/prism_config.xml";
+            PrismXMLReader xml = new PrismXMLReader();
+            xml.readFile(filename);
+        } catch (ParserConfigurationException | SAXException | IOException err) {
+            System.out.println("Unable to parse configuration file ");
+        }
+        int count = v0.loadComponent(0, infile);
+        v1p = new V1Process(v0);
+        v1p.processV1Data();
+        String unitname = config.getConfigValue(DATA_UNITS_NAME);
+        org.junit.Assert.assertArrayEquals(cmsvals, v1p.getV1Array(), EPSILON);
+        org.junit.Assert.assertEquals(1.536153578, v1p.getMeanToZero(), EPSILON);
+        org.junit.Assert.assertEquals(0.0, v1p.getAvgVal(), EPSILON);
+        org.junit.Assert.assertEquals(-0.0277712701279, v1p.getPeakVal(), EPSILON);
+        org.junit.Assert.assertEquals(6, v1p.getPeakIndex(), EPSILON);
+        org.junit.Assert.assertEquals(0.00046612555868, v1p.getConversionFactor(), EPSILON);
+        org.junit.Assert.assertEquals(4, v1p.getDataUnitCode());
+        org.junit.Assert.assertEquals("cm/sec2", v1p.getDataUnits());
+        org.junit.Assert.assertEquals(19, v1p.getV1ArrayLength());
+    }
+    @Test
+    public void TestV1ProcessG() throws SmException, FormatException {
+        try {
+            String filename = "D:/PRISM/config_files/prism_config_testV1.xml";
+            PrismXMLReader xml = new PrismXMLReader();
+            xml.readFile(filename);
+        } catch (ParserConfigurationException | SAXException | IOException err) {
+            System.out.println("Unable to parse configuration file ");
+        }
+        int count = v0.loadComponent(0, infile);
+         v2p = new V1Process(v0);
+        v2p.processV1Data();
+        org.junit.Assert.assertArrayEquals(gvals, v2p.getV1Array(), EPSILON);
+        org.junit.Assert.assertEquals(0.00156644070914, v2p.getMeanToZero(), EPSILON);
+        org.junit.Assert.assertEquals(0.0, v2p.getAvgVal(), EPSILON);
+        org.junit.Assert.assertEquals(-2.83188144044e-05, v2p.getPeakVal(), EPSILON);
+        org.junit.Assert.assertEquals(6, v2p.getPeakIndex(), EPSILON);
+        org.junit.Assert.assertEquals(4.75315789474e-07, v2p.getConversionFactor(), EPSILON);
+        org.junit.Assert.assertEquals(2, v2p.getDataUnitCode());
+        org.junit.Assert.assertEquals("g", v2p.getDataUnits());
+        org.junit.Assert.assertEquals(19, v2p.getV1ArrayLength());
+    }
+    @Rule public ExpectedException expectedEx = ExpectedException.none();
+    @Test
+    public void TestBadLSBParms() throws SmException, FormatException {
+        expectedEx.expect(SmException.class);
+        expectedEx.expectMessage("Real header #22, recorder least sig. bit, is invalid: -999.0");
+        infile[28]= "  -999.000000  -999.000000  -999.000000  -999.000000     2.500000    25.000000";
+        try {
+            String filename = "D:/PRISM/config_files/prism_config.xml";
+            PrismXMLReader xml = new PrismXMLReader();
+            xml.readFile(filename);
+        } catch (ParserConfigurationException | SAXException | IOException err) {
+            System.out.println("Unable to parse configuration file ");
+        }
+        int count = v0.loadComponent(0, infile);
+        v3p = new V1Process(v0);
+    }
+    @Test
+    public void TestBadSensitivityParms() throws SmException, FormatException {
+        expectedEx.expect(SmException.class);
+        expectedEx.expectMessage("Real header #42, sensor sensitivity, is invalid: 0.0");
+        infile[31]= "  -999.000000  -999.000000  -999.000000   100.400000      .660000      .000000";
+        try {
+            String filename = "D:/PRISM/config_files/prism_config.xml";
+            PrismXMLReader xml = new PrismXMLReader();
+            xml.readFile(filename);
+        } catch (ParserConfigurationException | SAXException | IOException err) {
+            System.out.println("Unable to parse configuration file ");
+        }
+        int count = v0.loadComponent(0, infile);
+        v3p = new V1Process(v0);
+    }
+    @Test
+    public void TestBadUnitCodeConfig() throws SmException, FormatException {
+        expectedEx.expect(SmException.class);
+        expectedEx.expectMessage("Error extracting numeric values from configuration file");
+        try {
+            String filename = "D:/PRISM/config_files/prism_config_testErrorV1.xml";
+            PrismXMLReader xml = new PrismXMLReader();
+            xml.readFile(filename);
+        } catch (ParserConfigurationException | SAXException | IOException err) {
+            System.out.println("Unable to parse configuration file ");
+        }
+        int count = v0.loadComponent(0, infile);
+        v3p = new V1Process(v0);
+    }
 }

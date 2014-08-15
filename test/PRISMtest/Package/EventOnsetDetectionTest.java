@@ -40,7 +40,7 @@ public class EventOnsetDetectionTest {
     EventOnsetDetection e10;
     EventOnsetDetection e20;
     
-    static final String picktest = "D:/PRISM/smtesting/ppicktest/15481673.AZ.FRD.HNN.txt";
+    static final String picktest = "D:/PRISM/ppicktest/15481673.AZ.FRD.HNN.txt";
     static String[] fileContents;
     
     double[] a1;
@@ -76,8 +76,10 @@ public class EventOnsetDetectionTest {
         for (int i = 0; i < a1.length; i++) {
             if (i < 20) {
                 a1[i] = -1.0;
+            } else if ((i >= 20) && (i < 40)){
+                a1[i] = 1.0;
             } else {
-                a1[i] = Math.sin((double)i) + 1.0;
+                a1[i] = -1.0;
             }
         }
     }
@@ -116,6 +118,6 @@ public class EventOnsetDetectionTest {
     public void check15481673AZFRDHNNOnset() {
         int pick = e10.findEventOnset(hnn, 0.0);
         System.out.println("15481673");
-        org.junit.Assert.assertEquals(1476, pick);
+        org.junit.Assert.assertEquals(1572, pick);
     }
 }

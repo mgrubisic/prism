@@ -190,21 +190,21 @@ public class V2Component extends COSMOScontentFormat {
         
         //update the headers with the V2 values
         this.intHeader.setIntValue(PROCESSING_STAGE_INDEX, V2_STAGE);
-        this.realHeader.setRealValue(MAX_VAL_TIME, time);
+        this.realHeader.setRealValue(PEAK_VAL_TIME, time);
         this.intHeader.setIntValue(V_UNITS_INDEX, unitscode);
         if (procType == V2DataType.ACC) {
             this.intHeader.setIntValue(DATA_PHYSICAL_PARAM_CODE, ACC_PARM_CODE);
-            this.realHeader.setRealValue(MAX_VAL, inVvals.getMaxVal(V2DataType.ACC));
+            this.realHeader.setRealValue(PEAK_VAL, inVvals.getMaxVal(V2DataType.ACC));
             this.realHeader.setRealValue(AVG_VAL, inVvals.getAvgVal(V2DataType.ACC));
             eodname = " acceleration";
         } else if (procType == V2DataType.VEL) {
             this.intHeader.setIntValue(DATA_PHYSICAL_PARAM_CODE, VEL_PARM_CODE);
-            this.realHeader.setRealValue(MAX_VAL, inVvals.getMaxVal(V2DataType.VEL));
+            this.realHeader.setRealValue(PEAK_VAL, inVvals.getMaxVal(V2DataType.VEL));
             this.realHeader.setRealValue(AVG_VAL, inVvals.getAvgVal(V2DataType.VEL));
             eodname = " velocity";
         } else {
             this.intHeader.setIntValue(DATA_PHYSICAL_PARAM_CODE, DIS_ABS_PARM_CODE);
-            this.realHeader.setRealValue(MAX_VAL, inVvals.getMaxVal(V2DataType.DIS));
+            this.realHeader.setRealValue(PEAK_VAL, inVvals.getMaxVal(V2DataType.DIS));
             this.realHeader.setRealValue(AVG_VAL, inVvals.getAvgVal(V2DataType.DIS));            
             eodname = " displacement";
         }

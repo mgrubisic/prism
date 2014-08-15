@@ -19,36 +19,48 @@ public class FormatException extends Exception {
   protected int lineNo = -1;
   protected String line = null;
 
+  /**
+   * Default constructor
+   */
   public FormatException() {
   }
+  /**
+   * Extends the standard exception by providing message text
+   * @param msg the exception message text
+   */
   public FormatException(String msg) {
     super(msg);
   }
   /** Descriptive message and line number of text containing incorrectly formatted data.
-     * @param msg
-     * @param lineNumber */
+     * @param msg the exception message text
+     * @param lineNumber line number in file that is incorrectly formatted
+     */
   public FormatException(String msg, int lineNumber) {
     super(msg);
     lineNo = lineNumber;
   }
   /** Descriptive message and line of text containing incorrectly formatted data.
-     * @param msg
-     * @param line */
+     * @param msg error message
+     * @param line line of text to attach to message
+     */
   public FormatException(String msg, String line) {
     super(msg);
     this.line = line;
   }
   /** Descriptive message and line number and line of text containing incorrectly formatted data.
-     * @param msg
-     * @param lineNumber
-     * @param line */
+     * @param msg descriptive error message
+     * @param lineNumber line number of format error in file
+     * @param line line contents
+     */
   public FormatException(String msg, int lineNumber, String line) {
     super(msg);
     lineNo = lineNumber;
     this.line = line;
   }
-  /** Descriptive message and if defined, the line number and/or line of text containing the incorrectly formatted data.
-     * @return  */
+  /** Descriptive message and if defined, the line number and/or line of text 
+   * containing the incorrectly formatted data.
+     * @return  the formatted string error message with line and line number
+     */
   @Override
   public String toString() {
       String s = super.toString();

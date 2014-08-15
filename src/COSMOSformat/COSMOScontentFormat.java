@@ -35,7 +35,8 @@ public class COSMOScontentFormat {
     protected String endOfData;  //Save the end-of-data line
     /**
      * Default constructor
-     * @param procType defines the data type of raw accel., uncorrected accel., etc.
+     * @param procType defines the data type of raw accel., uncorrected accel., 
+     * etc.,
      */
     public COSMOScontentFormat( String procType){
         this.procType = procType;

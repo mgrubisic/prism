@@ -84,10 +84,10 @@ public class ArrayOps {
     }
     /**
      * Removes a linear trend from an array, where the linear trend is calculated
-     * from another array.  This is used when a portion of the original array
-     * is identified for determining the linear trend, and then once the trend
-     * is calculated it is applied to the entire array.
-     * 
+     * from another array.  This can be used where a portion of an array (the
+     * subset array) is used to determine a linear trend, and then the trend
+     * is removed from the entire array.  It is assumed that both arrays use
+     * the same time step.
      * @param array input array to have the linear trend removed from
      * @param subarray input array to use to calculate the linear trend. This
      * array is not modified in the process.
@@ -204,10 +204,12 @@ public class ArrayOps {
         }
     }
     /**
-     * 
-     * @param inArray
-     * @param countConv
-     * @return 
+     * Converts raw trace counts to physical values by multiplying the integer
+     * counts in the input array by the count conversion factor.  The result is
+     * a floating point array.
+     * @param inArray input integer array to be converted
+     * @param countConv conversion factor to multiply by
+     * @return floating (double) point array of physical values
      */
     public static double[] countsToPhysicalValues(final int[] inArray, final double countConv) {
         
@@ -220,10 +222,11 @@ public class ArrayOps {
         return result;
     }
     /**
-     * 
-     * @param inArray
-     * @param countConv
-     * @return 
+     * Converts a floating (double) point array of one data unit type to another
+     * based on the conversion factor.
+     * @param inArray input array to be converted
+     * @param conversion conversion factor for multiplication
+     * @return a new array of converted values
      */
     public static double[] convertArrayUnits(final double[] inArray, final double conversion) {
         
