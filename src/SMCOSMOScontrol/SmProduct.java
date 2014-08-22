@@ -60,14 +60,23 @@ public class SmProduct {
         this.productList.add(newprod);
     }
     public void createDirectories() {
+        String event;
+        String station;
         StringBuilder sb = new StringBuilder(MAX_LINE_LENGTH);
-        String name = this.fileName.getName();
-        System.out.println("file name: " + name);
-        System.out.println("out dir: " + this.outFolder);
-        String[] sections = name.split("\\.");
-        String eid = sb.append(sections[1]).append(".").append(sections[0]).toString();
-        String station = sections[2];
-        File eventId = Paths.get(this.outFolder, eid).toFile();
+        String name = this.fileName.getName();        
+        boolean validname = validateFileName( name );
+        
+        if (validname) {
+            String[] sections = name.split("\\.");
+            event = sb.append(sections[0]).append(".").append(sections[1]).toString(); 
+            sb = new StringBuilder(MAX_LINE_LENGTH);
+            station = sb.append(sections[2]).append(".").append(sections[3]).toString(); 
+        } else {
+            event = "Orphan";
+            station = "";
+        }
+        
+        File eventId = Paths.get(this.outFolder, event).toFile();
         if (!eventId.isDirectory()) {
             eventId.mkdir();
         }
@@ -162,6 +171,28 @@ public class SmProduct {
         }
         Path outName = Paths.get(this.stationDir.toString(),this.fileExtension, name);
         return outName;
+    }
+    public boolean validateFileName( String name ) {
+        StringBuilder sb = new StringBuilder(80);
+        String pat = sb.append("^")
+                       .append("(\\w+)")
+                       .append("(\\.)")
+                       .append("(\\w+)")
+                       .append("(\\.)")
+                       .append("(\\w+)")
+                       .append("(\\.)")
+                       .append("(\\w+)")
+                       .append("(\\.)")
+                       .append("([-\\s\\w]*)")
+                       .append("(\\.)")
+                       .append("\\w+")
+                       .append("(\\.)")
+                       .append("[vV][0123]")
+                       .append("$")
+                       .toString();
+        Pattern officialname = Pattern.compile(pat);
+        Matcher m = officialname.matcher(name);
+        return m.matches();
     }
     public void moveV0AfterProcessing() throws IOException {
         System.out.println("stationDir: " + this.stationDir.toString());

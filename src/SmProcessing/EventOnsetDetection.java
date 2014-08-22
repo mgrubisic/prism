@@ -40,11 +40,19 @@ public class EventOnsetDetection {
     private final double coef_e; 
     private final double coef_f;
     
+    private int eventStart;
+    private double bufferVal;
+    private int bufferedStart;
+    
     //constructor
     public EventOnsetDetection(double deltaT) {
         this.deltaT = deltaT;
         omegan= 2.0 * Math.PI / TN;
         const_C = 2.0 * XI * omegan;
+        
+        eventStart = 0;
+        bufferVal = 0.0;
+        bufferedStart = 0;
 
         //Get the matrix coefficients for the specific sampling interval
         EventOnsetCoefs pickCoef = new EventOnsetCoefs();
@@ -74,6 +82,7 @@ public class EventOnsetDetection {
     public int findEventOnset( final double[] acc, double buffer) {
         int len = acc.length;
         int found = 0;
+        bufferVal = buffer;
         
         System.out.println("deltaT: " + deltaT);
         System.out.println("const_C: " + const_C);
@@ -124,7 +133,8 @@ public class EventOnsetDetection {
         double[] PIM = ArrayOps.Differentiate(EIM, deltaT);
         
         //!!!Debug 
-        TextFileWriter textout = new TextFileWriter( "D:/PRISM/filter_test/junit", "ppick_pim.txt", PIM);
+        TextFileWriter textout = new TextFileWriter( "D:/PRISM/filter_test/junit", 
+                                                            "ppick_pim.txt", PIM);
         try {
             textout.writeOutArray();
         } catch (IOException err) {
@@ -161,11 +171,17 @@ public class EventOnsetDetection {
         System.out.println("+++ start of zero crossing: " + found);
         //Return the index into the acceleration array that marks the start of
         //the P-wave, adjusted by the buffer amount
-        found = found - (int)(buffer/deltaT);
-        if (found < 0 ) {
-            return 0;
-        } else {
-            return found;
-        }
+        eventStart = found;
+        bufferedStart = found - (int)Math.round(buffer/deltaT);
+        return bufferedStart;
+    }
+    public int getEventStart() {
+        return this.eventStart;
+    }
+    public double getBufferLength() {
+        return this.bufferVal;
+    }
+    public int getBufferedStart() {
+        return this.bufferedStart;
     }
 }

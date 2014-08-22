@@ -179,7 +179,7 @@ public class ArrayOps {
      * @param degree polynomial degree to calculate, such as 2 or 3.
      * @param timestep sample interval
      */
-    public static void removePolynomialTrend(double[] array, int degree, double timestep) {
+    public static double[] removePolynomialTrend(double[] array, int degree, double timestep) {
         int len = array.length;
         double value;
         double[] time = makeTimeArray( timestep, len);
@@ -191,17 +191,25 @@ public class ArrayOps {
         PolynomialCurveFitter fitter = PolynomialCurveFitter.create(degree);
         double[] coefs = fitter.fit(points);
         
-//        for (double each : coefs) {
-//            System.out.println("poly coef: " + each);
-//        }
+        for (double each : coefs) {
+            System.out.println("poly coef: " + each);
+        }
         //Remove the calculated polynomial trend from the array
         for (int i = 0; i < len; i++) {
             value = 0.0;
             for (int k = 0; k < coefs.length; k++) {
-                value = value + coefs[k]*Math.pow(i,k);
+                value = value + coefs[k]*Math.pow(time[i],k);
             }
             array[i] = array[i] - value;
         }
+        return coefs;
+    }
+    public static double rootMeanSquare( double[] array ) {
+        double rms = 0.0;
+        for (double each : array) {
+            rms += Math.pow(each, 2);
+        }
+        return Math.sqrt(rms / array.length);
     }
     /**
      * Converts raw trace counts to physical values by multiplying the integer

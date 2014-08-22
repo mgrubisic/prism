@@ -176,4 +176,48 @@ public class Prism {
             return inList.toArray(finalList);
         }
     }
+    public String getInFolder()
+    {
+        return this.inFolder;
+    }
+    
+    public String getOutFolder()
+    {
+        return this.outFolder;
+    }
+    
+    public String getConfigFile()
+    {
+        return this.configFile;
+    }
+    
+    public File[] getInVList()
+    {
+        return this.inVList;
+    }
+    
+    public SmQueue getSmqueue()
+    {
+        return this.smqueue;
+    }
+    
+    public SmProduct getV1product()
+    {
+        return this.V1product;
+    }
+    
+    public SmProduct getV2product()
+    {
+        return this.V2product;
+    }
+    
+    public SmProduct getV3product()
+    {
+        return this.V3product;
+    }
+    
+    public void setInVList(File[] inVList)
+    {
+        this.inVList = inVList;
+    }
 }

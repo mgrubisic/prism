@@ -219,11 +219,9 @@ public class V2Process {
         //Remove pre-event linear trend from acceleration record
         System.out.println("+++ accraw before linear trend, start: " + accraw[0] + " end: " + accraw[accraw.length-1]);
         if (startIndex > 0) {
-//            double[] subset = Arrays.copyOfRange( accraw, 0, startIndex );
-//            ArrayStats accsub = new ArrayStats( subset );
-//            ArrayOps.removeMean(accraw, accsub.getMean());
             double[] subset = Arrays.copyOfRange( accraw, 0, startIndex );
-            ArrayOps.removeLinearTrendFromSubArray(accraw, subset, dtime);
+            ArrayStats accsub = new ArrayStats( subset );
+            ArrayOps.removeMean(accraw, accsub.getMean());
        }
         else {
             ArrayStats accmean = new ArrayStats( accraw );
@@ -271,7 +269,7 @@ public class V2Process {
         System.out.println("+++ magnitude: " + magnitude + " and type used: " + magtype);
         System.out.println("+++ Adj f1: " + lowcutadj + "  adj f2: " + highcutadj);
         valid = filter.calculateCoefficients(lowcutadj, highcutadj, 
-                                            dtime, numpoles, true);
+                                            dtime, DEFAULT_NUM_POLES, true);
         if (valid) {
             filter.applyFilter(velocity, taperlength);
         } else {
