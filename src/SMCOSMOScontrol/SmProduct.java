@@ -32,44 +32,54 @@ import java.util.regex.Pattern;
  * @author jmjones
  */
 public class SmProduct {
-    private static String outFolder;
-    private static File fileName;
-    private final String fileExtension;
-    private ArrayList<COSMOScontentFormat> productList;
+    private String outFolder;
+    private File fileName;
+    private ArrayList<COSMOScontentFormat> V1List;
+    private ArrayList<COSMOScontentFormat> V2List;
+    private ArrayList<COSMOScontentFormat> V3List;
     private final Charset ENCODING = StandardCharsets.UTF_8;
-    private static OutputStyle bundleFlag;
-    private static File stationDir; //value is set in the setDirectories method
-    private static File eventDir;  //value is set in the setDirectories method
-    private static File logDir;  //value is set in the setDirectories method
-    private static int numInInputList;
+    private OutputStyle bundleFlag;
+    private File stationDir; //value is set in the setDirectories method
+    private File eventDir;  //value is set in the setDirectories method
+    private File logDir;  //value is set in the setDirectories method
+    private int numInInputList;
     
     //The products package assumes a file name structure for the V0 files.
     //
-    public SmProduct(final File inFileName, final String newExt, 
-                                                    final String newFolder) {
-        SmProduct.fileName = inFileName;
-        this.productList = new ArrayList<>();
-        this.fileExtension = newExt;
-        SmProduct.outFolder = newFolder;
-        SmProduct.numInInputList= 1;
+    public SmProduct(final File inFileName, final String newFolder) {
+        this.fileName = inFileName;
+        this.V1List = new ArrayList<>();
+        this.V2List = new ArrayList<>();
+        this.V3List = new ArrayList<>();
+        this.outFolder = newFolder;
+        this.numInInputList= 1;
+        this.stationDir = new File( newFolder );
+        this.eventDir = new File( newFolder );
+        this.logDir = new File( newFolder );
         
         ConfigReader config = ConfigReader.INSTANCE;
         String outStyle = config.getConfigValue(OUT_FILE_FORMAT);
         if (outStyle.compareToIgnoreCase("bundled") == 0) {
-            SmProduct.bundleFlag = OutputStyle.BUNDLED;
+            this.bundleFlag = OutputStyle.BUNDLED;
         } else {
-            SmProduct.bundleFlag = OutputStyle.SINGLE_CHANNEL;
+            this.bundleFlag = OutputStyle.SINGLE_CHANNEL;
         }
     }
-    public void addProduct(COSMOScontentFormat newprod ) {
-        this.productList.add(newprod);
+    public void addProduct(COSMOScontentFormat newprod, String ext ) {
+        if (ext.equalsIgnoreCase("V1")) {
+            this.V1List.add((V1Component)newprod);
+        } else if (ext.equalsIgnoreCase("V2")) {
+            this.V2List.add((V2Component)newprod);
+        } else {
+//            this.V3List.add((V3Component)newprod);
+        }
     }
-    public void setDirectories(V2Component v2rec, boolean passedQA, int numlist) {
+    public void setDirectories(String eventMarker, boolean passedQA, int numlist) {
         String event;
         String station;
-        SmProduct.numInInputList = numlist;
+        this.numInInputList = numlist;
         StringBuilder sb = new StringBuilder(MAX_LINE_LENGTH);
-        String name = SmProduct.fileName.getName();        
+        String name = this.fileName.getName();        
         boolean validname = validateFileName( name );
         String[] sections = name.split("\\.");
         
@@ -80,7 +90,7 @@ public class SmProduct {
         }
         if (passedQA) {
             if (event.equals("Orphan")) {
-                station = v2rec.getEventDateTime();
+                station = eventMarker;
             } else {
                 sb = new StringBuilder(MAX_LINE_LENGTH);
                 station = sb.append(sections[2]).append(".").append(sections[3]).toString();
@@ -89,25 +99,25 @@ public class SmProduct {
                station = "Trouble";         
         }
         
-        File logId = Paths.get(SmProduct.outFolder, "Logs").toFile();
+        File logId = Paths.get(this.outFolder, "Logs").toFile();
         if (!logId.isDirectory()) {
             logId.mkdir();
         }
-        SmProduct.logDir = logId;
+        this.logDir = logId;
         
-        File eventId = Paths.get(SmProduct.outFolder, event).toFile();
+        File eventId = Paths.get(this.outFolder, event).toFile();
         if (!eventId.isDirectory()) {
             eventId.mkdir();
         }
-        SmProduct.eventDir = eventId;
+        this.eventDir = eventId;
         
         File stationId = Paths.get(eventId.toString(), station).toFile();
         if (!stationId.isDirectory()) {
             stationId.mkdir();
         }
-        SmProduct.stationDir = stationId;
+        this.stationDir = stationId;
         
-        System.out.println("event: " + SmProduct.eventDir + " and station: " + SmProduct.stationDir);
+        System.out.println("event: " + this.eventDir + " and station: " + this.stationDir);
         File V0Id = Paths.get(stationId.toString(), "V0").toFile();
         if (!V0Id.isDirectory()) {
             V0Id.mkdir();
@@ -129,74 +139,84 @@ public class SmProduct {
     }
     
     public void writeOutProducts() throws IOException {
+        TextFileWriter textout;
+        Iterator iter;
         Path outName = null;
-        if (SmProduct.bundleFlag == OutputStyle.BUNDLED) {
-            outName = buildFilename(SmProduct.bundleFlag, 0);
-            Files.deleteIfExists(outName);
-        }
         String[] contents;
-        System.out.println("productlist length: " + this.productList.size());
+        System.out.println("productlist length: " + this.V1List.size());
         
-        Iterator iter = this.productList.iterator();
+        iter = this.V1List.iterator();
         while (iter.hasNext()) {
-            COSMOScontentFormat each = (COSMOScontentFormat)iter.next();
-            if (SmProduct.bundleFlag == OutputStyle.SINGLE_CHANNEL) {
-                outName = buildFilename(SmProduct.bundleFlag, each.getChannelNum());
-            }
-            
-            if (fileExtension.compareToIgnoreCase("V1") == 0) {
-                V1Component rec = (V1Component)each;
-                contents = rec.VrecToText();
-                TextFileWriter textout = new TextFileWriter(outName, contents);
-                if (SmProduct.bundleFlag == OutputStyle.SINGLE_CHANNEL) {
-                    textout.writeOutToFile();
-                } else {
-                    textout.appendToFile();
-                }
-            } else if (fileExtension.compareToIgnoreCase("V2") == 0) {
-                //get corrected acceleration
-                V2Component rec = (V2Component)each;
-                contents = rec.VrecToText();
-                TextFileWriter textout = new TextFileWriter(outName, contents);
-                if (SmProduct.bundleFlag == OutputStyle.SINGLE_CHANNEL) {
-                    textout.writeOutToFile();
-                } else {
-                    textout.appendToFile();
-                }
-                //get velocity and append to file
-                ///add error checking for end of list !!!
-                each = (COSMOScontentFormat)iter.next();
-                rec = (V2Component)each;
-                contents = rec.VrecToText();
-                textout = new TextFileWriter(outName, contents);
-                textout.appendToFile();
-                //get displacement and append
-                each = (COSMOScontentFormat)iter.next();
-                rec = (V2Component)each;
-                contents = rec.VrecToText();
-                textout = new TextFileWriter(outName, contents);
-                textout.appendToFile();
+            V1Component rec1 = (V1Component)iter.next();
+            if (this.bundleFlag == OutputStyle.SINGLE_CHANNEL) {
+                outName = buildFilename(this.bundleFlag, "V1",rec1.getChannelNum());
             } else {
-                System.out.println("+++ Ready to write out V3");
+                outName = buildFilename(this.bundleFlag, "V1", 0);
+            }
+            contents = rec1.VrecToText();
+            textout = new TextFileWriter(outName, contents);
+            if (this.bundleFlag == OutputStyle.SINGLE_CHANNEL) {
+                textout.writeOutToFile();
+            } else {
+                textout.appendToFile();
             }
         }
+        this.V1List.clear();
+        
+        iter = this.V2List.iterator();
+        while (iter.hasNext()) {
+            V2Component rec2 = (V2Component)iter.next();
+            if (this.bundleFlag == OutputStyle.SINGLE_CHANNEL) {
+                outName = buildFilename(this.bundleFlag, "V2",rec2.getChannelNum());
+            } else {
+                outName = buildFilename(this.bundleFlag, "V2", 0);
+            }
+            contents = rec2.VrecToText();
+            textout = new TextFileWriter(outName, contents);
+            if (this.bundleFlag == OutputStyle.SINGLE_CHANNEL) {
+                textout.writeOutToFile();
+            } else {
+                textout.appendToFile();
+            }
+            //get velocity and append to file
+            if (iter.hasNext()) {
+                rec2 = (V2Component)iter.next();
+                contents = rec2.VrecToText();
+                textout = new TextFileWriter(outName, contents);
+                textout.appendToFile();
+            }
+            //get displacement and append
+            if (iter.hasNext()) {
+                rec2 = (V2Component)iter.next();
+                contents = rec2.VrecToText();
+                textout = new TextFileWriter(outName, contents);
+                textout.appendToFile();
+            }
+        }
+        this.V2List.clear();
+        
+        iter = this.V3List.iterator();
+        while (iter.hasNext()) {
+            System.out.println("Print out V3");
+        }
+        this.V3List.clear();
     }
-    public Path buildFilename( OutputStyle aBundleFlag, int aChannelNum) {
-        String startName = SmProduct.fileName.getName();
+    public Path buildFilename( OutputStyle aBundleFlag, String fileExtension, int aChannelNum) {
+        String startName = this.fileName.getName();
         String name = "";
         String getExtensionRegex = "\\.(?i)V\\d$";
         Pattern extension = Pattern.compile( getExtensionRegex );
         Matcher matcher = extension.matcher(startName);
-        if ((aBundleFlag == OutputStyle.SINGLE_CHANNEL) && (SmProduct.numInInputList > 1)) {
+        if ((aBundleFlag == OutputStyle.SINGLE_CHANNEL) && (this.numInInputList > 1)) {
             String channel = String.valueOf(aChannelNum);
-            name = matcher.replaceFirst("." + channel + "." + this.fileExtension);
+            name = matcher.replaceFirst("." + channel + "." + fileExtension);
         } else {
-            name = matcher.replaceFirst("." + this.fileExtension);
+            name = matcher.replaceFirst("." + fileExtension);
         }
-        System.out.println("fileExtension " + this.fileExtension);
+        System.out.println("fileExtension " + fileExtension);
         System.out.println("name: " + name);
-        System.out.println("stationDir: " + SmProduct.stationDir);
-        Path outName = Paths.get(SmProduct.stationDir.toString(),this.fileExtension, name);
+        System.out.println("stationDir: " + this.stationDir);
+        Path outName = Paths.get(this.stationDir.toString(),fileExtension, name);
         return outName;
     }
     public boolean validateFileName( String name ) {
@@ -222,10 +242,10 @@ public class SmProduct {
         return m.matches();
     }
     public void moveV0AfterProcessing() throws IOException {
-        System.out.println("stationDir: " + SmProduct.stationDir.toString());
-        System.out.println("filename: " + SmProduct.fileName.getName());
-        Path target = Paths.get(SmProduct.stationDir.toString(),"V0", SmProduct.fileName.getName());
-        Path source = SmProduct.fileName.toPath();
+        System.out.println("stationDir: " + this.stationDir.toString());
+        System.out.println("filename: " + this.fileName.getName());
+        Path target = Paths.get(this.stationDir.toString(),"V0", this.fileName.getName());
+        Path source = this.fileName.toPath();
         Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
 //        Files.deleteIfExists(source);
     }

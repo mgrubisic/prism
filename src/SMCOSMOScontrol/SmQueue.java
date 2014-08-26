@@ -93,8 +93,8 @@ public class SmQueue {
         return smlist.size();
     }
     
-    public void processQueueContents(SmProduct V1prod, SmProduct V2prod,SmProduct V3prod) 
-                                        throws FormatException, SmException, IOException {
+    public void processQueueContents(SmProduct Vprod) 
+                                throws FormatException, SmException, IOException {
 
         for (COSMOScontentFormat rec : smlist) {
             //declare rec as a V0 channel record
@@ -121,11 +121,11 @@ public class SmQueue {
             V2Component V2dis = new V2Component( DISPLACE, v1rec );
             V2dis.buildV2(V2DataType.DIS, v2val);
             
-            V2prod.setDirectories(V2acc, complete, numRecords);
-            V1prod.addProduct(v1rec);
-            V2prod.addProduct(V2acc);
-            V2prod.addProduct(V2vel);
-            V2prod.addProduct(V2dis);
+            Vprod.setDirectories(V2acc.getEventDateTime(), complete, numRecords);
+            Vprod.addProduct(v1rec, "V1");
+            Vprod.addProduct(V2acc, "V2");
+            Vprod.addProduct(V2vel, "V2");
+            Vprod.addProduct(V2dis, "V2");
             
             //Create the V3 processing object and do the processing.  V3 processing
             //produces 1  V3 object: response spectra.

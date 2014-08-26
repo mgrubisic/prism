@@ -41,9 +41,7 @@ public class Prism {
     // data structures for the controller
     private File[] inVList;
     private SmQueue smqueue;
-    private SmProduct V1product;
-    private SmProduct V2product;
-    private SmProduct V3product;
+    private SmProduct Vproduct;
 
     public Prism (String[] args) throws SmException {
         this.configFile = "";
@@ -98,9 +96,7 @@ public class Prism {
             //Attempt to process all the files in the list.
             for (File each: smc.inVList){
                 smc.smqueue = new SmQueue( each );
-                smc.V1product = new SmProduct(each, "V1", smc.outFolder);
-                smc.V2product = new SmProduct(each, "V2", smc.outFolder);
-                smc.V3product = new SmProduct(each, "V3", smc.outFolder);
+                smc.Vproduct = new SmProduct(each, smc.outFolder);
                 //add V3 products eventually
                 try {
 //                    long startTime = System.nanoTime();
@@ -118,9 +114,7 @@ public class Prism {
 //                    long parseTime = System.nanoTime() - startTime;
                     //next is to process the records, then write out results
 //                    startTime = System.nanoTime();
-                    smc.smqueue.processQueueContents(smc.V1product, 
-                                                     smc.V2product,
-                                                     smc.V3product);
+                    smc.smqueue.processQueueContents(smc.Vproduct);
 //                    long processTime = System.nanoTime() - startTime;
 //                    startTime = System.nanoTime();
 
@@ -128,10 +122,8 @@ public class Prism {
                     //out of the input directory and into its pass/fail location.
                     //create the directories for writing out.  Append directory
                     //names to writeOutProducts call?
-                    smc.V1product.writeOutProducts();
-                    smc.V2product.writeOutProducts();
-                    smc.V3product.writeOutProducts();
-                    smc.V2product.moveV0AfterProcessing();
+                    smc.Vproduct.writeOutProducts();
+                    smc.Vproduct.moveV0AfterProcessing();
 //                    long writeTime = System.nanoTime() - startTime;
                     //this is a mess!
 //                    System.out.println("+++ read time: " + readTime*NANO_TO_SECOND);
@@ -204,22 +196,7 @@ public class Prism {
     {
         return this.smqueue;
     }
-    
-    public SmProduct getV1product()
-    {
-        return this.V1product;
-    }
-    
-    public SmProduct getV2product()
-    {
-        return this.V2product;
-    }
-    
-    public SmProduct getV3product()
-    {
-        return this.V3product;
-    }
-    
+        
     public void setInVList(File[] inVList)
     {
         this.inVList = inVList;
