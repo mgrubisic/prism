@@ -100,6 +100,7 @@ public class Prism {
                 smc.smqueue = new SmQueue( each );
                 smc.V1product = new SmProduct(each, "V1", smc.outFolder);
                 smc.V2product = new SmProduct(each, "V2", smc.outFolder);
+                smc.V3product = new SmProduct(each, "V3", smc.outFolder);
                 //add V3 products eventually
                 try {
 //                    long startTime = System.nanoTime();
@@ -117,7 +118,9 @@ public class Prism {
 //                    long parseTime = System.nanoTime() - startTime;
                     //next is to process the records, then write out results
 //                    startTime = System.nanoTime();
-                    smc.smqueue.processQueueContents(smc.V1product, smc.V2product);
+                    smc.smqueue.processQueueContents(smc.V1product, 
+                                                     smc.V2product,
+                                                     smc.V3product);
 //                    long processTime = System.nanoTime() - startTime;
 //                    startTime = System.nanoTime();
 
@@ -127,6 +130,7 @@ public class Prism {
                     //names to writeOutProducts call?
                     smc.V1product.writeOutProducts();
                     smc.V2product.writeOutProducts();
+                    smc.V3product.writeOutProducts();
                     smc.V2product.moveV0AfterProcessing();
 //                    long writeTime = System.nanoTime() - startTime;
                     //this is a mess!

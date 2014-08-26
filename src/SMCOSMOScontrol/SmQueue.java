@@ -93,10 +93,9 @@ public class SmQueue {
         return smlist.size();
     }
     
-    public void processQueueContents(SmProduct V1prod, SmProduct V2prod) 
+    public void processQueueContents(SmProduct V1prod, SmProduct V2prod,SmProduct V3prod) 
                                         throws FormatException, SmException, IOException {
-        //under construction
-        double[] array;
+
         for (COSMOScontentFormat rec : smlist) {
             //declare rec as a V0 channel record
             V0Component v0rec = (V0Component)rec;
@@ -108,7 +107,6 @@ public class SmQueue {
             //create a V1 component to get the processing results
             V1Component v1rec = new V1Component( UNCORACC, v0rec);
             v1rec.buildV1(v1val);
-            V1prod.addProduct(v1rec);
            
             //Create the V2 processing object and do the processing.  V2 processing
             //produces 3 V2 objects: corrected acceleration, velocity, and displacement
@@ -122,6 +120,9 @@ public class SmQueue {
             V2vel.buildV2(V2DataType.VEL, v2val);
             V2Component V2dis = new V2Component( DISPLACE, v1rec );
             V2dis.buildV2(V2DataType.DIS, v2val);
+            
+            V2prod.setDirectories(V2acc, complete, numRecords);
+            V1prod.addProduct(v1rec);
             V2prod.addProduct(V2acc);
             V2prod.addProduct(V2vel);
             V2prod.addProduct(V2dis);

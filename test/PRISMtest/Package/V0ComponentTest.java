@@ -246,4 +246,12 @@ public class V0ComponentTest {
         int[] test = v0.getDataArray();
         org.junit.Assert.assertEquals(3300, test[10]);
     }
+    @Test
+    public void testEventDateTime() throws FormatException, SmException {
+        int lineNum = v0.loadComponent(0, infile);
+        String expected = "UT_2014_15_09_35_00";
+        String actual = v0.getEventDateTime();
+        System.out.println("event date time: " + actual);
+       org.junit.Assert.assertEquals(expected, actual);
+    }
 }

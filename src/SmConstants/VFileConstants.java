@@ -37,6 +37,13 @@ public final class VFileConstants {
     public static final String DEFAULT_REAL_DISPLAYTYPE = "E";
     public static final String DEFAULT_INT_DISPLAYTYPE = "I";
     
+    //event date time text header entries
+    public static final int START_TIME_YEAR = 39;
+    public static final int START_TIME_JULIAN_DAY = 40;
+    public static final int START_TIME_HOUR = 43;
+    public static final int START_TIME_MIN = 44;
+    public static final int START_TIME_SEC = 29;
+    
     //data product names
     public static final String RAWACC =   "Raw acceleration counts  ";
     public static final String UNCORACC = "Uncorrected acceleration ";
