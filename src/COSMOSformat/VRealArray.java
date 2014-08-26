@@ -134,9 +134,13 @@ public class VRealArray extends COSMOSarrayFormat {
  * numLines fields based on the current array size and other field values.
  * @throws FormatException if the fieldWidth field is less than or equal to 0
  */
-    public void buildArrayParams() throws FormatException {
+    public void buildArrayParams(String packtype) throws FormatException {
         if (this.getFieldWidth() > 0 ) {
-            this.setValsPerLine(MAX_LINE_LENGTH / this.getFieldWidth());
+            if (packtype.equals("packed")) {
+                this.setValsPerLine(MAX_LINE_LENGTH / this.getFieldWidth());
+            } else {
+                this.setValsPerLine(1);
+            }
         } else {
             throw new FormatException("Invalid field width of " + this.getFieldWidth());
         }
@@ -153,7 +157,7 @@ public class VRealArray extends COSMOSarrayFormat {
      */
     @Override
     public ArrayList<String> arrayToText() {
-        String outType = ("e".compareToIgnoreCase(this.displayType) == 0) ? "e" : "f";
+        String outType = ("e".equalsIgnoreCase(this.displayType)) ? "e" : "f";
         //!!!update this line for floating pt. format
         String formatting = "%" + String.valueOf(this.getFieldWidth()) + "." +
                                 String.valueOf(this.getPrecision())+ outType;

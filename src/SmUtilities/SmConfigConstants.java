@@ -28,6 +28,7 @@ public class SmConfigConstants {
     public static final String PROC_AGENCY_IRIS = "PRISM/ProcessingAgency/StrongMotionNetworkCode/AgencyIRISCode";
     
     public static final String OUT_FILE_FORMAT = "PRISM/OutputFileFormat";
+    public static final String OUT_ARRAY_FORMAT = "PRISM/OutputArrayFormat";
     
     public static final String DATA_UNITS_CODE = "PRISM/DataUnitsForCountConversion/DataUnitCodes/DataUnitCode";
     public static final String DATA_UNITS_NAME = "PRISM/DataUnitsForCountConversion/DataUnitCodes/DataUnitName";

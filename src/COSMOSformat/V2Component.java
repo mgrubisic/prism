@@ -7,10 +7,12 @@
 package COSMOSformat;
 
 import static SmConstants.VFileConstants.*;
+import SmConstants.VFileConstants.V2DataType;
 import SmException.FormatException;
 import SmException.SmException;
 import SmProcessing.V2Process;
 import SmUtilities.ConfigReader;
+import static SmUtilities.SmConfigConstants.OUT_ARRAY_FORMAT;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_ABBREV;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_CODE;
 import SmUtilities.SmTimeFormatter;
@@ -126,6 +128,12 @@ public class V2Component extends COSMOScontentFormat {
         String agcode = config.getConfigValue(PROC_AGENCY_CODE);
         int agency_code = (agcode == null) ? 0 : Integer.parseInt(agcode);
         
+        //Get the array output format of single column per channel or packed
+        String arrformat = config.getConfigValue(OUT_ARRAY_FORMAT);
+        if (!(arrformat.equalsIgnoreCase("packed")) && !(arrformat.equalsIgnoreCase("singleColumn"))) {
+            arrformat = "packed";
+        }
+        
         //Get the current processing time
         String val = proctime.getGMTdateTime();
         //update values in the text header
@@ -165,26 +173,24 @@ public class V2Component extends COSMOScontentFormat {
                                 .toString();
         
         //transfer the data array and set all array values
+        V2Data.setFieldWidth(REAL_FIELDWIDTH_V2);
+        V2Data.setPrecision(REAL_PRECISION_V2);
+        String packtype = (arrformat.equalsIgnoreCase("singleColumn")) ? "single" : "packed";
+        System.out.println("packtype: " + packtype);
         if (procType == V2DataType.ACC) {
             V2Data.setRealArray(inVvals.getV2Array(V2DataType.ACC));
-            V2Data.setFieldWidth(REAL_FIELDWIDTH_V2);
-            V2Data.setPrecision(REAL_PRECISION_V2);
             V2Data.setNumVals(inVvals.getV2ArrayLength(V2DataType.ACC));
-            V2Data.buildArrayParams();
+            V2Data.buildArrayParams( packtype );
             this.buildNewDataFormatLine(unitsname, unitscode, "acceleration");
         } else if (procType == V2DataType.VEL) {
             V2Data.setRealArray(inVvals.getV2Array(V2DataType.VEL));
-            V2Data.setFieldWidth(REAL_FIELDWIDTH_V2);
-            V2Data.setPrecision(REAL_PRECISION_V2);
             V2Data.setNumVals(inVvals.getV2ArrayLength(V2DataType.VEL));
-            V2Data.buildArrayParams();
+            V2Data.buildArrayParams( packtype );
             this.buildNewDataFormatLine(unitsname, unitscode, "velocity    ");
         }else {
             V2Data.setRealArray(inVvals.getV2Array(V2DataType.DIS));
-            V2Data.setFieldWidth(REAL_FIELDWIDTH_V2);
-            V2Data.setPrecision(REAL_PRECISION_V2);
             V2Data.setNumVals(inVvals.getV2ArrayLength(V2DataType.DIS));
-            V2Data.buildArrayParams();
+            V2Data.buildArrayParams( packtype );
             this.buildNewDataFormatLine(unitsname, unitscode, "displacement");            
         }
         

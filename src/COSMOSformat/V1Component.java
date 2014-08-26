@@ -11,6 +11,7 @@ import SmException.FormatException;
 import SmException.SmException;
 import SmProcessing.V1Process;
 import SmUtilities.ConfigReader;
+import static SmUtilities.SmConfigConstants.OUT_ARRAY_FORMAT;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_ABBREV;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_CODE;
 import SmUtilities.SmTimeFormatter;
@@ -100,7 +101,7 @@ public class V1Component extends COSMOScontentFormat {
         //verify that real header value delta t is defined and valid
         //this check has also happened in the V1process !!!
         this.realHeader.setFieldWidth(DEFAULT_REAL_FIELDWIDTH);
-        this.realHeader.buildArrayParams();
+        this.realHeader.buildArrayParams( "packed" );
         this.setRealHeaderFormatLine();
         
         double delta_t = this.realHeader.getRealValue(DELTA_T);
@@ -122,6 +123,13 @@ public class V1Component extends COSMOScontentFormat {
         String unitsname = inVvals.getDataUnits();
         int unitscode = inVvals.getDataUnitCode();
         
+        //Get the array output format of single column per channel or packed
+        String arrformat = config.getConfigValue(OUT_ARRAY_FORMAT);
+        if (!(arrformat.equalsIgnoreCase("packed")) && !(arrformat.equalsIgnoreCase("singleColumn"))) {
+            arrformat = "packed";
+        }
+        String packtype = (arrformat.equalsIgnoreCase("singleColumn")) ? "single" : "packed";
+
         //Get the current processing time
         String val = proctime.getGMTdateTime();
         //update values in the text header
@@ -138,7 +146,7 @@ public class V1Component extends COSMOScontentFormat {
         V1Data.setFieldWidth(REAL_FIELDWIDTH_V1);
         V1Data.setPrecision(REAL_PRECISION_V1);
         V1Data.setNumVals(inVvals.getV1ArrayLength());
-        V1Data.buildArrayParams();
+        V1Data.buildArrayParams( packtype );
         this.buildNewDataFormatLine(unitsname, unitscode);
         
         //update the headers with the V1 values

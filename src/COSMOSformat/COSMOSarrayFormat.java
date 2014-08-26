@@ -229,6 +229,7 @@ abstract class COSMOSarrayFormat {
             }
             newText[i+1] = line.toString();
         }
+        textVals.clear();
         return newText;
     }
     /**
