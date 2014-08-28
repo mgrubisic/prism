@@ -134,9 +134,9 @@ public class VRealArray extends COSMOSarrayFormat {
  * numLines fields based on the current array size and other field values.
  * @throws FormatException if the fieldWidth field is less than or equal to 0
  */
-    public void buildArrayParams(String packtype) throws FormatException {
+    public void buildArrayParams(SmArrayStyle packtype) throws FormatException {
         if (this.getFieldWidth() > 0 ) {
-            if (packtype.equals("packed")) {
+            if (packtype == SmArrayStyle.PACKED) {
                 this.setValsPerLine(MAX_LINE_LENGTH / this.getFieldWidth());
             } else {
                 this.setValsPerLine(1);

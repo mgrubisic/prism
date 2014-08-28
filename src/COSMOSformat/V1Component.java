@@ -101,7 +101,7 @@ public class V1Component extends COSMOScontentFormat {
         //verify that real header value delta t is defined and valid
         //this check has also happened in the V1process !!!
         this.realHeader.setFieldWidth(DEFAULT_REAL_FIELDWIDTH);
-        this.realHeader.buildArrayParams( "packed" );
+        this.realHeader.buildArrayParams( SmArrayStyle.PACKED );
         this.setRealHeaderFormatLine();
         
         double delta_t = this.realHeader.getRealValue(DELTA_T);
@@ -125,10 +125,12 @@ public class V1Component extends COSMOScontentFormat {
         
         //Get the array output format of single column per channel or packed
         String arrformat = config.getConfigValue(OUT_ARRAY_FORMAT);
-        if (!(arrformat.equalsIgnoreCase("packed")) && !(arrformat.equalsIgnoreCase("singleColumn"))) {
-            arrformat = "packed";
+        if (!(arrformat.equalsIgnoreCase("packed")) && 
+                                !(arrformat.equalsIgnoreCase("singleColumn"))) {
+            arrformat = DEFAULT_ARRAY_STYLE;
         }
-        String packtype = (arrformat.equalsIgnoreCase("singleColumn")) ? "single" : "packed";
+        SmArrayStyle packtype = (arrformat.equalsIgnoreCase("singleColumn")) ? 
+                              SmArrayStyle.SINGLE_COLUMN : SmArrayStyle.PACKED;
 
         //Get the current processing time
         String val = proctime.getGMTdateTime();

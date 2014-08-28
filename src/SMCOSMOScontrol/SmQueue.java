@@ -19,7 +19,6 @@ import SmException.FormatException;
 import SmException.SmException;
 import SmProcessing.V1Process;
 import SmProcessing.V2Process;
-import SmUtilities.ConfigReader;
 import SmUtilities.TextFileReader;
 
 /**
@@ -79,7 +78,6 @@ public class SmQueue {
                 } else {
                     dataType = CORACC;
                 }
-                System.out.println("+++ parsing V2 section: datatype is " + dataType);
                 V2Component rec = new V2Component( dataType );
                 returnLine = rec.loadComponent(currentLine, fileContents);
                 currentLine = (returnLine > currentLine) ? returnLine : fileContents.length;
@@ -89,7 +87,6 @@ public class SmQueue {
             }
         }
         numRecords = smlist.size();
-        System.out.println("+++ found " + smlist.size() + " record(s) in file");
         return smlist.size();
     }
     

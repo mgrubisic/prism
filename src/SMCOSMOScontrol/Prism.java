@@ -9,17 +9,18 @@ package SMCOSMOScontrol;
 import static SmConstants.VFileConstants.CORACC;
 import static SmConstants.VFileConstants.RAWACC;
 import static SmConstants.VFileConstants.UNCORACC;
+import SmException.FormatException;
+import SmException.SmException;
+import SmUtilities.ConfigReader;
+import SmUtilities.PrismLogger;
+import SmUtilities.PrismXMLReader;
+import SmUtilities.SmTimeFormatter;
 import java.io.*;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-
-import SmException.SmException;
-import SmException.FormatException;
-import SmUtilities.ConfigReader;
-import SmUtilities.PrismXMLReader;
 import javax.xml.parsers.ParserConfigurationException;
 import org.xml.sax.SAXException;
 
@@ -74,8 +75,22 @@ public class Prism {
         double NANO_TO_SECOND = 1.0e-9; //for timing tests
         // 
         try {
-            Prism smc = new Prism( args );    
+            Prism smc = new Prism( args ); 
             
+            SmTimeFormatter timer = new SmTimeFormatter();
+            PrismLogger log = PrismLogger.INSTANCE;
+            String logtime = timer.getGMTdateTime();
+            String[] startLog = new String[2];
+            startLog[0] = "\n";
+            startLog[1] = "Prism Log Entry: " + logtime;
+            try {
+                log.initializeLogger(smc.outFolder);
+                log.writeToLog(startLog);
+            } 
+            catch (IOException err) {
+                throw new SmException("Unable to open the log file: " + err.getMessage());
+            }
+
 //            int cores = Runtime.getRuntime().availableProcessors();
 //            System.out.println("Number of cores: " + cores);
 
@@ -122,7 +137,8 @@ public class Prism {
                     //out of the input directory and into its pass/fail location.
                     //create the directories for writing out.  Append directory
                     //names to writeOutProducts call?
-                    smc.Vproduct.writeOutProducts();
+                    String[] outlist = smc.Vproduct.writeOutProducts();
+                    log.writeToLog(outlist);
                     smc.Vproduct.moveV0AfterProcessing();
 //                    long writeTime = System.nanoTime() - startTime;
                     //this is a mess!
@@ -132,10 +148,10 @@ public class Prism {
 //                    System.out.println("+++ write time: " + writeTime*NANO_TO_SECOND);
                 }
                 catch (FormatException | IOException | SmException err) {
-                    //log the exact error msg and move on to the next file
-                    //print stack trace to log for numberformatexception!!!
-                    System.out.println("Unable to read/process/write file " + each.toString());
-                    System.out.println("\t" + err.getMessage());
+                    String[] logtxt = new String[2];
+                    logtxt[0] = "Unable to read/process/write file " + each.toString();
+                    logtxt[1] = "\t" + err.getMessage();
+                    log.writeToLog(logtxt);
                 }
             }
         } 

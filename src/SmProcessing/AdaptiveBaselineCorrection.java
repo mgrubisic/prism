@@ -74,15 +74,15 @@ public class AdaptiveBaselineCorrection {
     public int[] makeBreaks(int start, int end, int numbreaks) {
         int[] breakers = new int[numbreaks];
         int interval = Math.round((end-start) / (numbreaks-1));
-        System.out.println("break interval: " + interval);
+//        System.out.println("break interval: " + interval);
         for (int i = 0; i < numbreaks-1; i++) {
             breakers[i] = i * interval;
         }
         breakers[numbreaks-1] = end-start;
-        System.out.println("breaks: ");
-        for (int each : breakers) {
-            System.out.println(each);
-        }
+//        System.out.println("breaks: ");
+//        for (int each : breakers) {
+//            System.out.println(each);
+//        }
         return breakers;
     }
     public void makeCorrection( double[] array, int break1, int break2 ) {
@@ -93,7 +93,7 @@ public class AdaptiveBaselineCorrection {
         double[] result;
         double[] time = ArrayOps.makeTimeArray(deltat, array.length);
         int[] breaks = makeBreaks( break1, break2, numbreaks);
-        System.out.println();
+//        System.out.println();
         
         h1 = new double[break1];
         h2 = new double[break2-break1];
@@ -102,9 +102,9 @@ public class AdaptiveBaselineCorrection {
         System.arraycopy(array, break1, h2, 0, break2-break1);
         System.arraycopy(array, break2, h3, 0, array.length-break2);
         result = new double[ array.length ];
-        System.out.println("hnn length: " + array.length + " result: " + result.length + " time: " + time.length);
+//        System.out.println("hnn length: " + array.length + " result: " + result.length + " time: " + time.length);
 
-        System.out.println("test");
+//        System.out.println("test");
         double[] loctime;
         PolynomialSplineFunction spfunction = getSplines(h2, breaks, degreeS);
         double[] coefs1 = ArrayOps.removePolynomialTrend(h1, degreeP, deltat);
@@ -116,7 +116,7 @@ public class AdaptiveBaselineCorrection {
             h2[i] = h2[i] - spfunction.value(loctime[i]);
         }
         double rms2 = ArrayOps.rootMeanSquare(h2);
-        System.out.println("rms1: " + rms1 + "  rms2: " + rms2 + "  rms3: " + rms3);
+//        System.out.println("rms1: " + rms1 + "  rms2: " + rms2 + "  rms3: " + rms3);
         System.arraycopy(h1, 0, result, 0, break1);
         System.arraycopy(h3, 0, result, break2, array.length - break2);
         System.arraycopy(h2, 0, result, break1, break2-break1);

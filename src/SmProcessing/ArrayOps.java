@@ -74,9 +74,9 @@ public class ArrayOps {
         for(int i = 0; i < len; i++) {
             regression.addData(time[i], array[i]);
         }
-        System.out.println("+++ slopeA: " + regression.getSlope());
-        System.out.println("+++ interceptA: " + regression.getIntercept());
-        System.out.println("+++ mean sq. errorA: " + regression.getMeanSquareError());
+//        System.out.println("+++ slopeA: " + regression.getSlope());
+//        System.out.println("+++ interceptA: " + regression.getIntercept());
+//        System.out.println("+++ mean sq. errorA: " + regression.getMeanSquareError());
         //Remove the trend from the array
         for (int i = 0; i < len; i++) {
             array [i] = array[i] - regression.predict(time[i]);
@@ -97,15 +97,15 @@ public class ArrayOps {
                                         double[] subarray, double timestep ) {
         int lenfull = array.length;
         int lensub = subarray.length;
-        System.out.println("+++ array length: " + lenfull + " subarray length: " + lensub);
+//        System.out.println("+++ array length: " + lenfull + " subarray length: " + lensub);
         double[] time = makeTimeArray( timestep, lensub);
         SimpleRegression regression = new SimpleRegression();
         for(int i = 0; i < lensub; i++) {
             regression.addData(time[i], subarray[i]);
         }
-        System.out.println("+++ slopeB: " + regression.getSlope());
-        System.out.println("+++ interceptB: " + regression.getIntercept());
-        System.out.println("+++ mean sq. errorB: " + regression.getMeanSquareError());
+//        System.out.println("+++ slopeB: " + regression.getSlope());
+//        System.out.println("+++ interceptB: " + regression.getIntercept());
+//        System.out.println("+++ mean sq. errorB: " + regression.getMeanSquareError());
         //Remove the trend from the first array
         double[] fulltime = makeTimeArray( timestep, lenfull);
         for (int i = 0; i < lenfull; i++) {
@@ -191,9 +191,9 @@ public class ArrayOps {
         PolynomialCurveFitter fitter = PolynomialCurveFitter.create(degree);
         double[] coefs = fitter.fit(points);
         
-        for (double each : coefs) {
-            System.out.println("poly coef: " + each);
-        }
+//        for (double each : coefs) {
+//            System.out.println("poly coef: " + each);
+//        }
         //Remove the calculated polynomial trend from the array
         for (int i = 0; i < len; i++) {
             value = 0.0;

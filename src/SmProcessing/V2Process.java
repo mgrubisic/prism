@@ -188,11 +188,8 @@ public class V2Process {
         
         //remove linear trend before finding event onset
         double dtime = delta_t * MSEC_TO_SEC;
+//        System.out.println("delta time: " + dtime);
         ArrayOps.removeLinearTrend( acc, dtime);
-        
-        //filter the data
-        System.out.println("+++ deltat: " + delta_t);
-        System.out.println("+++ time step: " + dtime);
         
         //set up the filter coefficients and run
         ButterworthFilter filter = new ButterworthFilter();
@@ -204,7 +201,7 @@ public class V2Process {
             throw new SmException("Invalid bandpass filter input parameters");
         }
         
-        System.out.println("f1: " + lowcutoff + " f2: " + highcutoff + " numpoles: " + numpoles);
+//        System.out.println("f1: " + lowcutoff + " f2: " + highcutoff + " numpoles: " + numpoles);
 //        double[] b1 = filter.getB1();
 //        double[] b2 = filter.getB2();
 //        double[] fact = filter.getFact();
@@ -214,10 +211,10 @@ public class V2Process {
         //Find the start of the wave
         EventOnsetDetection pick = new EventOnsetDetection( dtime );
         int startIndex = pick.findEventOnset(acc, buffer);
-        System.out.println("+++ pick index: " + startIndex);
+//        System.out.println("+++ pick index: " + startIndex);
 
         //Remove pre-event linear trend from acceleration record
-        System.out.println("+++ accraw before linear trend, start: " + accraw[0] + " end: " + accraw[accraw.length-1]);
+//        System.out.println("+++ accraw before linear trend, start: " + accraw[0] + " end: " + accraw[accraw.length-1]);
         if (startIndex > 0) {
             double[] subset = Arrays.copyOfRange( accraw, 0, startIndex );
             ArrayStats accsub = new ArrayStats( subset );
@@ -227,7 +224,7 @@ public class V2Process {
             ArrayStats accmean = new ArrayStats( accraw );
             ArrayOps.removeMean(accraw, accmean.getMean());
         }
-        System.out.println("+++ accraw after preevent mean removal, start: " + accraw[0] + " end: " + accraw[accraw.length-1]);
+//        System.out.println("+++ accraw after preevent mean removal, start: " + accraw[0] + " end: " + accraw[accraw.length-1]);
         
 //        //Now remove any linear trend
 //        ArrayOps.removeLinearTrend(accraw, dtime);
@@ -244,7 +241,7 @@ public class V2Process {
         //Integrate the acceleration to get velocity.
         velocity = ArrayOps.Integrate( accraw, delta_t);
         int vellen = velocity.length;
-        System.out.println("+++ velocity after integrate, start: " + velocity[0] + " end: " + velocity[vellen-1]);
+//        System.out.println("+++ velocity after integrate, start: " + velocity[0] + " end: " + velocity[vellen-1]);
         
         //Remove any linear trend from velocity
         ArrayOps.removeLinearTrend( velocity, dtime);
@@ -256,8 +253,8 @@ public class V2Process {
         if ((Math.abs(velocity[0]) > qavelocityinit) || 
                                 (Math.abs(velocity[vellen-1]) > qavelocityend)) {
             //!!! Adaptive baseline correction here.
-            System.out.println("+++ Adaptive baseline correction!!!");
-            System.out.println("+++ start: " + velocity[0] + " end: " + velocity[vellen-1]);
+//            System.out.println("+++ Adaptive baseline correction!!!");
+//            System.out.println("+++ start: " + velocity[0] + " end: " + velocity[vellen-1]);
         }
         
         //determine new filter coefs based on earthquake local magnitude
@@ -266,8 +263,8 @@ public class V2Process {
         FilterCutOffThresholds threshold = new FilterCutOffThresholds( magnitude );
         lowcutadj = threshold.getLowCutOff();
         highcutadj = threshold.getHighCutOff();
-        System.out.println("+++ magnitude: " + magnitude + " and type used: " + magtype);
-        System.out.println("+++ Adj f1: " + lowcutadj + "  adj f2: " + highcutadj);
+//        System.out.println("+++ magnitude: " + magnitude + " and type used: " + magtype);
+//        System.out.println("+++ Adj f1: " + lowcutadj + "  adj f2: " + highcutadj);
         valid = filter.calculateCoefficients(lowcutadj, highcutadj, 
                                             dtime, DEFAULT_NUM_POLES, true);
         if (valid) {
@@ -306,7 +303,7 @@ public class V2Process {
         if ((Math.abs(velocity[0]) > qavelocityinit) || 
                             (Math.abs(velocity[vellen-1]) > qavelocityend) ||
                                 (Math.abs(displace[dislen-1]) > qadisplacend)) {
-            System.out.println("+++ 2nd QA test failed - move to Trouble folder");
+//            System.out.println("+++ 2nd QA test failed - move to Trouble folder");
             success = false;
         } else {
             success = true;

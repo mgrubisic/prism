@@ -46,7 +46,7 @@ public class TextFileReader {
     public String[] readInTextFile() throws IOException{
         String nextLine;
         ArrayList<String> tempfile = new ArrayList<>();
-        System.out.println("+++ Reading in file: " + this.fileName);
+//        System.out.println("+++ Reading in file: " + this.fileName);
 
         try (BufferedReader bufReader = new BufferedReader(new FileReader(this.fileName))){
             while ((nextLine = bufReader.readLine()) != null) {

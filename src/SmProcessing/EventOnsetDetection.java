@@ -84,11 +84,11 @@ public class EventOnsetDetection {
         int found = 0;
         bufferVal = buffer;
         
-        System.out.println("deltaT: " + deltaT);
-        System.out.println("const_C: " + const_C);
-        System.out.println("coef_a: " + coef_a + " coef_b: " + coef_b);
-        System.out.println("coef_c: " + coef_c + " coef_d: " + coef_d);
-        System.out.println("coef_e: " + coef_e + " coef_f: " + coef_f);
+//        System.out.println("deltaT: " + deltaT);
+//        System.out.println("const_C: " + const_C);
+//        System.out.println("coef_a: " + coef_a + " coef_b: " + coef_b);
+//        System.out.println("coef_c: " + coef_c + " coef_d: " + coef_d);
+//        System.out.println("coef_e: " + coef_e + " coef_f: " + coef_f);
         
         //Calculate the transient response of an oscillator with vibration period
         //TN and damping ratio XI subjected to support acceleration (array acc)
@@ -121,7 +121,7 @@ public class EventOnsetDetection {
                 Edoverm_max = Math.abs(each);
             }
         }
-        System.out.println("Edoverm_max: " + Edoverm_max);
+//        System.out.println("Edoverm_max: " + Edoverm_max);
         
         //normalize the array by dividing all vals by the max
         double[] EIM = new double[Edoverm.length];
@@ -138,7 +138,7 @@ public class EventOnsetDetection {
         try {
             textout.writeOutArray();
         } catch (IOException err) {
-            System.out.println("Error printing out PIM in EventOnsetDetection");
+//            System.out.println("Error printing out PIM in EventOnsetDetection");
         }
         //!!!Debug
         
@@ -147,7 +147,7 @@ public class EventOnsetDetection {
         // value in the lower half of the array min-max range.
         ArrayStats statPIM = new ArrayStats(PIM);
         double lowerMode = statPIM.getModalMinimum(NUM_BINS);
-        System.out.println("+++ modalMin in ppicker: " + lowerMode);
+//        System.out.println("+++ modalMin in ppicker: " + lowerMode);
         //Now find the index of the first occurrence in the array of a value
         //that is greater than the most frequently-occurring value.
         int peak = 0;
@@ -157,7 +157,7 @@ public class EventOnsetDetection {
                 break;
             }
         }
-        System.out.println("+++ PIM index of peak: " + peak);
+//        System.out.println("+++ PIM index of peak: " + peak);
         //In the array subset acc[0:peak], start at the end and work back to front
         //to find the index of the first zero-crossing.  This is the start of
         //the P-wave.  The zero-crossing is identified by 2 consecutive values
@@ -168,7 +168,7 @@ public class EventOnsetDetection {
                 break;
             }
         }
-        System.out.println("+++ start of zero crossing: " + found);
+//        System.out.println("+++ start of zero crossing: " + found);
         //Return the index into the acceleration array that marks the start of
         //the P-wave, adjusted by the buffer amount
         eventStart = found;

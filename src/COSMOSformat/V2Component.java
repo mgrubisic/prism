@@ -131,7 +131,7 @@ public class V2Component extends COSMOScontentFormat {
         //Get the array output format of single column per channel or packed
         String arrformat = config.getConfigValue(OUT_ARRAY_FORMAT);
         if (!(arrformat.equalsIgnoreCase("packed")) && !(arrformat.equalsIgnoreCase("singleColumn"))) {
-            arrformat = "packed";
+            arrformat = DEFAULT_ARRAY_STYLE;
         }
         
         //Get the current processing time
@@ -175,8 +175,9 @@ public class V2Component extends COSMOScontentFormat {
         //transfer the data array and set all array values
         V2Data.setFieldWidth(REAL_FIELDWIDTH_V2);
         V2Data.setPrecision(REAL_PRECISION_V2);
-        String packtype = (arrformat.equalsIgnoreCase("singleColumn")) ? "single" : "packed";
-        System.out.println("packtype: " + packtype);
+        SmArrayStyle packtype = (arrformat.equalsIgnoreCase("singleColumn")) ? 
+                                SmArrayStyle.SINGLE_COLUMN : SmArrayStyle.PACKED;
+//        System.out.println("packtype: " + packtype);
         if (procType == V2DataType.ACC) {
             V2Data.setRealArray(inVvals.getV2Array(V2DataType.ACC));
             V2Data.setNumVals(inVvals.getV2ArrayLength(V2DataType.ACC));

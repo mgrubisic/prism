@@ -65,6 +65,9 @@ public final class VFileConstants {
     public static final int GLN = 2;
     
     public enum OutputStyle { SINGLE_CHANNEL, BUNDLED };
+    public enum SmArrayStyle { SINGLE_COLUMN, PACKED };
+    
+    public static final String DEFAULT_ARRAY_STYLE = "packed";
     
     //table 1 data physical parameter codes
     public static final int ACC_PARM_CODE = 1;
