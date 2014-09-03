@@ -46,17 +46,16 @@ public class ArrayOps {
     private ArrayOps() {
     }
     /**
-     * Removes the given mean value from each entry in the array.
-     * This method does not calculate the mean internally in order
-     * to handle the case where the mean is pre-calculated over a subset of the
-     * array (pre-event) and then removed from the whole array.
+     * Removes the given value from each entry in the array.
+     * This method allows for the removal of a mean that was calculated on
+     * a subset of another array, or removal of the median.
      * 
      * @param array input array to have mean removed from
-     * @param mean pre-calculated mean to remove from the array
+     * @param val pre-calculated value to remove from the array
      */
-    public static void removeMean( double[] array, double mean ) {
+    public static void removeValue( double[] array, double val ) {
         for (int i = 0; i < array.length; i++) {
-            array[i] = array[i] - mean;
+            array[i] = array[i] - val;
         }
     }
     /**

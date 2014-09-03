@@ -47,4 +47,5 @@ public class SmConfigConstants {
     public static final String BP_FILTER_CUTOFFLOW = "PRISM/BandPassFilterParameters/BandPassFilterCutoff/CutoffLow";
     
     public static final String EVENT_ONSET_BUFFER = "PRISM/EventOnsetBufferAmount";
+    public static final String EVENT_ONSET_METHOD = "PRISM/EventDetectionMethod";
 }

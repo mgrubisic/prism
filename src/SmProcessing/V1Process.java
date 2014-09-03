@@ -107,7 +107,7 @@ public class V1Process {
         //Remove the mean from the array and save for the Real Header
         ArrayStats accmean = new ArrayStats( accel );
         meanToZero = accmean.getMean();
-        ArrayOps.removeMean(accel, meanToZero);
+        ArrayOps.removeValue(accel, meanToZero);
         
         ArrayStats stat = new ArrayStats( accel );
         avgVal = stat.getMean();

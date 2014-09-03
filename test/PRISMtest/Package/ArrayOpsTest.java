@@ -94,27 +94,27 @@ public class ArrayOpsTest {
      public void testRemoveMean() {
          double[] test = new double[LENGTH];
          System.arraycopy(zeroconstant, 0, test, 0, LENGTH);
-         ArrayOps.removeMean(test, 0.0);
+         ArrayOps.removeValue(test, 0.0);
          org.junit.Assert.assertArrayEquals(zeroconstant, test, EPSILON);
 
          System.arraycopy(posconstant, 0, test, 0, LENGTH);
-         ArrayOps.removeMean(test, 2.0);
+         ArrayOps.removeValue(test, 2.0);
          org.junit.Assert.assertArrayEquals(zeroconstant, test, EPSILON);
          
          System.arraycopy(negconstant, 0, test, 0, LENGTH);
-         ArrayOps.removeMean(test, -3.8);
+         ArrayOps.removeValue(test, -3.8);
          org.junit.Assert.assertArrayEquals(zeroconstant, test, EPSILON);
          
          System.arraycopy(linecentered, 0, test, 0, LENGTH);
-         ArrayOps.removeMean(test, centerstat.getMean());
+         ArrayOps.removeValue(test, centerstat.getMean());
          org.junit.Assert.assertArrayEquals(linecentered, test, EPSILON);
          
          System.arraycopy(linepos, 0, test, 0, LENGTH);
-         ArrayOps.removeMean(test, posstat.getMean());
+         ArrayOps.removeValue(test, posstat.getMean());
          org.junit.Assert.assertArrayEquals(linecentered, test, EPSILON);
          
          System.arraycopy(lineneg, 0, test, 0, LENGTH);
-         ArrayOps.removeMean(test, negstat.getMean());
+         ArrayOps.removeValue(test, negstat.getMean());
          org.junit.Assert.assertArrayEquals(linecentered, test, EPSILON);
          
          System.arraycopy(polypos, 0, test, 0, LENGTH);

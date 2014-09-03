@@ -119,12 +119,25 @@ public class ArrayStats {
         return maxlow;
     }
     /**
+     * Getter for the minimum array value index
+     * @return the index of the minimum array value
+     */
+    public int getMinValIndex() {
+        return maxlowid;
+    }
+    /**
      * Getter for the maximum array value
-     * 
      * @return maximum array value
      */
     public double getMaxVal() {
         return maxhigh;
+    }
+    /**
+     * Getter for the maximum array value
+     * @return index for the maximum array value
+     */
+    public int getMaxValIndex() {
+        return maxhighid;
     }
     /**
      * Getter for the interval size calculated for the histogram, which is

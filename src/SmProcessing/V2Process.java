@@ -30,6 +30,7 @@ import static SmUtilities.SmConfigConstants.BP_FILTER_ORDER;
 import static SmUtilities.SmConfigConstants.BP_TAPER_LENGTH;
 import static SmUtilities.SmConfigConstants.DATA_UNITS_CODE;
 import static SmUtilities.SmConfigConstants.EVENT_ONSET_BUFFER;
+import static SmUtilities.SmConfigConstants.EVENT_ONSET_METHOD;
 import static SmUtilities.SmConfigConstants.QA_INITIAL_VELOCITY;
 import static SmUtilities.SmConfigConstants.QA_RESIDUAL_DISPLACE;
 import static SmUtilities.SmConfigConstants.QA_RESIDUAL_VELOCITY;
@@ -75,7 +76,8 @@ public class V2Process {
     private double magnitude;
     private MagnitudeType magtype;
     
-    private double buffer;
+    private double ebuffer;
+    private EventOnsetType emethod;
     private final int numpoles;  // the filter order is 2*numpoles
     private double taperlength;
     
@@ -150,7 +152,16 @@ public class V2Process {
             this.taperlength = (taplen == null) ? DEFAULT_TAPER_LENGTH : Double.parseDouble(taplen);
             
             String pbuf = config.getConfigValue(EVENT_ONSET_BUFFER);
-            this.buffer = (pbuf == null) ? DEFAULT_EVENT_ONSET_BUFFER : Double.parseDouble(pbuf);
+            this.ebuffer = (pbuf == null) ? DEFAULT_EVENT_ONSET_BUFFER : Double.parseDouble(pbuf);
+            
+            String eventmethod = config.getConfigValue(EVENT_ONSET_METHOD);
+            if (eventmethod == null) {
+                this.emethod = DEFAULT_EVENT_ONSET_METHOD;
+            } else if (eventmethod.equalsIgnoreCase("AIC")) {
+                this.emethod = EventOnsetType.AIC;
+            } else {
+                this.emethod = EventOnsetType.DE;
+            }
             
             String qainitvel = config.getConfigValue(QA_INITIAL_VELOCITY);
             this.qavelocityinit = (qainitvel == null) ? DEFAULT_QA_INITIAL_VELOCITY : Double.parseDouble(qainitvel);
@@ -163,7 +174,7 @@ public class V2Process {
         } catch (NumberFormatException err) {
             throw new SmException("Error extracting numeric values from configuration file");
         }
-        this.buffer = (this.buffer < 0.0) ? DEFAULT_EVENT_ONSET_BUFFER : this.buffer;
+        this.ebuffer = (this.ebuffer < 0.0) ? DEFAULT_EVENT_ONSET_BUFFER : this.ebuffer;
         this.taperlength = (this.taperlength < 0.0) ? DEFAULT_TAPER_LENGTH : this.taperlength;
     }
     
@@ -209,20 +220,29 @@ public class V2Process {
 //            System.out.format("+++ fact: %f  b1: %f  b2: %f%n", fact[jj],b1[jj],b2[jj]);
 //        }
         //Find the start of the wave
-        EventOnsetDetection pick = new EventOnsetDetection( dtime );
-        int startIndex = pick.findEventOnset(acc, buffer);
-//        System.out.println("+++ pick index: " + startIndex);
+        int startIndex = 0;
+        int pickIndex = 0;
+        if (emethod == EventOnsetType.DE) {
+            EventOnsetDetection depick = new EventOnsetDetection( dtime );
+            pickIndex = depick.findEventOnset(acc);
+            startIndex = depick.applyBuffer(ebuffer);
+        } else {
+            AICEventDetect aicpick = new AICEventDetect();
+            pickIndex = aicpick.calculateIndex(acc, "ToPeak");
+            startIndex = aicpick.applyBuffer(ebuffer, dtime);
+        }
+        System.out.println("+++ pick index: " + startIndex);
 
         //Remove pre-event linear trend from acceleration record
 //        System.out.println("+++ accraw before linear trend, start: " + accraw[0] + " end: " + accraw[accraw.length-1]);
         if (startIndex > 0) {
             double[] subset = Arrays.copyOfRange( accraw, 0, startIndex );
             ArrayStats accsub = new ArrayStats( subset );
-            ArrayOps.removeMean(accraw, accsub.getMean());
+            ArrayOps.removeValue(accraw, accsub.getMean());
        }
         else {
             ArrayStats accmean = new ArrayStats( accraw );
-            ArrayOps.removeMean(accraw, accmean.getMean());
+            ArrayOps.removeValue(accraw, accmean.getMean());
         }
 //        System.out.println("+++ accraw after preevent mean removal, start: " + accraw[0] + " end: " + accraw[accraw.length-1]);
         

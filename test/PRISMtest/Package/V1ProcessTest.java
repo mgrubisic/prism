@@ -131,9 +131,9 @@ public class V1ProcessTest {
             gvals[i] = counts[i] * conv2;
         }
         ArrayStats cmsstat = new ArrayStats( cmsvals );
-        ArrayOps.removeMean(cmsvals, cmsstat.getMean());
+        ArrayOps.removeValue(cmsvals, cmsstat.getMean());
         ArrayStats gstat = new ArrayStats( gvals );
-        ArrayOps.removeMean(gvals, gstat.getMean());
+        ArrayOps.removeValue(gvals, gstat.getMean());
     }
 
     @Test

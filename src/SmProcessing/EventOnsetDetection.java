@@ -23,7 +23,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
- *
+ * This class uses the damping energy concept to pick the event onset time.
  * @author jmjones
  */
 public class EventOnsetDetection {
@@ -79,10 +79,9 @@ public class EventOnsetDetection {
     }
     //buffer has units of seconds and is used to increase the length of time
     //between the detected P-wave and the reported start of waveform.
-    public int findEventOnset( final double[] acc, double buffer) {
+    public int findEventOnset( final double[] acc) {
         int len = acc.length;
         int found = 0;
-        bufferVal = buffer;
         
 //        System.out.println("deltaT: " + deltaT);
 //        System.out.println("const_C: " + const_C);
@@ -133,13 +132,13 @@ public class EventOnsetDetection {
         double[] PIM = ArrayOps.Differentiate(EIM, deltaT);
         
         //!!!Debug 
-        TextFileWriter textout = new TextFileWriter( "D:/PRISM/filter_test/junit", 
-                                                            "ppick_pim.txt", PIM);
-        try {
-            textout.writeOutArray();
-        } catch (IOException err) {
-//            System.out.println("Error printing out PIM in EventOnsetDetection");
-        }
+//        TextFileWriter textout = new TextFileWriter( "D:/PRISM/filter_test/junit", 
+//                                                            "ppick_pim.txt", PIM);
+//        try {
+//            textout.writeOutArray();
+//        } catch (IOException err) {
+////            System.out.println("Error printing out PIM in EventOnsetDetection");
+//        }
         //!!!Debug
         
         // find the most common value in the lower half of the range of PIM.
@@ -172,7 +171,12 @@ public class EventOnsetDetection {
         //Return the index into the acceleration array that marks the start of
         //the P-wave, adjusted by the buffer amount
         eventStart = found;
-        bufferedStart = found - (int)Math.round(buffer/deltaT);
+        return eventStart;
+    }
+    public int applyBuffer(double buffer) {
+        bufferVal = buffer;
+        bufferedStart = eventStart - (int)Math.round(bufferVal/deltaT);
+        bufferedStart = (bufferedStart < 0) ? 0 : bufferedStart;
         return bufferedStart;
     }
     public int getEventStart() {

@@ -108,15 +108,15 @@ public class EventOnsetDetectionTest {
         org.junit.Assert.assertArrayEquals(combined, e20.showCoefficients(), EPSILON);
     }
     
-    @Test
-    public void checkOnset() {
-        int pick = e10.findEventOnset(a1, 0.0);
-        org.junit.Assert.assertEquals(19, pick);
-    }
+//    @Test
+//    public void checkOnset() {
+//        int pick = e10.findEventOnset(a1, 0.0);
+//        org.junit.Assert.assertEquals(19, pick);
+//    }
     
     @Test
     public void check15481673AZFRDHNNOnset() {
-        int pick = e10.findEventOnset(hnn, 0.0);
+        int pick = e10.findEventOnset(hnn);
         System.out.println("15481673");
         org.junit.Assert.assertEquals(1572, pick);
     }

@@ -108,12 +108,17 @@ public final class VFileConstants {
     //misc. constants
     public static final double MSEC_TO_SEC = 0.001; //milliseconds to seconds
     public static final double FROM_G_CONVERSION = 980.665; //cm per sq. sec per g
+    
+    public enum EventOnsetType{ AIC, DE };
+    
+    //event onset constants
+    public static final double DEFAULT_EVENT_ONSET_BUFFER = 0.0;
+    public static final EventOnsetType DEFAULT_EVENT_ONSET_METHOD = EventOnsetType.DE;
 
     //filtering constants
     public static final int DEFAULT_NUM_POLES = 2;
     public static final double DEFAULT_HIGHCUT = 0.5;
     public static final double DEFAULT_LOWCUT = 30.0;
-    public static final double DEFAULT_EVENT_ONSET_BUFFER = 0.0;
     public static final double DEFAULT_TAPER_LENGTH = 1.0;
     
     //QA check constants
