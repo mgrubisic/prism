@@ -131,7 +131,7 @@ public class ArrayOps {
      * method.  The spacing between each point is dt
      * 
      * @param array array to be integrated
-     * @param dt the time step
+     * @param dt the time step in seconds
      * @return new array containing the approximate integral of the input points
      */
     public static double[] Integrate( double[] array, double dt ) {
@@ -147,7 +147,7 @@ public class ArrayOps {
      * Calculates the approximate derivative of the input array.
      * 
      * @param array array to be differentiated
-     * @param dt the time step
+     * @param dt the time step in seconds
      * @return new array containing the approximate derivative of the input points
      */
     public static double[] Differentiate( double[] array, double dt) {
@@ -203,6 +203,11 @@ public class ArrayOps {
         }
         return coefs;
     }
+    /**
+     * Calculates the root mean square (rms) value for the input array
+     * @param array array to calculate rms for
+     * @return the rms value
+     */
     public static double rootMeanSquare( double[] array ) {
         double rms = 0.0;
         for (double each : array) {

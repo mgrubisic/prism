@@ -71,7 +71,7 @@ public class AICEventDetect {
             int indpeak = arrstats.getPeakValIndex();
             arrnew = new double[indpeak];
             System.arraycopy(array, 0 , arrnew, 0, indpeak);
-            System.out.println("Inarray peak: " + indpeak);
+//            System.out.println("Inarray peak: " + indpeak);
         } else {
             arrnew = array;
         }

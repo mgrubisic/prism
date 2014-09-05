@@ -105,10 +105,6 @@ public class V1Component extends COSMOScontentFormat {
         this.setRealHeaderFormatLine();
         
         double delta_t = this.realHeader.getRealValue(DELTA_T);
-        if ((Math.abs(delta_t - this.noRealVal) < epsilon) || (delta_t < 0.0)){
-            throw new SmException("Real header #62, delta t, is invalid: " + 
-                                                                        delta_t);
-        }        
         double time = (inVvals.getPeakIndex()) * MSEC_TO_SEC * delta_t;
 
         //Get the processing agency info from the config. data
@@ -189,6 +185,9 @@ public class V1Component extends COSMOScontentFormat {
                                      String.valueOf(numvals),datType,
                                                     timeSec, units, unitsCode);
         V1Data.setFormatLine(line + V1Data.getNumberFormat());
+    }
+    public String getDataFormatLine() {
+        return V1Data.getFormatLine();
     }
     /**
      * This method converts the V1 component stored in memory into its text

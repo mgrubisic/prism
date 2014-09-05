@@ -27,18 +27,21 @@ import org.junit.Test;
  * @author jmjones
  */
 public class ArrayStatsTest {
+    double[] t1 = {1,2,4,4,4,4,4,3,2,9,9,9,9,9,9,9,9,8,8,8};
     double[] a1;
-    double[]a2;
+    double[] a2;
     double[] b1;
     ArrayStats stata1;
     ArrayStats statb1;
     ArrayStats stata2;
     ArrayStats statmode;
+    ArrayStats t1mode;
     double EPSILON = 0.001;
     double EPS2 = 0.1;
     int[] hista1 = {2,2,2,2,2,2,2,2,2,2};
     int[] histb1 = {2,2,2,2,2,2,2,2,2,2};
     int[] hista2 = {5,0,0,0,0,0,10,0,0,10};
+    int[] histmode = {30,10,10,0,10,0,0,30,20,20};
     
     double[] mode = { 3.1,3.1,3.1,3.1,3.1,3.1,3.1,3.1,3.1,3.1,
                         5.2,5.2,5.2,5.2,5.2,5.2,5.2,5.2,5.2,5.2,
@@ -77,6 +80,7 @@ public class ArrayStatsTest {
         stata2 = new ArrayStats( a2 );
         
         statmode = new ArrayStats( mode );
+        t1mode = new ArrayStats(t1);
     }
     
     @Test
@@ -108,11 +112,12 @@ public class ArrayStatsTest {
         org.junit.Assert.assertEquals(3.9, statb1.getHistogramInterval(), EPSILON);
         org.junit.Assert.assertArrayEquals(hista2, stata2.makeHistogram(10));
         org.junit.Assert.assertEquals(0.66, stata2.getHistogramInterval(), EPSILON);
+        org.junit.Assert.assertArrayEquals(histmode, statmode.makeHistogram(10));
+        org.junit.Assert.assertEquals(1.74, statmode.getHistogramInterval(), EPSILON);
     }
     @Test
     public void testModalMinimum() {
         org.junit.Assert.assertEquals(-8.93, statmode.getModalMinimum(10), EPSILON);
-        org.junit.Assert.assertEquals(10.0, stata1.getModalMinimum(5), EPS2);
-        org.junit.Assert.assertEquals(-1.4, stata2.getModalMinimum(5), EPS2);
+        org.junit.Assert.assertEquals(4.0, t1mode.getModalMinimum(4), EPSILON);
     }
 }

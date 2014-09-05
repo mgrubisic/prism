@@ -45,8 +45,8 @@ public class ArrayStats {
     private double histstep;
     /**
      * The constructor for this class does all the computation on the array for
-     * max, min, peak value, and so on.
-     * 
+     * max, min, peak value, and so on.  The other methods then retrieve individual
+     * statistics on the array.
      * @param array input array to calculate statistics on
      */
     public ArrayStats( double[] array ) {
@@ -187,13 +187,13 @@ public class ArrayStats {
                 }
             }
         }
-//        System.out.println("+++ hist maxhigh: " + maxhigh + " maxlow: " + maxlow);
-//        for (int i = 0; i < hist.length; i++) {
-//            if (hist[i] > 0) {
-//                System.out.println("+++ hist low: " + (maxlow + i*histstep) + " hist high: " + (maxlow + (i+1)*histstep));
-//                System.out.println("+++ hist: " + hist[i] + " for index: " + i);
-//            }
-//        }
+        System.out.println("+++ hist maxhigh: " + maxhigh + " maxlow: " + maxlow);
+        for (int i = 0; i < hist.length; i++) {
+            if (hist[i] > 0) {
+                System.out.println("+++ hist low: " + (maxlow + i*histstep) + " hist high: " + (maxlow + (i+1)*histstep));
+                System.out.println("+++ hist: " + hist[i] + " for index: " + i);
+            }
+        }
         return hist;
     }
     /**
@@ -219,19 +219,22 @@ public class ArrayStats {
         
         int startbin = 0;
         int stopbin = numbins;
+        
+        //Find the lowest non-zero histogram bin.  This is the start bin.
         for (int i = 0; i < numbins; i++) {
             if (hist[i] > 0) {
                 startbin = i;
                 break;
             }
         }
+        //Find the highest non-zero histogram bin.  This is the stop bin.
         for (int i = hist.length-1;  i <= 0; i-- ) {
             if (hist[i] > 0) {
                 stopbin = i;
                 break;
             }
         }
-        for (int i = startbin; i < (stopbin-startbin)/2; i++) {
+        for (int i = startbin; i < ((stopbin-startbin)/2 + 1); i++) {
             if (hist[i] >= mode) {
                 mode = hist[i];
                 modeindex = i;
@@ -240,7 +243,7 @@ public class ArrayStats {
 //        System.out.println("+++ found mode at index: " + modeindex);
 //
         //returns the center point value of the range
-        modalMin = maxlow + histstep * 0.5;
+        modalMin = maxlow + (histstep * modeindex) + histstep * 0.5;
         
         return modalMin;
     }

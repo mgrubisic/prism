@@ -234,7 +234,7 @@ public class V2Process {
         System.out.println("+++ pick index: " + startIndex);
 
         //Remove pre-event linear trend from acceleration record
-//        System.out.println("+++ accraw before linear trend, start: " + accraw[0] + " end: " + accraw[accraw.length-1]);
+        System.out.println("+++ accraw before linear trend, start: " + accraw[0] + " end: " + accraw[accraw.length-1]);
         if (startIndex > 0) {
             double[] subset = Arrays.copyOfRange( accraw, 0, startIndex );
             ArrayStats accsub = new ArrayStats( subset );
@@ -244,27 +244,41 @@ public class V2Process {
             ArrayStats accmean = new ArrayStats( accraw );
             ArrayOps.removeValue(accraw, accmean.getMean());
         }
-//        System.out.println("+++ accraw after preevent mean removal, start: " + accraw[0] + " end: " + accraw[accraw.length-1]);
+        System.out.println("+++ accraw after preevent mean removal, start: " + accraw[0] + " end: " + accraw[accraw.length-1]);
         
 //        //Now remove any linear trend
 //        ArrayOps.removeLinearTrend(accraw, dtime);
 //        System.out.println("+++ accraw after linear trend, start: " + accraw[0] + " end: " + accraw[accraw.length-1]);
-//        
-//        System.out.println("Writing out file justRemoveLinearTrend.txt");
-//        TextFileWriter textout = new TextFileWriter( "D:/PRISM/V2process_test", "justRemoveLinearTrend.txt", accraw);
-//        try {
-//            textout.writeOutArray();
-//        } catch (IOException err) {
-//            System.out.println("Error in debug print");
-//        }
+        
+        System.out.println("Writing out file accaftermean.txt");
+        TextFileWriter textout = new TextFileWriter( "D:/PRISM/V2process_test", "accaftermean.txt", accraw);
+        try {
+            textout.writeOutArray();
+        } catch (IOException err) {
+            System.out.println("Error in debug print");
+        }
 
         //Integrate the acceleration to get velocity.
-        velocity = ArrayOps.Integrate( accraw, delta_t);
+        velocity = ArrayOps.Integrate( accraw, dtime);
         int vellen = velocity.length;
-//        System.out.println("+++ velocity after integrate, start: " + velocity[0] + " end: " + velocity[vellen-1]);
+        System.out.println("+++ velocity after integrate, start: " + velocity[0] + " end: " + velocity[vellen-1]);
+        System.out.println("Writing out file beforetrend.txt");
+        textout = new TextFileWriter( "D:/PRISM/test", "beforeTrend.txt", velocity);
+        try {
+            textout.writeOutArray();
+        } catch (IOException err) {
+            System.out.println("Error in debug print");
+        }
         
         //Remove any linear trend from velocity
         ArrayOps.removeLinearTrend( velocity, dtime);
+        System.out.println("Writing out file aftertrend.txt");
+        textout = new TextFileWriter( "D:/PRISM/test", "afterTrend.txt", velocity);
+        try {
+            textout.writeOutArray();
+        } catch (IOException err) {
+            System.out.println("Error in debug print");
+        }
 
         //perform first QA check on velocity, check first and last values of
         //velocity array - should be close to 0.0 with tolerances.  If not,
@@ -299,7 +313,7 @@ public class V2Process {
         VavgVal = statVel.getMean();
         
         //Integrate the velocity to get displacement.
-        displace = ArrayOps.Integrate( velocity, delta_t);
+        displace = ArrayOps.Integrate( velocity, dtime);
         
         ArrayStats statDis = new ArrayStats( displace );
         DmaxVal = statDis.getPeakVal();
@@ -307,7 +321,7 @@ public class V2Process {
         DavgVal = statDis.getMean();
 
         //Differentiate velocity for final acceleration
-        accel = ArrayOps.Differentiate(velocity, delta_t);
+        accel = ArrayOps.Differentiate(velocity, dtime);
 
         ArrayStats statAcc = new ArrayStats( accel );
         AmaxVal = statAcc.getPeakVal();

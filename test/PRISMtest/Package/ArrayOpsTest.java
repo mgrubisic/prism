@@ -91,7 +91,7 @@ public class ArrayOpsTest {
     }
     
      @Test
-     public void testRemoveMean() {
+     public void testRemoveValue() {
          double[] test = new double[LENGTH];
          System.arraycopy(zeroconstant, 0, test, 0, LENGTH);
          ArrayOps.removeValue(test, 0.0);
