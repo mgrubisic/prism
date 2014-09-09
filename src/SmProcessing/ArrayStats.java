@@ -187,13 +187,13 @@ public class ArrayStats {
                 }
             }
         }
-        System.out.println("+++ hist maxhigh: " + maxhigh + " maxlow: " + maxlow);
-        for (int i = 0; i < hist.length; i++) {
-            if (hist[i] > 0) {
-                System.out.println("+++ hist low: " + (maxlow + i*histstep) + " hist high: " + (maxlow + (i+1)*histstep));
-                System.out.println("+++ hist: " + hist[i] + " for index: " + i);
-            }
-        }
+//        System.out.println("+++ hist maxhigh: " + maxhigh + " maxlow: " + maxlow);
+//        for (int i = 0; i < hist.length; i++) {
+//            if (hist[i] > 0) {
+//                System.out.println("+++ hist low: " + (maxlow + i*histstep) + " hist high: " + (maxlow + (i+1)*histstep));
+//                System.out.println("+++ hist: " + hist[i] + " for index: " + i);
+//            }
+//        }
         return hist;
     }
     /**

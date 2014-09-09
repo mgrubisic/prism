@@ -48,4 +48,13 @@ public class SmConfigConstants {
     
     public static final String EVENT_ONSET_BUFFER = "PRISM/EventOnsetBufferAmount";
     public static final String EVENT_ONSET_METHOD = "PRISM/EventDetectionMethod";
+    
+    public static final String NUM_SPLINE_BREAKS_LOWER = "PRISM/AdaptiveBaselineCorrection/NumberSplineBreaks/LowerLimit";
+    public static final String NUM_SPLINE_BREAKS_UPPER = "PRISM/AdaptiveBaselineCorrection/NumberSplineBreaks/UpperLimit";
+    public static final String SPLINE_ORDER_LOWER = "PRISM/AdaptiveBaselineCorrection/SplineOrder/LowerLimit";
+    public static final String SPLINE_ORDER_UPPER = "PRISM/AdaptiveBaselineCorrection/SplineOrder/UpperLimit";
+    public static final String FIRST_POLY_ORDER_LOWER = "PRISM/AdaptiveBaselineCorrection/FirstPolyOrder/LowerLimit";
+    public static final String FIRST_POLY_ORDER_UPPER = "PRISM/AdaptiveBaselineCorrection/FirstPolyOrder/UpperLimit";
+    public static final String SECOND_POLY_ORDER_LOWER = "PRISM/AdaptiveBaselineCorrection/SecondPolyOrder/LowerLimit";
+    public static final String SECOND_POLY_ORDER_UPPER = "PRISM/AdaptiveBaselineCorrection/SecondPolyOrder/LowerLimit";
 }

@@ -168,17 +168,16 @@ public class ArrayOps {
         return calc;
     }
     /**
-     * Removes a polynomial trend of specified degree from the input array.  The
+     * Finds a polynomial trend of specified degree from the input array.  The
      * polynomial trend is calculated with the apache commons math 
-     * PolynomialCurveFitter class, and the input array is modified by subtracting
-     * the calculated value of the polynomial at each time step.
+     * PolynomialCurveFitter class, and the coefficients are returned.
      * 
-     * @param array input array containing data with a polynomial trend.  This
-     * array is modified during execution.
+     * @param array input array containing data with a polynomial trend.
      * @param degree polynomial degree to calculate, such as 2 or 3.
      * @param timestep sample interval
+     * @return coefficients
      */
-    public static double[] removePolynomialTrend(double[] array, int degree, double timestep) {
+    public static double[] findPolynomialTrend(double[] array, int degree, double timestep) {
         int len = array.length;
         double value;
         double[] time = makeTimeArray( timestep, len);
@@ -189,11 +188,14 @@ public class ArrayOps {
         
         PolynomialCurveFitter fitter = PolynomialCurveFitter.create(degree);
         double[] coefs = fitter.fit(points);
-        
-//        for (double each : coefs) {
-//            System.out.println("poly coef: " + each);
-//        }
-        //Remove the calculated polynomial trend from the array
+        return coefs;
+    }
+    
+    public static void removePolynomialTrend(double[] array, double[] coefs, 
+                                                            double timestep) {
+        int len = array.length;
+        double value;
+        double[] time = makeTimeArray( timestep, len);
         for (int i = 0; i < len; i++) {
             value = 0.0;
             for (int k = 0; k < coefs.length; k++) {
@@ -201,7 +203,6 @@ public class ArrayOps {
             }
             array[i] = array[i] - value;
         }
-        return coefs;
     }
     /**
      * Calculates the root mean square (rms) value for the input array

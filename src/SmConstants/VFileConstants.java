@@ -121,6 +121,16 @@ public final class VFileConstants {
     public static final double DEFAULT_LOWCUT = 30.0;
     public static final double DEFAULT_TAPER_LENGTH = 1.0;
     
+    //adaptive baseline correction constants
+    public static final int DEFAULT_NUM_BREAKS_LOWER = 10;
+    public static final int DEFAULT_NUM_BREAKS_UPPER = 20;
+    public static final int DEFAULT_SPLINE_ORDER_LOWER = 2;
+    public static final int DEFAULT_SPLINE_ORDER_UPPER = 3;
+    public static final int DEFAULT_1ST_POLY_ORD_LOWER = 2;
+    public static final int DEFAULT_1ST_POLY_ORD_UPPER = 3;
+    public static final int DEFAULT_2ND_POLY_ORD_LOWER = 2;
+    public static final int DEFAULT_2ND_POLY_ORD_UPPER = 3;
+    
     //QA check constants
     public static final double DEFAULT_QA_INITIAL_VELOCITY = 0.002;
     public static final double DEFAULT_QA_RESIDUAL_VELOCITY = 0.002;

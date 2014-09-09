@@ -174,17 +174,21 @@ public class ArrayOpsTest {
      }
      @Test
      public void testRemovePolynomialTrend() {
+         double[] coefs;
          double[] test = new double[LENGTH];
          System.arraycopy(poly, 0, test, 0, LENGTH);
-         ArrayOps.removePolynomialTrend(test, 2, STEP);
+         coefs = ArrayOps.findPolynomialTrend(test, 2, STEP);
+         ArrayOps.removePolynomialTrend(test, coefs, STEP);
          org.junit.Assert.assertArrayEquals(zeroconstant, test, EPSILON);
          
          System.arraycopy(poly, 0, test, 0, LENGTH);
-         ArrayOps.removePolynomialTrend(test, 3, STEP);
+         coefs = ArrayOps.findPolynomialTrend(test, 2, STEP);
+         ArrayOps.removePolynomialTrend(test, coefs, STEP);
          org.junit.Assert.assertArrayEquals(zeroconstant, test, EPSILON);
          
          System.arraycopy(poly3order, 0, test, 0, LENGTH);
-         ArrayOps.removePolynomialTrend(test, 3, STEP);
+         coefs = ArrayOps.findPolynomialTrend(test, 3, STEP);
+         ArrayOps.removePolynomialTrend(test, coefs, STEP);
          org.junit.Assert.assertArrayEquals(zeroconstant, test, EPSILON);
      }
 }

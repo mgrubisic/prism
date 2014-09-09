@@ -76,6 +76,8 @@ public class V2Process {
     private double magnitude;
     private MagnitudeType magtype;
     
+    private int pickIndex;
+    private int startIndex;
     private double ebuffer;
     private EventOnsetType emethod;
     private final int numpoles;  // the filter order is 2*numpoles
@@ -84,6 +86,7 @@ public class V2Process {
     private final double qavelocityinit;
     private final double qavelocityend;
     private final double qadisplacend;
+    private boolean success;
         
     public V2Process(final V1Component v1rec) throws SmException {
         double epsilon = 0.0001;
@@ -100,6 +103,9 @@ public class V2Process {
         this.acc_units = CMSQSECT;
         this.vel_units = CMSECT;
         this.dis_units = CMT;
+        this.pickIndex = 0;
+        this.startIndex = 0;
+        this.success = false;
         
         this.noRealVal = inV1.getNoRealVal();
         //verify that real header value delta t is defined and valid
@@ -179,7 +185,6 @@ public class V2Process {
     }
     
     public boolean processV2Data() throws SmException {   
-        boolean success;
         double[] accraw = new double[0];
         //save a copy of the original array for pre-mean removal
         double[] V1Array = inV1.getDataArray();
@@ -220,8 +225,6 @@ public class V2Process {
 //            System.out.format("+++ fact: %f  b1: %f  b2: %f%n", fact[jj],b1[jj],b2[jj]);
 //        }
         //Find the start of the wave
-        int startIndex = 0;
-        int pickIndex = 0;
         if (emethod == EventOnsetType.DE) {
             EventOnsetDetection depick = new EventOnsetDetection( dtime );
             pickIndex = depick.findEventOnset(acc);
@@ -334,14 +337,9 @@ public class V2Process {
         //needing additional processing.
         vellen = velocity.length;
         int dislen = displace.length;
-        if ((Math.abs(velocity[0]) > qavelocityinit) || 
-                            (Math.abs(velocity[vellen-1]) > qavelocityend) ||
-                                (Math.abs(displace[dislen-1]) > qadisplacend)) {
-//            System.out.println("+++ 2nd QA test failed - move to Trouble folder");
-            success = false;
-        } else {
-            success = true;
-        }
+        success = (Math.abs(velocity[0]) <= qavelocityinit) && 
+                        (Math.abs(velocity[vellen-1]) <= qavelocityend) && 
+                                (Math.abs(displace[dislen-1]) <= qadisplacend);
         return success;
     }
     public double getMaxVal(V2DataType dType) {
@@ -412,5 +410,14 @@ public class V2Process {
     }
     public double getHighCut() {
         return this.highcutadj;
+    }
+    public boolean getQAStatus() {
+        return this.success;
+    }
+    public int getPickIndex() {
+        return this.pickIndex;
+    }
+    public int getStartIndex() {
+        return this.startIndex;
     }
 }

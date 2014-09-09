@@ -7,6 +7,7 @@
 package COSMOSformat;
 
 import static SmConstants.VFileConstants.*;
+import SmConstants.VFileConstants.SmArrayStyle;
 import SmConstants.VFileConstants.V2DataType;
 import SmException.FormatException;
 import SmException.SmException;
@@ -16,6 +17,8 @@ import static SmUtilities.SmConfigConstants.OUT_ARRAY_FORMAT;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_ABBREV;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_CODE;
 import SmUtilities.SmTimeFormatter;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  *
@@ -107,16 +110,17 @@ public class V2Component extends COSMOScontentFormat {
             throw new SmException("Real header #62, delta t, is invalid: " + 
                                                                         delta_t);
         }  
+        double dtime = MSEC_TO_SEC * delta_t;
         if (procType == V2DataType.ACC) {
-            time = (inVvals.getMaxIndex(V2DataType.ACC)) * MSEC_TO_SEC * delta_t;
+            time = (inVvals.getMaxIndex(V2DataType.ACC)) * dtime;
             unitsname = inVvals.getDataUnits(V2DataType.ACC);
             unitscode = inVvals.getDataUnitCode(V2DataType.ACC);
         } else if (procType == V2DataType.VEL) {
-            time = (inVvals.getMaxIndex(V2DataType.VEL)) * MSEC_TO_SEC * delta_t;
+            time = (inVvals.getMaxIndex(V2DataType.VEL)) * dtime;
             unitsname = inVvals.getDataUnits(V2DataType.VEL);
             unitscode = inVvals.getDataUnitCode(V2DataType.VEL);
         } else {
-            time = (inVvals.getMaxIndex(V2DataType.DIS)) * MSEC_TO_SEC * delta_t;
+            time = (inVvals.getMaxIndex(V2DataType.DIS)) * dtime;
             unitsname = inVvals.getDataUnits(V2DataType.DIS);
             unitscode = inVvals.getDataUnitCode(V2DataType.DIS);
         }
@@ -215,6 +219,17 @@ public class V2Component extends COSMOScontentFormat {
             this.realHeader.setRealValue(AVG_VAL, inVvals.getAvgVal(V2DataType.DIS));            
             eodname = " displacement";
         }
+        //Update the comments with signal pick value, but only if it passed
+        // the QA test.
+        if (inVvals.getQAStatus()) {
+            ArrayList<String> lines = new ArrayList<>();
+            double picktime = inVvals.getPickIndex() * dtime;
+            String lineToAdd = String.format("| <BL>event onset(sec)=%1$8s",
+                                    String.format(realformat,picktime));
+            lines.add(lineToAdd);
+            this.comments = updateComments(this.comments, lines);
+        }
+        
         //Update the end-of-data line with the new data type
         this.endOfData = eod.append(this.endOfData,0,END_OF_DATA_CHAN)
                             .append(" ")
@@ -267,5 +282,12 @@ public class V2Component extends COSMOScontentFormat {
         System.arraycopy(V2DataText, 0, outText, currentLength, V2DataText.length);
         outText[totalLength-1] = this.endOfData;
         return outText;
+    }
+    public String[] updateComments(String[] comments, ArrayList<String> lines) {
+        ArrayList<String> text = new ArrayList<String>(Arrays.asList(comments));
+        text.addAll(lines);
+        comments = new String[text.size()];
+        comments = text.toArray(comments);
+        return comments;
     }
 }
