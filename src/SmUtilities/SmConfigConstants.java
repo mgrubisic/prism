@@ -49,6 +49,8 @@ public class SmConfigConstants {
     public static final String EVENT_ONSET_BUFFER = "PRISM/EventOnsetBufferAmount";
     public static final String EVENT_ONSET_METHOD = "PRISM/EventDetectionMethod";
     
+    public static final String DEBUG_ARRAY_WRITE = "PRISM/DebugArrayWrite";
+    
     public static final String NUM_SPLINE_BREAKS_LOWER = "PRISM/AdaptiveBaselineCorrection/NumberSplineBreaks/LowerLimit";
     public static final String NUM_SPLINE_BREAKS_UPPER = "PRISM/AdaptiveBaselineCorrection/NumberSplineBreaks/UpperLimit";
     public static final String SPLINE_ORDER_LOWER = "PRISM/AdaptiveBaselineCorrection/SplineOrder/LowerLimit";

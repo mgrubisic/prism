@@ -284,10 +284,16 @@ public class V2Component extends COSMOScontentFormat {
         return outText;
     }
     public String[] updateComments(String[] comments, ArrayList<String> lines) {
-        ArrayList<String> text = new ArrayList<String>(Arrays.asList(comments));
+        ArrayList<String> text = new ArrayList<>(Arrays.asList(comments));
         text.addAll(lines);
+        StringBuilder sb = new StringBuilder();
+        String start = text.get(0);
+        sb.append(String.format("%4d",(text.size()-1))).append(start.substring(4, start.length()));
+        text.set(0,sb.toString());
         comments = new String[text.size()];
         comments = text.toArray(comments);
+        lines.clear();
+        text.clear();
         return comments;
     }
 }

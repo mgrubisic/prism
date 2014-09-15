@@ -19,6 +19,7 @@ package SmProcessing;
 
 import COSMOSformat.V1Component;
 import static SmConstants.VFileConstants.*;
+import SmConstants.VFileConstants.EventOnsetType;
 import SmConstants.VFileConstants.MagnitudeType;
 import static SmConstants.VFileConstants.MagnitudeType.*;
 import SmConstants.VFileConstants.V2DataType;
@@ -29,13 +30,18 @@ import static SmUtilities.SmConfigConstants.BP_FILTER_CUTOFFLOW;
 import static SmUtilities.SmConfigConstants.BP_FILTER_ORDER;
 import static SmUtilities.SmConfigConstants.BP_TAPER_LENGTH;
 import static SmUtilities.SmConfigConstants.DATA_UNITS_CODE;
+import static SmUtilities.SmConfigConstants.DEBUG_ARRAY_WRITE;
 import static SmUtilities.SmConfigConstants.EVENT_ONSET_BUFFER;
 import static SmUtilities.SmConfigConstants.EVENT_ONSET_METHOD;
 import static SmUtilities.SmConfigConstants.QA_INITIAL_VELOCITY;
 import static SmUtilities.SmConfigConstants.QA_RESIDUAL_DISPLACE;
 import static SmUtilities.SmConfigConstants.QA_RESIDUAL_VELOCITY;
+import SmUtilities.SmErrorLogger;
+import SmUtilities.SmTimeFormatter;
 import SmUtilities.TextFileWriter;
+import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
@@ -87,13 +93,22 @@ public class V2Process {
     private final double qavelocityend;
     private final double qadisplacend;
     private boolean success;
+    private ArrayList<String> errorlog;
+    private boolean writeArrays;
+    private SmErrorLogger elog;
+    private String[] logstart;
+    private final File V0name;
         
-    public V2Process(final V1Component v1rec) throws SmException {
+    public V2Process(final V1Component v1rec, File inName) throws SmException {
         double epsilon = 0.0001;
         this.inV1 = v1rec;
         this.lowcutadj = 0.0;
         this.highcutadj = 0.0;
+        errorlog = new ArrayList<>();
+        elog = SmErrorLogger.INSTANCE;
         ConfigReader config = ConfigReader.INSTANCE;
+        writeArrays = false;
+        this.V0name = inName;
         
         //Get config values to cm/sec2 (acc), cm/sec (vel), cm (dis)
         this.acc_unit_code = CMSQSECN;
@@ -106,6 +121,12 @@ public class V2Process {
         this.pickIndex = 0;
         this.startIndex = 0;
         this.success = false;
+        
+        SmTimeFormatter timer = new SmTimeFormatter();
+        String logtime = timer.getGMTdateTime();
+        logstart = new String[2];
+        logstart[0] = "\n";
+        logstart[1] = "Prism Error/Debug Log Entry: " + logtime;
         
         this.noRealVal = inV1.getNoRealVal();
         //verify that real header value delta t is defined and valid
@@ -177,6 +198,10 @@ public class V2Process {
             
             String qaenddis = config.getConfigValue(QA_RESIDUAL_DISPLACE);
             this.qadisplacend = (qaenddis == null) ? DEFAULT_QA_RESIDUAL_DISPLACE : Double.parseDouble(qaenddis);
+            
+            String debugon = config.getConfigValue(DEBUG_ARRAY_WRITE);
+            this.writeArrays = debugon.equalsIgnoreCase(DEBUG_ARRAY_WRITE_ON);
+            
         } catch (NumberFormatException err) {
             throw new SmException("Error extracting numeric values from configuration file");
         }
@@ -184,7 +209,7 @@ public class V2Process {
         this.taperlength = (this.taperlength < 0.0) ? DEFAULT_TAPER_LENGTH : this.taperlength;
     }
     
-    public boolean processV2Data() throws SmException {   
+    public boolean processV2Data() throws SmException, IOException {   
         double[] accraw = new double[0];
         //save a copy of the original array for pre-mean removal
         double[] V1Array = inV1.getDataArray();
@@ -201,10 +226,12 @@ public class V2Process {
         System.arraycopy( accraw, 0, acc, 0, accraw.length);
         
         //Pick P-wave and remove baseline
-        
+        errorlog.add("Start of V2 processing for " + V0name.toString());
         //remove linear trend before finding event onset
         double dtime = delta_t * MSEC_TO_SEC;
-//        System.out.println("delta time: " + dtime);
+        errorlog.add(String.format("delta_t in msec: %f and sec %f",delta_t,dtime));
+        errorlog.add("Event detection: remove linear trend, filter, event onset detection");
+        
         ArrayOps.removeLinearTrend( acc, dtime);
         
         //set up the filter coefficients and run
@@ -217,72 +244,61 @@ public class V2Process {
             throw new SmException("Invalid bandpass filter input parameters");
         }
         
-//        System.out.println("f1: " + lowcutoff + " f2: " + highcutoff + " numpoles: " + numpoles);
+//        errorlog.add("   f1: " + lowcutoff + " f2: " + highcutoff + " numpoles: " + numpoles);
 //        double[] b1 = filter.getB1();
 //        double[] b2 = filter.getB2();
 //        double[] fact = filter.getFact();
 //        for (int jj = 0; jj < b1.length; jj++) {
-//            System.out.format("+++ fact: %f  b1: %f  b2: %f%n", fact[jj],b1[jj],b2[jj]);
+//            errorlog.add(String.format("   fact: %f  b1: %f  b2: %f%n", fact[jj],b1[jj],b2[jj]));
 //        }
         //Find the start of the wave
         if (emethod == EventOnsetType.DE) {
             EventOnsetDetection depick = new EventOnsetDetection( dtime );
             pickIndex = depick.findEventOnset(acc);
             startIndex = depick.applyBuffer(ebuffer);
+            errorlog.add("Event Detection algorithm: damping energy method");
         } else {
             AICEventDetect aicpick = new AICEventDetect();
             pickIndex = aicpick.calculateIndex(acc, "ToPeak");
             startIndex = aicpick.applyBuffer(ebuffer, dtime);
+            errorlog.add("Event Detection algorithm: modified Akaike Information Criterion");
         }
-        System.out.println("+++ pick index: " + startIndex);
+        errorlog.add(String.format("pick index: %d,  pick buffer: %f,  start index: %d",
+                                                pickIndex,ebuffer,startIndex));
+        errorlog.add(String.format("pick time in seconds: %f, buffered time: %f",
+                                          (pickIndex*dtime),(startIndex*dtime)));
 
-        //Remove pre-event linear trend from acceleration record
-        System.out.println("+++ accraw before linear trend, start: " + accraw[0] + " end: " + accraw[accraw.length-1]);
+        //Remove pre-event mean from acceleration record
         if (startIndex > 0) {
             double[] subset = Arrays.copyOfRange( accraw, 0, startIndex );
             ArrayStats accsub = new ArrayStats( subset );
             ArrayOps.removeValue(accraw, accsub.getMean());
+            errorlog.add("Pre-event mean removed from uncorrected acceleration");
        }
         else {
             ArrayStats accmean = new ArrayStats( accraw );
             ArrayOps.removeValue(accraw, accmean.getMean());
+            errorlog.add("(No pre-event) Full array mean removed from uncorrected acceleration");
         }
-        System.out.println("+++ accraw after preevent mean removal, start: " + accraw[0] + " end: " + accraw[accraw.length-1]);
         
-//        //Now remove any linear trend
-//        ArrayOps.removeLinearTrend(accraw, dtime);
-//        System.out.println("+++ accraw after linear trend, start: " + accraw[0] + " end: " + accraw[accraw.length-1]);
-        
-        System.out.println("Writing out file accaftermean.txt");
-        TextFileWriter textout = new TextFileWriter( "D:/PRISM/V2process_test", "accaftermean.txt", accraw);
-        try {
-            textout.writeOutArray();
-        } catch (IOException err) {
-            System.out.println("Error in debug print");
-        }
+        if (writeArrays) {
+            elog.writeOutArray(accraw, "initialBaselineCorrection.txt");
+        } 
 
         //Integrate the acceleration to get velocity.
         velocity = ArrayOps.Integrate( accraw, dtime);
+        errorlog.add("acceleration integrated to velocity (trapezoidal method)");
         int vellen = velocity.length;
-        System.out.println("+++ velocity after integrate, start: " + velocity[0] + " end: " + velocity[vellen-1]);
-        System.out.println("Writing out file beforetrend.txt");
-        textout = new TextFileWriter( "D:/PRISM/test", "beforeTrend.txt", velocity);
-        try {
-            textout.writeOutArray();
-        } catch (IOException err) {
-            System.out.println("Error in debug print");
+        if (writeArrays) {
+           elog.writeOutArray(velocity, "afterIntegrationToVel.txt");
         }
-        
         //Remove any linear trend from velocity
         ArrayOps.removeLinearTrend( velocity, dtime);
-        System.out.println("Writing out file aftertrend.txt");
-        textout = new TextFileWriter( "D:/PRISM/test", "afterTrend.txt", velocity);
-        try {
-            textout.writeOutArray();
-        } catch (IOException err) {
-            System.out.println("Error in debug print");
+        errorlog.add("linear trend removed from velocity");
+        if (writeArrays) {
+           elog.writeOutArray(velocity, "LinearTrendRemovedVel.txt");
         }
-
+        
         //perform first QA check on velocity, check first and last values of
         //velocity array - should be close to 0.0 with tolerances.  If not,
         //perform adaptive baseline correction.
@@ -290,8 +306,12 @@ public class V2Process {
         if ((Math.abs(velocity[0]) > qavelocityinit) || 
                                 (Math.abs(velocity[vellen-1]) > qavelocityend)) {
             //!!! Adaptive baseline correction here.
-//            System.out.println("+++ Adaptive baseline correction!!!");
-//            System.out.println("+++ start: " + velocity[0] + " end: " + velocity[vellen-1]);
+            errorlog.add("Velocity QA failed:");
+            errorlog.add(String.format("   initial velocity: %f,  limit %f",
+                                        Math.abs(velocity[0]), qavelocityinit));
+            errorlog.add(String.format("   final velocity: %f,  limit %f",
+                                  Math.abs(velocity[vellen-1]), qavelocityend));
+            errorlog.add("No baseline correction in place yet");
         }
         
         //determine new filter coefs based on earthquake local magnitude
@@ -300,8 +320,10 @@ public class V2Process {
         FilterCutOffThresholds threshold = new FilterCutOffThresholds( magnitude );
         lowcutadj = threshold.getLowCutOff();
         highcutadj = threshold.getHighCutOff();
-//        System.out.println("+++ magnitude: " + magnitude + " and type used: " + magtype);
-//        System.out.println("+++ Adj f1: " + lowcutadj + "  adj f2: " + highcutadj);
+        errorlog.add("Acausal bandpass filter:");
+        errorlog.add("  earthquake magnitude is " + magnitude + " and M used is " + magtype);
+        errorlog.add(String.format("  adjusted lowcut: %f and adjusted highcut: %f Hz",
+                                                        lowcutadj, highcutadj));
         valid = filter.calculateCoefficients(lowcutadj, highcutadj, 
                                             dtime, DEFAULT_NUM_POLES, true);
         if (valid) {
@@ -317,7 +339,7 @@ public class V2Process {
         
         //Integrate the velocity to get displacement.
         displace = ArrayOps.Integrate( velocity, dtime);
-        
+        errorlog.add("Velocity integrated to displacement (trapezoidal method)");
         ArrayStats statDis = new ArrayStats( displace );
         DmaxVal = statDis.getPeakVal();
         DmaxIndex = statDis.getPeakValIndex();
@@ -325,7 +347,7 @@ public class V2Process {
 
         //Differentiate velocity for final acceleration
         accel = ArrayOps.Differentiate(velocity, dtime);
-
+        errorlog.add("Velocity differentiated to corrected acceleration");
         ArrayStats statAcc = new ArrayStats( accel );
         AmaxVal = statAcc.getPeakVal();
         AmaxIndex = statAcc.getPeakValIndex();
@@ -340,6 +362,20 @@ public class V2Process {
         success = (Math.abs(velocity[0]) <= qavelocityinit) && 
                         (Math.abs(velocity[vellen-1]) <= qavelocityend) && 
                                 (Math.abs(displace[dislen-1]) <= qadisplacend);
+        if (!success) {
+            errorlog.add("Final QA failed - V2 processing unsuccessful:");
+            errorlog.add(String.format("   initial velocity: %f, limit %f",
+                                        Math.abs(velocity[0]), qavelocityinit));
+            errorlog.add(String.format("   final velocity: %f, limit %f",
+                                  Math.abs(velocity[vellen-1]), qavelocityend));
+            errorlog.add(String.format("   final displacement,: %f, limit %f",
+                                  Math.abs(displace[dislen-1]), qadisplacend));
+            elog.writeToLog(logstart);
+            String[] errorout = new String[errorlog.size()];
+            errorout = errorlog.toArray(errorout);
+            elog.writeToLog(errorout);
+            errorlog.clear();
+        }
         return success;
     }
     public double getMaxVal(V2DataType dType) {

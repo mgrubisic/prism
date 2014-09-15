@@ -300,13 +300,17 @@ public class COSMOScontentFormat {
 //        StringBuilder ab = new StringBuilder(MAX_LINE_LENGTH);
         
         String year = String.format("%04d",intHeader.getIntValue(START_TIME_YEAR));
-        String day = String.format("%02d",intHeader.getIntValue(START_TIME_JULIAN_DAY));
+        String month = String.format("%02d",intHeader.getIntValue(START_TIME_MONTH));
+        String day = String.format("%02d",intHeader.getIntValue(START_TIME_DAY));
         String hour = String.format("%02d",intHeader.getIntValue(START_TIME_HOUR));
         String min = String.format("%02d",intHeader.getIntValue(START_TIME_MIN));
         String sec = String.format("%02d",(int)Math.round(realHeader.getRealValue(START_TIME_SEC)));
         
-        String eventtime = sb.append("UT_").append(year).append("_").append(day)
-                             .append("_").append(hour).append("_").append(min)
+        String eventtime = sb.append("UT_").append(year)
+                             .append("_").append(month)
+                             .append("_").append(day)
+                             .append("_").append(hour)
+                             .append("_").append(min)
                              .append("_").append(sec).toString();
 //        String altdisp =   ab.append("UT_").append(year).append("_J").append(day)
 //                             .append("_H").append(hour).append("_M").append(min)

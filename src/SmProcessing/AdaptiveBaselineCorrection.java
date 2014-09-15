@@ -144,7 +144,7 @@ public class AdaptiveBaselineCorrection {
         return outval;
     }
     
-    public void startInterations() {
+    public void startIterations() {
         //The matlab code works with the time index into the array, while this
         //implementation just uses the index into the array, and only uses the
         //time step to create the time arrays as needed.

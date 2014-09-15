@@ -60,7 +60,7 @@ public class AdaptiveBaselineTest {
     public AdaptiveBaselineTest() {
         System.out.println("in constructor");
         time = ArrayOps.makeTimeArray(deltat, hnn.length);
-        adapt = new AdaptiveBaselineCorrection(deltat, NUM_BREAKS, degreeP1,
+        adapt = new AdaptiveBaselineCorrection(deltat, hnn, NUM_BREAKS, degreeP1,
                                                                 degreeP2, degreeS);
     }
     

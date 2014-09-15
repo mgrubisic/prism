@@ -39,7 +39,8 @@ public final class VFileConstants {
     
     //event date time text header entries
     public static final int START_TIME_YEAR = 39;
-    public static final int START_TIME_JULIAN_DAY = 40;
+    public static final int START_TIME_MONTH = 41;
+    public static final int START_TIME_DAY = 42;
     public static final int START_TIME_HOUR = 43;
     public static final int START_TIME_MIN = 44;
     public static final int START_TIME_SEC = 29;
@@ -135,4 +136,6 @@ public final class VFileConstants {
     public static final double DEFAULT_QA_INITIAL_VELOCITY = 0.002;
     public static final double DEFAULT_QA_RESIDUAL_VELOCITY = 0.002;
     public static final double DEFAULT_QA_RESIDUAL_DISPLACE = 0.001;
+    
+    public static final String DEBUG_ARRAY_WRITE_ON = "On";
 }

@@ -98,14 +98,12 @@ public class V1Component extends COSMOScontentFormat {
         SmTimeFormatter proctime = new SmTimeFormatter();
         ConfigReader config = ConfigReader.INSTANCE;
         
-        //verify that real header value delta t is defined and valid
-        //this check has also happened in the V1process !!!
         this.realHeader.setFieldWidth(DEFAULT_REAL_FIELDWIDTH);
         this.realHeader.buildArrayParams( SmArrayStyle.PACKED );
         this.setRealHeaderFormatLine();
         
         double delta_t = this.realHeader.getRealValue(DELTA_T);
-        double time = (inVvals.getPeakIndex()) * MSEC_TO_SEC * delta_t;
+        double ptime = (inVvals.getPeakIndex()) * MSEC_TO_SEC * delta_t;
 
         //Get the processing agency info from the config. data
         String agabbrev = config.getConfigValue(PROC_AGENCY_ABBREV);
@@ -136,7 +134,7 @@ public class V1Component extends COSMOScontentFormat {
                                 .append(agabbrev).append(", Max = ")
                                 .append(String.format(realformat,inVvals.getPeakVal()))
                                 .append(" ").append(unitsname).append(" at ")
-                                .append(String.format(realformat,time))
+                                .append(String.format(realformat,ptime))
                                 .append(" sec").toString();
         
         //transfer the data array and set all array values
@@ -155,7 +153,7 @@ public class V1Component extends COSMOScontentFormat {
         
         this.realHeader.setRealValue(PEAK_VAL, inVvals.getPeakVal());
         this.realHeader.setRealValue(AVG_VAL, inVvals.getAvgVal());
-        this.realHeader.setRealValue(PEAK_VAL_TIME, time);
+        this.realHeader.setRealValue(PEAK_VAL_TIME, ptime);
         this.realHeader.setRealValue(SCALING_FACTOR, inVvals.getConversionFactor());
         this.realHeader.setRealValue(MEAN_ZERO, inVvals.getMeanToZero());
         

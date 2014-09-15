@@ -7,19 +7,20 @@
 
 package SMCOSMOScontrol;
 
-import COSMOSformat.V0Component;
 import COSMOSformat.COSMOScontentFormat;
+import COSMOSformat.V0Component;
 import COSMOSformat.V1Component;
 import COSMOSformat.V2Component;
 import static SmConstants.VFileConstants.*;
-import java.io.*;
-import java.util.ArrayList;
-
+import SmConstants.VFileConstants.V2DataType;
 import SmException.FormatException;
 import SmException.SmException;
 import SmProcessing.V1Process;
 import SmProcessing.V2Process;
+import SmProcessing.V3Process;
 import SmUtilities.TextFileReader;
+import java.io.*;
+import java.util.ArrayList;
 
 /**
  *
@@ -107,8 +108,8 @@ public class SmQueue {
            
             //Create the V2 processing object and do the processing.  V2 processing
             //produces 3 V2 objects: corrected acceleration, velocity, and displacement
-            V2Process v2val = new V2Process(v1rec);
-            boolean complete = v2val.processV2Data();
+            V2Process v2val = new V2Process(v1rec, this.fileName);
+            boolean success = v2val.processV2Data();
             
             //create the V2 components to get the processing results
             V2Component V2acc = new V2Component( CORACC, v1rec );
@@ -118,7 +119,12 @@ public class SmQueue {
             V2Component V2dis = new V2Component( DISPLACE, v1rec );
             V2dis.buildV2(V2DataType.DIS, v2val);
             
-            Vprod.setDirectories(V2acc.getEventDateTime(), complete, numRecords);
+            if (success) {
+                V3Process v3val = new V3Process(V2acc, V2vel, V2dis);
+                v3val.processV3Data();
+            }
+            
+            Vprod.setDirectories(V2acc.getEventDateTime(), success, numRecords);
             Vprod.addProduct(v1rec, "V1");
             Vprod.addProduct(V2acc, "V2");
             Vprod.addProduct(V2vel, "V2");
