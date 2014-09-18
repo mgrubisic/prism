@@ -31,29 +31,29 @@ public class EventOnsetCoefs {
     private final Map<Integer, double[]> AeB;
     private final Map<Integer, double[]> Ae;
     
-    private final double[] aeb_01 = { 0.0256E-4, 
-                                     -0.4362E-4};
+    private final double[] aeb_01 = { 0.00000, 
+                                     -0.00004};
     
-    private final double[] aeb_02 = {-3.4101151e-06, 
-                                      8.6115879e-04};
+    private final double[] aeb_02 = {0.0000, 
+                                     0.0000};
     
-    private final double[] aeb_005 = {1.5608976e-04, 
-                                     -2.3877377e-01};
+    private final double[] aeb_005 = {0.000, 
+                                      0.00018};
     
-    private final double[] ae_01 = {-0.0093, 
-                                     0.0, 
-                                     17.2205, 
-                                     0.0236};
+    private final double[] ae_01 = {-0.00932, 
+                                    -0.00004, 
+                                     17.22045, 
+                                     0.02357};
     
-    private final double[] ae_02 = {-1.2814798e-03, 
-                                     1.3462595e+00, 
-                                     2.5362756e-06, 
-                                    -3.4101151e-06};
+    private final double[] ae_02 = {-0.00066, 
+                                    -0.00000, 
+                                     0.24536, 
+                                    -0.00020};
     
-    private final double[] ae_005 = {-1.4069967e-01, 
-                                     -6.1621769e+01, 
-                                      2.8894260e-06, 
-                                      1.5608976e-04};
+    private final double[] ae_005 = {-0.05590, 
+                                      0.00018, 
+                                    -70.09431, 
+                                     -0.18977};
     
     public EventOnsetCoefs() {
         AeB = new HashMap<>();

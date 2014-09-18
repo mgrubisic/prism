@@ -30,8 +30,8 @@ import java.util.ArrayList;
  * @author jmjones
  */
 public class TextFileReader {
-    File fileName;
-    String[] contents;
+    private File fileName;
+    private String[] contents;
     
     public TextFileReader(File filename) throws IOException {
         Path check = filename.toPath();
@@ -40,13 +40,13 @@ public class TextFileReader {
         } else {
             throw new IOException("Unable to read file " + filename);
         }
+        contents = new String[0];
     }
     //read in the file into a temp arrayList. If the read was good, copy the
     //arrayList into a regular array and return.
     public String[] readInTextFile() throws IOException{
         String nextLine;
         ArrayList<String> tempfile = new ArrayList<>();
-//        System.out.println("+++ Reading in file: " + this.fileName);
 
         try (BufferedReader bufReader = new BufferedReader(new FileReader(this.fileName))){
             while ((nextLine = bufReader.readLine()) != null) {
@@ -55,11 +55,11 @@ public class TextFileReader {
             if (tempfile.size() > 0){
                 contents = tempfile.toArray(new String[tempfile.size()]);
             } else {
-                contents = new String[0];
                 throw new IOException("Empty file: " + this.fileName);
             }
-        return contents;
         }
+        tempfile.clear();
+        return contents;
     }
 
 }

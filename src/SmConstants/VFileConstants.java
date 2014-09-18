@@ -138,4 +138,10 @@ public final class VFileConstants {
     public static final double DEFAULT_QA_RESIDUAL_DISPLACE = 0.001;
     
     public static final String DEBUG_ARRAY_WRITE_ON = "On";
+    
+    //V3 processing
+    public static final double[] V3_DAMPING_VALUES = {0.00,0.02,0.05,0.10,0.20};
+    public static final int NUM_T_PERIODS = 91;
+    //1 array for periods, 1 for fft, 3 for each of 5 damping values = 17
+    public static final int NUM_V3_ARRAYS = 17;
 }

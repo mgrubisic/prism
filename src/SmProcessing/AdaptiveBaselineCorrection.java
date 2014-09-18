@@ -21,11 +21,23 @@ package SmProcessing;
 //import static SmConstants.VFileConstants.DEFAULT_2ND_POLY_ORD;
 //import static SmConstants.VFileConstants.DEFAULT_NUM_BREAKS;
 //import static SmConstants.VFileConstants.DEFAULT_SPLINE_ORDER;
+import static SmConstants.VFileConstants.DEFAULT_1ST_POLY_ORD_LOWER;
+import static SmConstants.VFileConstants.DEFAULT_1ST_POLY_ORD_UPPER;
+import static SmConstants.VFileConstants.DEFAULT_2ND_POLY_ORD_LOWER;
+import static SmConstants.VFileConstants.DEFAULT_2ND_POLY_ORD_UPPER;
+import static SmConstants.VFileConstants.DEFAULT_NUM_BREAKS_LOWER;
+import static SmConstants.VFileConstants.DEFAULT_NUM_BREAKS_UPPER;
+import static SmConstants.VFileConstants.DEFAULT_SPLINE_ORDER_LOWER;
+import static SmConstants.VFileConstants.DEFAULT_SPLINE_ORDER_UPPER;
 import SmUtilities.ConfigReader;
-//import static SmUtilities.SmConfigConstants.FIRST_POLY_ORDER;
-//import static SmUtilities.SmConfigConstants.NUM_SPLINE_BREAKS;
-//import static SmUtilities.SmConfigConstants.SECOND_POLY_ORDER;
-//import static SmUtilities.SmConfigConstants.SPLINE_ORDER;
+import static SmUtilities.SmConfigConstants.FIRST_POLY_ORDER_LOWER;
+import static SmUtilities.SmConfigConstants.FIRST_POLY_ORDER_UPPER;
+import static SmUtilities.SmConfigConstants.NUM_SPLINE_BREAKS_LOWER;
+import static SmUtilities.SmConfigConstants.NUM_SPLINE_BREAKS_UPPER;
+import static SmUtilities.SmConfigConstants.SECOND_POLY_ORDER_LOWER;
+import static SmUtilities.SmConfigConstants.SECOND_POLY_ORDER_UPPER;
+import static SmUtilities.SmConfigConstants.SPLINE_ORDER_LOWER;
+import static SmUtilities.SmConfigConstants.SPLINE_ORDER_UPPER;
 import java.util.ArrayList;
 import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
 import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
@@ -39,7 +51,7 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
  */
 public class AdaptiveBaselineCorrection {
     private final int NUM_SEGMENTS = 3;
-    private final int NUM_BREAKS = 10;
+//    private final int NUM_BREAKS = 10;
     
     private final double TOL_RES_DISP = 0.001;
     private final double TOL_INIT_VEL = 0.001;
@@ -53,12 +65,17 @@ public class AdaptiveBaselineCorrection {
     private double highcut;
     private int estart;
     private double[] vel;
-    private int numbreaks;
-    private int degreeS;
-    private int degreeP1;
-    private int degreeP2;
+    private final int numbreakslo;
+    private final int numbreakshi;
+    private final int degreeSlo;
+    private final int degreeShi;
+    private final int degreeP1lo;
+    private final int degreeP1hi;
+    private final int degreeP2lo;
+    private final int degreeP2hi;
     private double[] bnn;
     private double[] result;
+    private ArrayList<double[]> params;
     private int[] breaks;
     private double[] rms;
     private int[] polyBreaks;
@@ -75,59 +92,47 @@ public class AdaptiveBaselineCorrection {
         this.polyBreaks = new int[NUM_SEGMENTS-1];
         
         //Get the values out of the configuration file and screen for correctness.
-//        this.numbreakslow = validateConfigParam(NUM_SPLINE_BREAKS_LOWER, DEFAULT_NUM_BREAKS_LOWER);
-//        ConfigReader config = ConfigReader.INSTANCE;
-//        String numsplines = config.getConfigValue(NUM_SPLINE_BREAKS);
-//        if (numsplines == null) {
-//            this.numbreaks = DEFAULT_NUM_BREAKS;
-//        } else {
-//            try {
-//                this.numbreaks = Integer.parseInt(numsplines);
-//                this.numbreaks = (numbreaks < DEFAULT_NUM_BREAKS) ? 
-//                                                DEFAULT_NUM_BREAKS : numbreaks;
-//            } catch (NumberFormatException e) {
-//                this.numbreaks = DEFAULT_NUM_BREAKS;
-//            }
-//        }
-//        String splineord = config.getConfigValue(SPLINE_ORDER);
-//        if (splineord == null) {
-//            this.degreeS = DEFAULT_SPLINE_ORDER;
-//        } else {
-//            try {
-//                this.degreeS = Integer.parseInt(splineord);
-//                this.degreeS = (degreeS < DEFAULT_SPLINE_ORDER) ? 
-//                                                DEFAULT_SPLINE_ORDER : degreeS;
-//            } catch (NumberFormatException e) {
-//                this.degreeS = DEFAULT_SPLINE_ORDER;
-//            }
-//        }
-//        String firstord = config.getConfigValue(FIRST_POLY_ORDER);
-//        if (firstord == null) {
-//            this.degreeP1 = DEFAULT_1ST_POLY_ORD;
-//        } else {
-//            try {
-//                this.degreeP1 = Integer.parseInt(firstord);
-//                this.degreeP1 = (degreeP1 < DEFAULT_1ST_POLY_ORD) ? 
-//                                                DEFAULT_1ST_POLY_ORD : degreeP1;
-//            } catch (NumberFormatException e) {
-//                this.degreeP1 = DEFAULT_1ST_POLY_ORD;
-//            }
-//        }
-//        String secondord = config.getConfigValue(SECOND_POLY_ORDER);
-//        if (secondord == null) {
-//            this.degreeP2 = DEFAULT_2ND_POLY_ORD;
-//        } else {
-//            try {
-//                this.degreeP2 = Integer.parseInt(secondord);
-//                this.degreeP2 = (degreeP2 < DEFAULT_2ND_POLY_ORD) ? 
-//                                                DEFAULT_2ND_POLY_ORD : degreeP2;
-//            } catch (NumberFormatException e) {
-//                this.degreeP2 = DEFAULT_2ND_POLY_ORD;
-//            }
-//        }
+        //Number of spline breaks
+        this.numbreakslo = validateConfigParam(NUM_SPLINE_BREAKS_LOWER, 
+                                                DEFAULT_NUM_BREAKS_LOWER,
+                                                DEFAULT_NUM_BREAKS_LOWER,
+                                                DEFAULT_NUM_BREAKS_UPPER);
+        this.numbreakshi = validateConfigParam(NUM_SPLINE_BREAKS_UPPER, 
+                                                DEFAULT_NUM_BREAKS_UPPER,
+                                                numbreakslo,
+                                                DEFAULT_NUM_BREAKS_UPPER);
+        //spline order
+        this.degreeSlo = validateConfigParam(SPLINE_ORDER_LOWER, 
+                                                DEFAULT_SPLINE_ORDER_LOWER,
+                                                DEFAULT_SPLINE_ORDER_LOWER,
+                                                DEFAULT_SPLINE_ORDER_UPPER);
+        this.degreeShi = validateConfigParam(SPLINE_ORDER_UPPER, 
+                                                DEFAULT_SPLINE_ORDER_UPPER,
+                                                degreeSlo,
+                                                DEFAULT_SPLINE_ORDER_UPPER);
+        //First polynomial order
+        this.degreeP1lo = validateConfigParam(FIRST_POLY_ORDER_LOWER, 
+                                                DEFAULT_1ST_POLY_ORD_LOWER,
+                                                DEFAULT_1ST_POLY_ORD_LOWER,
+                                                DEFAULT_1ST_POLY_ORD_UPPER);
+        this.degreeP1hi = validateConfigParam(FIRST_POLY_ORDER_UPPER, 
+                                                DEFAULT_1ST_POLY_ORD_UPPER,
+                                                degreeP1lo,
+                                                DEFAULT_1ST_POLY_ORD_UPPER);
+        //second polynomial order
+        this.degreeP2lo = validateConfigParam(SECOND_POLY_ORDER_LOWER, 
+                                                DEFAULT_2ND_POLY_ORD_LOWER,
+                                                DEFAULT_2ND_POLY_ORD_LOWER,
+                                                DEFAULT_2ND_POLY_ORD_UPPER);
+        this.degreeP2hi = validateConfigParam(SECOND_POLY_ORDER_UPPER, 
+                                                DEFAULT_2ND_POLY_ORD_UPPER,
+                                                degreeP2lo,
+                                                DEFAULT_2ND_POLY_ORD_UPPER);
+        
     }
     
-    public int validateConfigParam( String configparm, int defval ) {
+    public int validateConfigParam( String configparm, int defval, int upper,
+                                                                    int lower) {
         int outval = 0;
         ConfigReader config = ConfigReader.INSTANCE;
         String inval = config.getConfigValue(configparm);
@@ -136,7 +141,7 @@ public class AdaptiveBaselineCorrection {
         } else {
             try {
                 outval = Integer.parseInt(inval);
-                outval = (outval < defval) ? defval : outval;
+                outval = ((outval < lower) || (outval > upper)) ? defval : outval;
             } catch (NumberFormatException e) {
                 outval = defval;
             }
@@ -161,6 +166,7 @@ public class AdaptiveBaselineCorrection {
         int len;
         double[] loctime;
         double[] subset;
+        int numbreaks= inbreaks.length;
         
         PolynomialFunction poly;
         PolynomialFunction[] polyArrays;
@@ -209,7 +215,7 @@ public class AdaptiveBaselineCorrection {
         double[] h2;
         double[] h3;
         double[] time = ArrayOps.makeTimeArray(deltat, array.length);
-        breaks = makeBreaks( break1, break2, numbreaks);
+//        breaks = makeBreaks( break1, break2, numbreaks);
 //        System.out.println();
         
         h1 = new double[break1];
@@ -222,23 +228,23 @@ public class AdaptiveBaselineCorrection {
         
         //Get the polynomials that were fitted to the input array
         //Construct the baseline function from each section
-        PolynomialSplineFunction spfunction = getSplines(h2, breaks, degreeS);
-        double[] coefs1 = ArrayOps.findPolynomialTrend(h1, degreeP1, deltat);
-        double[] coefs3 = ArrayOps.findPolynomialTrend(h3, degreeP2, deltat);
+//        PolynomialSplineFunction spfunction = getSplines(h2, breaks, degreeS);
+//        double[] coefs1 = ArrayOps.findPolynomialTrend(h1, degreeP1, deltat);
+//        double[] coefs3 = ArrayOps.findPolynomialTrend(h3, degreeP2, deltat);
         
-        PolynomialFunction b1poly = new PolynomialFunction( coefs1 );
-        PolynomialFunction b3poly = new PolynomialFunction( coefs3 );
-
-        bnn = new double[time.length];
-        for (int i = 0; i < bnn.length; i++) {
-            if ( i < break1) {
-                bnn[i] = b1poly.value(time[i]);
-            } else if ( i >= break2) {
-                bnn[i] = b3poly.value(time[i] - (break2*deltat));
-            } else {
-                bnn[i] = spfunction.value(time[i] - (break1*deltat));
-            }
-        }
+//        PolynomialFunction b1poly = new PolynomialFunction( coefs1 );
+//        PolynomialFunction b3poly = new PolynomialFunction( coefs3 );
+//
+//        bnn = new double[time.length];
+//        for (int i = 0; i < bnn.length; i++) {
+//            if ( i < break1) {
+//                bnn[i] = b1poly.value(time[i]);
+//            } else if ( i >= break2) {
+//                bnn[i] = b3poly.value(time[i] - (break2*deltat));
+//            } else {
+//                bnn[i] = spfunction.value(time[i] - (break1*deltat));
+//            }
+//        }
         //If smoothing selected, then smooth out discontinuities in the baseline
         //function before removing it from the input array.
         if (smooth == 1) {
