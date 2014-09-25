@@ -112,4 +112,18 @@ public class FFTtest {
         } catch (IOException err) {
         }
      }
+     
+     @Test
+     public void testPower2() {
+        int length = 63000;
+        int powlength = 2;
+        int i = 2;
+        if (length > 2) {
+            while (powlength < length) {
+                powlength = (int)Math.pow( 2,i);
+                i++;
+            }
+        }
+        System.out.println("power: " + powlength);
+     }
 }

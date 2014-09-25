@@ -152,7 +152,7 @@ public class Prism {
                 }
                 catch (FormatException | IOException | SmException err) {
                     String[] logtxt = new String[2];
-                    logtxt[0] = "Unable to read/process/write file " + each.toString();
+                    logtxt[0] = "Unable to process file " + each.toString();
                     logtxt[1] = "\t" + err.getMessage();
                     log.writeToLog(logtxt);
                 }

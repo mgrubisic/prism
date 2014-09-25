@@ -140,7 +140,9 @@ public final class VFileConstants {
     public static final String DEBUG_ARRAY_WRITE_ON = "On";
     
     //V3 processing
+    public static final int NUM_COEF_VALS = 6;
     public static final double[] V3_DAMPING_VALUES = {0.00,0.02,0.05,0.10,0.20};
+    public static final double[] V3_SAMPLING_RATES = {50.0, 100.0, 200.0};
     public static final int NUM_T_PERIODS = 91;
     //1 array for periods, 1 for fft, 3 for each of 5 damping values = 17
     public static final int NUM_V3_ARRAYS = 17;

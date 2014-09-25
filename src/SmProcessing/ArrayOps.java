@@ -18,6 +18,7 @@
 package SmProcessing;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import org.apache.commons.math3.fitting.PolynomialCurveFitter;
 import org.apache.commons.math3.fitting.WeightedObservedPoint;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
@@ -125,6 +126,19 @@ public class ArrayOps {
             time[i] = i * timestep;
         }
         return time;
+    }
+    /**
+     * Finds the mean of values in a subset of the input array.  
+     * 
+     * @param array array to get the sub-array from
+     * @param start starting index of the subset array in the input array
+     * @param numval number of values to include in the sub-array
+     * @return mean of the values in the sub-array
+     */
+    public static double findSubsetMean( double[] array, int start, int end) {
+        double[] subset = Arrays.copyOfRange( array, start, end );
+        ArrayStats accsub = new ArrayStats( subset );
+        return accsub.getMean();
     }
     /**
      * Calculates the approximate integral of the input array using the trapezoidal 

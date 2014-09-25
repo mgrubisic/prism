@@ -21,24 +21,16 @@ import COSMOSformat.V1Component;
 import static SmConstants.VFileConstants.*;
 import SmConstants.VFileConstants.EventOnsetType;
 import SmConstants.VFileConstants.MagnitudeType;
-import static SmConstants.VFileConstants.MagnitudeType.*;
+import static SmConstants.VFileConstants.MagnitudeType.MOMENT;
+import static SmConstants.VFileConstants.MagnitudeType.M_LOCAL;
+import static SmConstants.VFileConstants.MagnitudeType.M_OTHER;
+import static SmConstants.VFileConstants.MagnitudeType.SURFACE;
 import SmConstants.VFileConstants.V2DataType;
 import SmException.SmException;
 import SmUtilities.ConfigReader;
-import static SmUtilities.SmConfigConstants.BP_FILTER_CUTOFFHIGH;
-import static SmUtilities.SmConfigConstants.BP_FILTER_CUTOFFLOW;
-import static SmUtilities.SmConfigConstants.BP_FILTER_ORDER;
-import static SmUtilities.SmConfigConstants.BP_TAPER_LENGTH;
-import static SmUtilities.SmConfigConstants.DATA_UNITS_CODE;
-import static SmUtilities.SmConfigConstants.DEBUG_ARRAY_WRITE;
-import static SmUtilities.SmConfigConstants.EVENT_ONSET_BUFFER;
-import static SmUtilities.SmConfigConstants.EVENT_ONSET_METHOD;
-import static SmUtilities.SmConfigConstants.QA_INITIAL_VELOCITY;
-import static SmUtilities.SmConfigConstants.QA_RESIDUAL_DISPLACE;
-import static SmUtilities.SmConfigConstants.QA_RESIDUAL_VELOCITY;
+import static SmUtilities.SmConfigConstants.*;
 import SmUtilities.SmErrorLogger;
 import SmUtilities.SmTimeFormatter;
-import SmUtilities.TextFileWriter;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -93,6 +85,7 @@ public class V2Process {
     private final double qavelocityend;
     private final double qadisplacend;
     private boolean success;
+    
     private ArrayList<String> errorlog;
     private boolean writeArrays;
     private SmErrorLogger elog;
@@ -302,15 +295,23 @@ public class V2Process {
         //perform first QA check on velocity, check first and last values of
         //velocity array - should be close to 0.0 with tolerances.  If not,
         //perform adaptive baseline correction.
+        int window5sec = (int)(5.0 / dtime);
+        double velstart = ArrayOps.findSubsetMean(velocity, 0, window5sec);
+        double velend = ArrayOps.findSubsetMean(velocity, (vellen - window5sec),
+                                                                    vellen);
+//        System.out.println("window: " + window5sec + " velstart: " + velstart);
+//        System.out.println("velocity[0]: " + velocity[0]);
 
-        if ((Math.abs(velocity[0]) > qavelocityinit) || 
-                                (Math.abs(velocity[vellen-1]) > qavelocityend)) {
-            //!!! Adaptive baseline correction here.
+//        if ((Math.abs(velocity[0]) > qavelocityinit) || 
+//                                (Math.abs(velocity[vellen-1]) > qavelocityend)) {
+        if ((Math.abs(velstart) > qavelocityinit) || 
+                                         (Math.abs(velend) > qavelocityend)){
+        //!!! Adaptive baseline correction here.
             errorlog.add("Velocity QA failed:");
             errorlog.add(String.format("   initial velocity: %f,  limit %f",
-                                        Math.abs(velocity[0]), qavelocityinit));
+                                        Math.abs(velstart), qavelocityinit));
             errorlog.add(String.format("   final velocity: %f,  limit %f",
-                                  Math.abs(velocity[vellen-1]), qavelocityend));
+                                             Math.abs(velend), qavelocityend));
             errorlog.add("No baseline correction in place yet");
         }
         
@@ -359,17 +360,25 @@ public class V2Process {
         //needing additional processing.
         vellen = velocity.length;
         int dislen = displace.length;
-        success = (Math.abs(velocity[0]) <= qavelocityinit) && 
-                        (Math.abs(velocity[vellen-1]) <= qavelocityend) && 
-                                (Math.abs(displace[dislen-1]) <= qadisplacend);
+        velstart = ArrayOps.findSubsetMean(velocity, 0, window5sec);
+        velend = ArrayOps.findSubsetMean(velocity, (vellen - window5sec),
+                                                                    vellen);
+        double disend = ArrayOps.findSubsetMean(displace, (dislen - window5sec),
+                                                                    dislen);
+//        success = (Math.abs(velocity[0]) <= qavelocityinit) && 
+//                        (Math.abs(velocity[vellen-1]) <= qavelocityend) && 
+//                                (Math.abs(displace[dislen-1]) <= qadisplacend);
+        success = (Math.abs(velstart) <= qavelocityinit) && 
+                            (Math.abs(velend) <= qavelocityend) && 
+                                        (Math.abs(disend) <= qadisplacend);
         if (!success) {
             errorlog.add("Final QA failed - V2 processing unsuccessful:");
             errorlog.add(String.format("   initial velocity: %f, limit %f",
-                                        Math.abs(velocity[0]), qavelocityinit));
+                                        Math.abs(velstart), qavelocityinit));
             errorlog.add(String.format("   final velocity: %f, limit %f",
-                                  Math.abs(velocity[vellen-1]), qavelocityend));
+                                  Math.abs(velend), qavelocityend));
             errorlog.add(String.format("   final displacement,: %f, limit %f",
-                                  Math.abs(displace[dislen-1]), qadisplacend));
+                                  Math.abs(disend), qadisplacend));
             elog.writeToLog(logstart);
             String[] errorout = new String[errorlog.size()];
             errorout = errorlog.toArray(errorout);
