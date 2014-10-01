@@ -93,10 +93,6 @@ public class Prism {
             catch (IOException err) {
                 throw new SmException("Unable to open the log files: " + err.getMessage());
             }
-
-//            int cores = Runtime.getRuntime().availableProcessors();
-//            System.out.println("Number of cores: " + cores);
-
             //get the list of filenames in the input directory
             try {
                 smc.inVList = smc.getFileList( smc.inFolder, "*.[vV]0" );
@@ -117,7 +113,6 @@ public class Prism {
                 smc.Vproduct = new SmProduct(each, smc.outFolder);
                 //add V3 products eventually
                 try {
-//                    long startTime = System.nanoTime();
                     smc.smqueue.readInFile( each );
                     
                     //This if stmt is used to test v2 reads only
@@ -125,30 +120,15 @@ public class Prism {
 //                        recordCount = smc.smqueue.parseVFile( CORACC );
 //                        continue;
 //                    }
-//                    long readTime = System.nanoTime() - startTime;
                     // parse the raw acceleration file into channel record(s)
-//                    startTime = System.nanoTime();
                     recordCount = smc.smqueue.parseVFile( RAWACC );
-//                    long parseTime = System.nanoTime() - startTime;
+                    
                     //next is to process the records, then write out results
-//                    startTime = System.nanoTime();
                     smc.smqueue.processQueueContents(smc.Vproduct);
-//                    long processTime = System.nanoTime() - startTime;
-//                    startTime = System.nanoTime();
 
-                    //add another method here to handle moving the V0 file
-                    //out of the input directory and into its pass/fail location.
-                    //create the directories for writing out.  Append directory
-                    //names to writeOutProducts call?
                     String[] outlist = smc.Vproduct.writeOutProducts();
                     log.writeToLog(outlist);
                     smc.Vproduct.moveV0AfterProcessing();
-//                    long writeTime = System.nanoTime() - startTime;
-                    //this is a mess!
-//                    System.out.println("+++ read time: " + readTime*NANO_TO_SECOND);
-//                    System.out.println("+++ parse time: " + parseTime*NANO_TO_SECOND);
-//                    System.out.println("+++ process time: " + processTime*NANO_TO_SECOND);
-//                    System.out.println("+++ write time: " + writeTime*NANO_TO_SECOND);
                 }
                 catch (FormatException | IOException | SmException err) {
                     String[] logtxt = new String[2];

@@ -100,6 +100,7 @@ public class V2Component extends COSMOScontentFormat {
         String unitsname;
         int unitscode;
         String eodname;
+        SmArrayStyle packtype;
 
         SmTimeFormatter proctime = new SmTimeFormatter();
         ConfigReader config = ConfigReader.INSTANCE;
@@ -134,8 +135,10 @@ public class V2Component extends COSMOScontentFormat {
         
         //Get the array output format of single column per channel or packed
         String arrformat = config.getConfigValue(OUT_ARRAY_FORMAT);
-        if (!(arrformat.equalsIgnoreCase("packed")) && !(arrformat.equalsIgnoreCase("singleColumn"))) {
-            arrformat = DEFAULT_ARRAY_STYLE;
+        if ((arrformat == null) || (arrformat.contentEquals("Packed"))) {
+            packtype = SmArrayStyle.PACKED;
+        } else {
+            packtype = SmArrayStyle.SINGLE_COLUMN;
         }
         
         //Get the current processing time
@@ -179,9 +182,8 @@ public class V2Component extends COSMOScontentFormat {
         //transfer the data array and set all array values
         V2Data.setFieldWidth(REAL_FIELDWIDTH_V2);
         V2Data.setPrecision(REAL_PRECISION_V2);
-        SmArrayStyle packtype = (arrformat.equalsIgnoreCase("singleColumn")) ? 
-                                SmArrayStyle.SINGLE_COLUMN : SmArrayStyle.PACKED;
-//        System.out.println("packtype: " + packtype);
+        V2Data.setDisplayType("E");
+        
         if (procType == V2DataType.ACC) {
             V2Data.setRealArray(inVvals.getV2Array(V2DataType.ACC));
             V2Data.setNumVals(inVvals.getV2ArrayLength(V2DataType.ACC));
@@ -240,9 +242,9 @@ public class V2Component extends COSMOScontentFormat {
                                         String dataType) throws SmException {
         //calculate the time by multiplying the number of data values by delta t
         String line;
-        double dtime = this.getRealHeaderValue(DELTA_T);
+        double deltat = this.getRealHeaderValue(DELTA_T);
         int numvals = V2Data.getNumVals();
-        double calcTime = dtime * numvals * MSEC_TO_SEC;
+        double calcTime = deltat * numvals * MSEC_TO_SEC;
         String timeSec = Integer.toString((int)calcTime);
         line = String.format("%1$8s %2$13s pts, approx %3$4s secs, units=%4$7s(%5$02d), Format=",
                                      String.valueOf(numvals),dataType,
@@ -288,7 +290,8 @@ public class V2Component extends COSMOScontentFormat {
         text.addAll(lines);
         StringBuilder sb = new StringBuilder();
         String start = text.get(0);
-        sb.append(String.format("%4d",(text.size()-1))).append(start.substring(4, start.length()));
+        sb.append(String.format("%4d",(text.size()-1)))
+                .append(start.substring(4, start.length()));
         text.set(0,sb.toString());
         comments = new String[text.size()];
         comments = text.toArray(comments);

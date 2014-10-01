@@ -66,6 +66,8 @@ public class V2Process {
     private final V1Component inV1;
     private final int data_unit_code;
     private final double delta_t;
+    private final double dtime;
+    private final double samplerate;
     private final double noRealVal;
     private final double lowcutoff;
     private final double highcutoff;
@@ -127,6 +129,18 @@ public class V2Process {
         if ((Math.abs(delta_t - noRealVal) < epsilon) || (delta_t < 0.0)){
             throw new SmException("Real header #62, delta t, is invalid: " + 
                                                                         delta_t);
+        }
+        boolean match = false;
+        dtime = delta_t * MSEC_TO_SEC;    
+        samplerate = 1.0 / dtime;
+        for (double each : V3_SAMPLING_RATES) {
+            if (Math.abs(each - samplerate) < epsilon) {
+                match = true;
+            }
+        }
+        if (!match) {
+            throw new SmException("Real header #62, delta t value, " + 
+                                        delta_t + " is out of expected range");
         }
         //Get the earthquake magnitude from the real header array.  The order of
         //precedence for magnitude values is MOMENT, LOCAL, SURFACE, OTHER.
@@ -221,8 +235,8 @@ public class V2Process {
         //Pick P-wave and remove baseline
         errorlog.add("Start of V2 processing for " + V0name.toString());
         //remove linear trend before finding event onset
-        double dtime = delta_t * MSEC_TO_SEC;
         errorlog.add(String.format("delta_t in msec: %f and sec %f",delta_t,dtime));
+        errorlog.add(String.format("sample rate (samp/sec): %f",samplerate));
         errorlog.add("Event detection: remove linear trend, filter, event onset detection");
         
         ArrayOps.removeLinearTrend( acc, dtime);

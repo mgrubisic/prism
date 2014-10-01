@@ -17,7 +17,10 @@
 
 package PRISMtest.Package;
 
+import static SmConstants.VFileConstants.NUM_COEF_VALS;
 import static SmConstants.VFileConstants.NUM_T_PERIODS;
+import static SmConstants.VFileConstants.V3_DAMPING_VALUES;
+import static SmConstants.VFileConstants.V3_SAMPLING_RATES;
 import SmException.FormatException;
 import SmProcessing.SpectraResources;
 import SmUtilities.TextFileReader;
@@ -65,9 +68,7 @@ public class SpectraResourcesTest {
     public void setUp() throws IOException {
         Path relpath = Paths.get("");
         String abspath = relpath.toAbsolutePath().toString();
-        System.out.println("default path: " + abspath);
         dirpath = Paths.get(abspath, "src/SmProcessing/spectra");
-        System.out.println("spectra path: " + dirpath);
         Path periodname = Paths.get(dirpath.toString(), "T_periods.txt");
         TextFileReader reader = new TextFileReader(periodname.toFile());
         PeriodsText = reader.readInTextFile();
@@ -101,6 +102,28 @@ public class SpectraResourcesTest {
         for (int i = 0; i < ctext.length; i++) {
             for (int j = 0; j < NUM_T_PERIODS; j++) {
                 org.junit.Assert.assertEquals(coeftext[i][j],ctext[i][j]);
+            }
+        }
+    }
+    @Test
+    public void checkCoefVals() throws FormatException {
+        double[][] cvals;
+        double testval;
+        String coefline;
+        String[] coefpieces = new String[NUM_COEF_VALS];
+        double[] expected = new double[NUM_COEF_VALS];
+        int len = V3_DAMPING_VALUES.length;
+        for (int i = 0; i < V3_SAMPLING_RATES.length; i++) {
+            for (int j = 0; j < V3_DAMPING_VALUES.length; j++) {
+                cvals = spec.getCoefArray(V3_SAMPLING_RATES[i], V3_DAMPING_VALUES[j]);
+                for (int k = 0; k < NUM_T_PERIODS; k++) {
+                    coefline = coeftext[(i*len)+j][k];
+                    coefpieces = coefline.trim().split("\\s+");
+                    for (int each = 0; each < NUM_COEF_VALS; each++) {
+                        expected[each] = Double.parseDouble(coefpieces[each]);
+                    }
+                    org.junit.Assert.assertArrayEquals(expected, cvals[k], EPSILON);
+                }
             }
         }
     }

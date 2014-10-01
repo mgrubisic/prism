@@ -19,19 +19,13 @@ package SmProcessing;
 
 import COSMOSformat.V2Component;
 import static SmConstants.VFileConstants.DELTA_T;
-import static SmConstants.VFileConstants.NUM_COEF_VALS;
+import static SmConstants.VFileConstants.MSEC_TO_SEC;
 import static SmConstants.VFileConstants.NUM_T_PERIODS;
-import static SmConstants.VFileConstants.NUM_V3_ARRAYS;
 import static SmConstants.VFileConstants.V3_DAMPING_VALUES;
 import SmException.FormatException;
 import SmException.SmException;
-import SmUtilities.ConfigReader;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 /**
  *
  * @author jmjones
@@ -63,30 +57,32 @@ public class V3Process {
         }
         //Get the periods to compute spectra and coeficients for the input
         //sampling interval.
-        spectra = new double[V3_DAMPING_VALUES.length][NUM_T_PERIODS][NUM_COEF_VALS];
+        dtime = delta_t * MSEC_TO_SEC;    
+        spectra = new double[V3_DAMPING_VALUES.length][][];
         spec = new SpectraResources();
         T_periods = spec.getTperiods();
         for (int i = 0; i < V3_DAMPING_VALUES.length; i++) {
             spectra[i] = spec.getCoefArray(delta_t, V3_DAMPING_VALUES[i]);
         }
-        //Add the damping values and the T-periods to the V3 data list
-        double[] dampingvals = new double[V3_DAMPING_VALUES.length];
-        System.arraycopy(V3_DAMPING_VALUES, 0, dampingvals, 0, 
-                                                    V3_DAMPING_VALUES.length);
-        V3Data.add(dampingvals);
+        //Add the T-periods to the V3 data list
         V3Data.add(T_periods);
     }
     
-    public void processV3Data() {
-        System.out.println("V3 processing");
-        
+    public void processV3Data() {        
         //Calculate FFT for the velocity array.  Select magnitudes for the
         //given T values only.  (freq = 1/T)
         double pval;
-        int index = 0;
+        double interpolated;
+        double dindex = 0.0;
+        double ulim = 0;
+        double llim = 0;
+        double uval = 0.0;
+        double lval = 0.0;
+        double scale = 0.0;
+        System.out.println("velocity length: " + velocity.length);
         FFourierTransform fft = new FFourierTransform();
         double[] velspec = fft.calculateFFT(velocity);
-        double delta_f = 1.0 / ((fft.getPowerLength() / 2) / delta_t);
+        double delta_f = 1.0 / (fft.getPowerLength() * dtime);
         
         System.out.println("V3: powerlength= " + fft.getPowerLength());
         System.out.println("delta_t = " + delta_t);
@@ -94,8 +90,17 @@ public class V3Process {
         
         double[] velfftvals = new double[NUM_T_PERIODS];
         for (int f = 0; f < NUM_T_PERIODS; f++) {
-            index = (int)((1/T_periods[f])/delta_f);
-            velfftvals[f] = velspec[index];
+            dindex = (1.0/T_periods[f])/delta_f;
+            ulim = Math.ceil(dindex);
+            llim = Math.floor(dindex);
+            scale = dindex - llim;
+            if (ulim <= velfftvals.length) {
+                uval = velspec[(int)ulim];
+                lval = velspec[(int)llim];
+                velfftvals[f] = lval + scale * (uval - lval);
+            } else {
+                velfftvals[f] = 0.0;
+            }
         }
         V3Data.add(velfftvals);
         
@@ -144,12 +149,11 @@ public class V3Process {
             V3Data.add(sv);
             V3Data.add(sa);
         }
-        System.out.println("V3 process: data length = " + V3Data.size());
     }
-    public ArrayList<double[]> getV3Array() {
-        return V3Data;
+    public double[] getV3Array(int arrnum) {
+        return V3Data.get(arrnum);
     }
-    public int getV3ArrayLength() {
+    public int getV3ListLength() {
         return V3Data.size();
     }
 }

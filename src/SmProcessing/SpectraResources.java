@@ -99,6 +99,7 @@ public class SpectraResources {
         int index;
         int samp = 0;
         int damp = 0;
+        int len = V3_DAMPING_VALUES.length;
         for (int i = 0; i < V3_SAMPLING_RATES.length; i++) {
             if (Math.abs(samppersec-V3_SAMPLING_RATES[i]) < EPSILON) {
                 samp = i;
@@ -109,7 +110,7 @@ public class SpectraResources {
                 damp = i;
             }
         }
-        index = (samp*5) * damp;
+        index = (samp*len) + damp;
         return reformatCoefArray(coefs[index],NUM_COEF_VALS);
     }
     private double[][] reformatCoefArray(String[] array, int cols ) 
@@ -118,7 +119,7 @@ public class SpectraResources {
         String[] vals;
         try {
             for (int i = 0; i < array.length; i++) {
-                vals = array[i].split(" ");
+                vals = array[i].trim().split("\\s+");
                 for(int j = 0; j < cols; j++) {
                     outarray[i][j] = Double.parseDouble(vals[j]);
                 }

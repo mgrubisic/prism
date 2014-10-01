@@ -11,6 +11,7 @@ import COSMOSformat.COSMOScontentFormat;
 import COSMOSformat.V0Component;
 import COSMOSformat.V1Component;
 import COSMOSformat.V2Component;
+import COSMOSformat.V3Component;
 import static SmConstants.VFileConstants.*;
 import SmConstants.VFileConstants.V2DataType;
 import SmException.FormatException;
@@ -109,6 +110,7 @@ public class SmQueue {
             //Create the V2 processing object and do the processing.  V2 processing
             //produces 3 V2 objects: corrected acceleration, velocity, and displacement
             V2Process v2val = new V2Process(v1rec, this.fileName);
+            System.out.println("V0 file: " + this.fileName);
             boolean success = v2val.processV2Data();
             
             //create the V2 components to get the processing results
@@ -119,19 +121,21 @@ public class SmQueue {
             V2Component V2dis = new V2Component( DISPLACE, v1rec );
             V2dis.buildV2(V2DataType.DIS, v2val);
             
-            if (success) {
-                V3Process v3val = new V3Process(V2acc, V2vel, V2dis);
-                v3val.processV3Data();
-            }
-            
             Vprod.setDirectories(V2acc.getEventDateTime(), success, numRecords);
             Vprod.addProduct(v1rec, "V1");
             Vprod.addProduct(V2acc, "V2");
             Vprod.addProduct(V2vel, "V2");
             Vprod.addProduct(V2dis, "V2");
             
-            //Create the V3 processing object and do the processing.  V3 processing
-            //produces 1  V3 object: response spectra.
+            if (success) {
+                //Create the V3 processing object and do the processing.  V3
+                //processing produces 1  V3 object: response spectra.
+                V3Process v3val = new V3Process(V2acc, V2vel, V2dis);
+                v3val.processV3Data();
+                V3Component V3rec = new V3Component( SPECTRA, V2acc);
+                V3rec.buildV3(v3val);
+                Vprod.addProduct(V3rec, "V3");
+            }
         }
     }
     public ArrayList<COSMOScontentFormat> getSmList() {

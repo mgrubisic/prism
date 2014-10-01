@@ -9,6 +9,7 @@ package SMCOSMOScontrol;
 import COSMOSformat.COSMOScontentFormat;
 import COSMOSformat.V1Component;
 import COSMOSformat.V2Component;
+import COSMOSformat.V3Component;
 import static SmConstants.VFileConstants.MAX_LINE_LENGTH;
 import SmConstants.VFileConstants.OutputStyle;
 import SmUtilities.ConfigReader;
@@ -63,10 +64,10 @@ public class SmProduct {
         
         ConfigReader config = ConfigReader.INSTANCE;
         String outStyle = config.getConfigValue(OUT_FILE_FORMAT);
-        if (outStyle.compareToIgnoreCase("bundled") == 0) {
-            this.bundleFlag = OutputStyle.BUNDLED;
-        } else {
+        if ((outStyle == null) || (outStyle.contentEquals("SingleChannel"))) {
             this.bundleFlag = OutputStyle.SINGLE_CHANNEL;
+        } else {
+            this.bundleFlag = OutputStyle.BUNDLED;
         }
     }
     public void addProduct(COSMOScontentFormat newprod, String ext ) {
@@ -75,7 +76,7 @@ public class SmProduct {
         } else if (ext.equalsIgnoreCase("V2")) {
             this.V2List.add((V2Component)newprod);
         } else {
-//            this.V3List.add((V3Component)newprod);
+            this.V3List.add((V3Component)newprod);
         }
     }
     public void setDirectories(String eventMarker, boolean passedQA, int numlist) {
@@ -215,7 +216,24 @@ public class SmProduct {
         iter = this.V3List.iterator();
         added = false;
         while (iter.hasNext()) {
-            this.loglist.add("No V3 products yet");
+            V3Component rec3 = (V3Component)iter.next();
+            if (this.bundleFlag == OutputStyle.SINGLE_CHANNEL) {
+                outName = buildFilename(this.bundleFlag, "V3",rec3.getChannelNum());
+            } else {
+                outName = buildFilename(this.bundleFlag, "V3", 0);
+            }
+            contents = rec3.VrecToText();
+            textout = new TextFileWriter(outName, contents);
+            if (this.bundleFlag == OutputStyle.SINGLE_CHANNEL) {
+                textout.writeOutToFile();
+                this.loglist.add(outName.toString());
+            } else {
+                textout.appendToFile();
+                if (!added) {
+                    this.loglist.add(outName.toString());
+                    added = true;
+                }
+            }
         }
         this.V3List.clear();
         

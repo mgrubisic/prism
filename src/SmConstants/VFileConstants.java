@@ -34,7 +34,9 @@ public final class VFileConstants {
     public static final int REAL_PRECISION_V1 = 3;
     public static final int REAL_FIELDWIDTH_V2 = 12;
     public static final int REAL_PRECISION_V2 = 3;
-    public static final String DEFAULT_REAL_DISPLAYTYPE = "E";
+    public static final int REAL_FIELDWIDTH_V3 = 10;
+    public static final int REAL_PRECISION_V3 = 3;
+    public static final String DEFAULT_REAL_DISPLAYTYPE = "F";
     public static final String DEFAULT_INT_DISPLAYTYPE = "I";
     
     //event date time text header entries
@@ -56,6 +58,8 @@ public final class VFileConstants {
     public enum V2DataType { ACC, VEL, DIS };
     
     //units names and codes
+    public static final String SECT = "sec";
+    public static final int SECN = 1;
     public static final String CMSQSECT = "cm/sec2";
     public static final int CMSQSECN = 4;
     public static final String CMSECT = "cm/sec";
@@ -145,5 +149,5 @@ public final class VFileConstants {
     public static final double[] V3_SAMPLING_RATES = {50.0, 100.0, 200.0};
     public static final int NUM_T_PERIODS = 91;
     //1 array for periods, 1 for fft, 3 for each of 5 damping values = 17
-    public static final int NUM_V3_ARRAYS = 17;
+    public static final int NUM_V3_SPECTRA_ARRAYS = 15;
 }

@@ -18,16 +18,9 @@
 package COSMOSformat;
 
 import SmConstants.VFileConstants;
-import static SmConstants.VFileConstants.DEFAULT_ARRAY_STYLE;
-import static SmConstants.VFileConstants.DEFAULT_REAL_FIELDWIDTH;
-import static SmConstants.VFileConstants.DELTA_T;
-import static SmConstants.VFileConstants.END_OF_DATATYPE;
-import static SmConstants.VFileConstants.END_OF_DATA_CHAN;
-import static SmConstants.VFileConstants.MAX_LINE_LENGTH;
-import static SmConstants.VFileConstants.MSEC_TO_SEC;
-import static SmConstants.VFileConstants.REAL_FIELDWIDTH_V1;
-import static SmConstants.VFileConstants.REAL_PRECISION_V1;
-import static SmConstants.VFileConstants.SPECTRA;
+import static SmConstants.VFileConstants.*;
+import SmConstants.VFileConstants.SmArrayStyle;
+import static SmConstants.VFileConstants.V3_DAMPING_VALUES;
 import SmException.FormatException;
 import SmException.SmException;
 import SmProcessing.V3Process;
@@ -36,13 +29,15 @@ import static SmUtilities.SmConfigConstants.OUT_ARRAY_FORMAT;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_ABBREV;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_CODE;
 import SmUtilities.SmTimeFormatter;
+import java.util.ArrayList;
 
 /**
  *
  * @author jmjones
  */
 public class V3Component extends COSMOScontentFormat {
-    private VRealArray V3Data;
+    private String V3DampingValues;
+    private ArrayList<VRealArray> V3Data;
     private final V1Component parentV1;  //link back to the parent V1 record
     private final V2Component parentV2;
 
@@ -64,26 +59,36 @@ public class V3Component extends COSMOScontentFormat {
         this.noIntVal = pV2.noIntVal;
         this.noRealVal = pV2.noRealVal;
         this.textHeader = pV2.getTextHeader();
-        //Load the headers with parent V1 values.
-        //Leave updates for buildV2 method
+        //Load the headers with parent V2 values.
+        //Leave updates for buildV3 method
         this.intHeader = new VIntArray(pV2.intHeader);        
         this.realHeader = new VRealArray(pV2.realHeader);
         this.setChannelNum();
         
         //The buildV2 method fills in these data values, the format line, and
         //the individual params for the real arrays.
-        this.V3Data = new VRealArray();
+        this.V3Data = new ArrayList<>();
         
         this.comments = pV2.getComments(); //leave update for processing, if any
-        this.endOfData = pV2.endOfData; //leave update for buildV2
+        this.endOfData = pV2.endOfData; //leave update for buildV3
     }
     @Override
     public int parseDataSection (int startLine, String[] infile) throws 
                                                             FormatException {
         int current = startLine;
-        
-        V3Data = new VRealArray();
-        current = V3Data.parseValues( current, infile);
+        V3DampingValues = infile[current++];
+        VRealArray Periods = new VRealArray();
+        current = Periods.parseValues(current, infile);
+        V3Data.add(Periods);
+        VRealArray fftVals = new VRealArray();
+        current = fftVals.parseValues(current, infile);
+        V3Data.add(fftVals);
+        VRealArray spectra;
+        for (int i = 0; i < NUM_V3_SPECTRA_ARRAYS; i++) {
+            spectra = new VRealArray();
+            current = spectra.parseValues(current, infile);
+            V3Data.add(spectra);
+        }
         return current;
     }
     /**
@@ -91,27 +96,31 @@ public class V3Component extends COSMOScontentFormat {
      * @return the number of values in the data array
      */
     public int getDataLength() {
-        return V3Data.getNumVals();
+        return V3Data.size();
     }
     /**
-     * Getter for a copy of the data array reference.  Used to access the entire
-     * array during data processing.
+     * Getter for a copy of the data array reference.  Used to access each array
+     * of the V3 array sequence
+     * @param arrnum the index of the array to retrieve from the V3 array list
      * @return a copy of the array reference
      */
-    public double[] getDataArray() {
-        return V3Data.getRealArray();
+    public double[] getDataArray(int arrnum) {
+        VRealArray varray;
+        varray = V3Data.get(arrnum);
+        return varray.getRealArray();
     }
     public void buildV3(V3Process inVvals) throws SmException, FormatException {
         Double epsilon = 0.001;
         StringBuilder sb = new StringBuilder(MAX_LINE_LENGTH);
         StringBuilder eod = new StringBuilder(MAX_LINE_LENGTH);
-        final double MSEC_TO_SEC = 1e-3;
-        String realformat = "%8.3f";
-        String freqformat = "%5.2f";
+        String realformat = "%10.3f";
+        String freqformat = "%10.3e";
         double time;
         String unitsname;
         int unitscode;
         String eodname;
+        String line;
+        SmArrayStyle packtype;
 
         SmTimeFormatter proctime = new SmTimeFormatter();
         ConfigReader config = ConfigReader.INSTANCE;
@@ -131,20 +140,82 @@ public class V3Component extends COSMOScontentFormat {
         double delta_t = this.realHeader.getRealValue(DELTA_T);
         //Get the array output format of single column per channel or packed
         String arrformat = config.getConfigValue(OUT_ARRAY_FORMAT);
-        if (!(arrformat.equalsIgnoreCase("packed")) && 
-                                !(arrformat.equalsIgnoreCase("singleColumn"))) {
-            arrformat = DEFAULT_ARRAY_STYLE;
+        if ((arrformat == null) || (arrformat.contentEquals("Packed"))) {
+            packtype = SmArrayStyle.PACKED;
+        } else {
+            packtype = SmArrayStyle.SINGLE_COLUMN;
         }
-        VFileConstants.SmArrayStyle packtype = (arrformat.equalsIgnoreCase("singleColumn")) ? 
-                              VFileConstants.SmArrayStyle.SINGLE_COLUMN : VFileConstants.SmArrayStyle.PACKED;
+        System.out.println("packtype: " + packtype);
+        //Make the V3 damping values line
+        V3DampingValues = sb.append(String.format("%1$4s", String.valueOf(V3_DAMPING_VALUES.length)))
+                .append(" damping values for which spectra are computed:")
+                .append(String.format("%1$4s,", String.valueOf(V3_DAMPING_VALUES[0])))
+                .append(String.format("%1$4s,", String.valueOf(V3_DAMPING_VALUES[1])))
+                .append(String.format("%1$4s,", String.valueOf(V3_DAMPING_VALUES[2])))
+                .append(String.format("%1$4s,", String.valueOf(V3_DAMPING_VALUES[3])))
+                .append(String.format("%1$4s,", String.valueOf(V3_DAMPING_VALUES[4])))
+                .toString();
+        
+        //transfer the data arrays, starting with the periods
+        VRealArray Periods = new VRealArray();
+        Periods.setRealArray(inVvals.getV3Array(0));
+        Periods.setNumVals(NUM_T_PERIODS);
+        Periods.setPrecision(REAL_PRECISION_V3);
+        Periods.setFieldWidth(REAL_FIELDWIDTH_V3);
+        Periods.setDisplayType("F");
+        Periods.buildArrayParams(packtype);
+        line = buildNewDataFormatLine(SECT, SECN, "periods","",0);
+        Periods.setFormatLine(line + Periods.getNumberFormat());
+        System.out.println("numform: " + Periods.getFormatLine());
+        V3Data.add(Periods);
+        
+        VRealArray fftvals = new VRealArray();
+        fftvals.setRealArray(inVvals.getV3Array(1));
+        fftvals.setNumVals(NUM_T_PERIODS);
+        fftvals.setPrecision(REAL_PRECISION_V3);
+        fftvals.setFieldWidth(REAL_FIELDWIDTH_V3);
+        fftvals.setDisplayType("E");
+        fftvals.buildArrayParams(packtype);
+        line = buildNewDataFormatLine(CMSECT, CMSECN, "fft","",0);
+        fftvals.setFormatLine(line + fftvals.getNumberFormat());
+        V3Data.add(fftvals);
+        
+        VRealArray sarray;
+        int arrcount = 2;
+        for (int s = 0; s < V3_DAMPING_VALUES.length; s++) {
+            sarray = new VRealArray();
+            sarray.setRealArray(inVvals.getV3Array(arrcount++));
+            sarray.setNumVals(NUM_T_PERIODS);
+            sarray.setPrecision(REAL_PRECISION_V3);
+            sarray.setFieldWidth(REAL_FIELDWIDTH_V3);
+            sarray.setDisplayType("E");
+            sarray.buildArrayParams(packtype);
+            line = buildNewDataFormatLine(CMT, CMN, "spectra","Sd",s);
+            sarray.setFormatLine(line + sarray.getNumberFormat());
+            V3Data.add(sarray);
 
-        //transfer the data array and set all array values
-//        V3Data.setRealArray(inVvals.getV3Array());
-        V3Data.setFieldWidth(REAL_FIELDWIDTH_V1);
-        V3Data.setPrecision(REAL_PRECISION_V1);
-        V3Data.setNumVals(inVvals.getV3ArrayLength());
-        V3Data.buildArrayParams( packtype );
-//        this.buildNewDataFormatLine(unitsname, unitscode);
+            sarray = new VRealArray();
+            sarray.setRealArray(inVvals.getV3Array(arrcount++));
+            sarray.setNumVals(NUM_T_PERIODS);
+            sarray.setPrecision(REAL_PRECISION_V3);
+            sarray.setFieldWidth(REAL_FIELDWIDTH_V3);
+            sarray.setDisplayType("E");
+            sarray.buildArrayParams(packtype);
+            line = buildNewDataFormatLine(CMSECT, CMSECN, "spectra","Sv",s);
+            sarray.setFormatLine(line + sarray.getNumberFormat());
+            V3Data.add(sarray);
+
+            sarray = new VRealArray();
+            sarray.setRealArray(inVvals.getV3Array(arrcount++));
+            sarray.setNumVals(NUM_T_PERIODS);
+            sarray.setPrecision(REAL_PRECISION_V3);
+            sarray.setFieldWidth(REAL_FIELDWIDTH_V3);
+            sarray.setDisplayType("E");
+            sarray.buildArrayParams(packtype);
+            line = buildNewDataFormatLine(CMSQSECT, CMSQSECN, "spectra","Sa",s);
+            sarray.setFormatLine(line + sarray.getNumberFormat());
+            V3Data.add(sarray);
+        }
         
         //Get the current processing time
         String val = proctime.getGMTdateTime();
@@ -165,20 +236,84 @@ public class V3Component extends COSMOScontentFormat {
      * @param unitsCode code containing the type of units (cm, cm/sec, etc.)
      * @throws SmException from setFormatLine
      */
-    public void buildNewDataFormatLine(String units, int unitsCode) throws SmException {
-        //calculate the time by multiplying the number of data values by delta t
-        String line;
-        double dtime = this.getRealHeaderValue(DELTA_T);
-        int numvals = V3Data.getNumVals();
-        double calcTime = dtime * numvals * MSEC_TO_SEC;
-        String timeSec = Integer.toString((int)calcTime);
-//        String datType = "acceleration";
-//        line = String.format("%1$8s %2$13s pts, approx %3$4s secs, units=%4$7s(%5$02d), Format=",
-//                                     String.valueOf(numvals),datType,
-//                                                    timeSec, units, unitsCode);
-//        V3Data.setFormatLine(line + V3Data.getNumberFormat());
+    public String buildNewDataFormatLine(String units, int unitsCode, String atype,
+                                 String stype, double damp) throws SmException {
+        StringBuilder line = new StringBuilder();
+        String datType;
+        String outline;
+        if (atype.equalsIgnoreCase("periods")) {
+            datType = " periods at which spectra computed,      units=";
+            outline = line.append(String.format("%1$4s", String.valueOf(NUM_T_PERIODS)))
+                        .append(datType)
+                        .append(String.format("%1$7s",String.valueOf(units)))
+                        .append(String.format("(%1$02d),Format=",unitsCode))
+                        .toString();
+        } else if (atype.equalsIgnoreCase("fft")) {
+            datType = " values of approx Fourier spectrum,      units=";
+            outline = line.append(String.format("%1$4s", String.valueOf(NUM_T_PERIODS)))
+                        .append(datType)
+                        .append(String.format("%1$7s",String.valueOf(units)))
+                        .append(String.format("(%1$02d),Format=",unitsCode))
+                        .toString();
+        } else {
+            outline= line.append(String.format(" values of %1$2s",stype))
+                        .append(String.format(" for Damping =%1$4s",String.valueOf(damp)))
+                        .append(",         units=")
+                        .append(String.format("%1$7s",String.valueOf(units)))
+                        .append(String.format("(%1$02d),Format=",unitsCode))
+                        .toString();
+        }
+        return outline;
     }
-    public String getDataFormatLine() {
-        return V3Data.getFormatLine();
+//    public String getDataFormatLine() {
+//        return V3Data.getFormatLine();
+//    }
+    @Override
+    public String[] VrecToText() {
+        //add up the length of the text portions of the component, which are
+        //the text header, the comments, and the end-of-data line.
+        int totalLength;
+        int currentLength = 0;
+        int textLength = this.textHeader.length + this.comments.length + 2;
+        
+        //get the header and data arrays as text
+        String[] intHeaderText = this.intHeader.numberSectionToText();
+        String[] realHeaderText = this.realHeader.numberSectionToText();
+        
+        String[] varr;
+        int datasize = 0;
+        ArrayList<String[]> V3DataText = new ArrayList<>();
+        for (VRealArray each :  V3Data) {
+            varr = each.numberSectionToText();
+            V3DataText.add(varr);
+            datasize += varr.length;
+        }
+        //add the array lengths to the text lengths to get the total and declare
+        //an array of this length, then build it by combining all the component
+        //pieces into a text version of the component.
+        totalLength = textLength + intHeaderText.length + realHeaderText.length + 
+                                                        datasize;
+        String[] outText = new String[totalLength];
+        System.arraycopy(this.textHeader, 0, outText, currentLength, 
+                                                        this.textHeader.length);
+        currentLength = currentLength + this.textHeader.length;
+        System.arraycopy(intHeaderText, 0, outText, currentLength, 
+                                                            intHeaderText.length);
+        currentLength = currentLength + intHeaderText.length;
+        System.arraycopy(realHeaderText, 0, outText, currentLength, 
+                                                          realHeaderText.length);
+        currentLength = currentLength + realHeaderText.length;
+        System.arraycopy(this.comments, 0, outText, currentLength, this.comments.length);
+        currentLength = currentLength + this.comments.length;
+        outText[currentLength] = V3DampingValues;
+        currentLength++;
+        
+        for (String[] each : V3DataText) {
+            System.arraycopy(each, 0, outText, currentLength, each.length);
+            currentLength += each.length;
+        }
+        V3DataText.clear();
+        outText[totalLength-1] = this.endOfData;
+        return outText;
     }
 }
