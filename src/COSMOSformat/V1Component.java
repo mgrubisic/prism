@@ -141,6 +141,7 @@ public class V1Component extends COSMOScontentFormat {
         V1Data.setRealArray(inVvals.getV1Array());
         V1Data.setFieldWidth(REAL_FIELDWIDTH_V1);
         V1Data.setPrecision(REAL_PRECISION_V1);
+        V1Data.setDisplayType("E");
         V1Data.setNumVals(inVvals.getV1ArrayLength());
         V1Data.buildArrayParams( packtype );
         this.buildNewDataFormatLine(unitsname, unitscode);

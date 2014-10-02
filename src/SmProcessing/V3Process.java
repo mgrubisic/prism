@@ -73,18 +73,19 @@ public class V3Process {
         //given T values only.  (freq = 1/T)
         double pval;
         double interpolated;
-        double dindex = 0.0;
-        double ulim = 0;
-        double llim = 0;
-        double uval = 0.0;
-        double lval = 0.0;
-        double scale = 0.0;
+        double dindex;
+        double ulim;
+        double llim;
+        double uval;
+        double lval;
+        double scale;
         System.out.println("velocity length: " + velocity.length);
         FFourierTransform fft = new FFourierTransform();
         double[] velspec = fft.calculateFFT(velocity);
         double delta_f = 1.0 / (fft.getPowerLength() * dtime);
         
         System.out.println("V3: powerlength= " + fft.getPowerLength());
+        System.out.println("return fft length: " + velspec.length);
         System.out.println("delta_t = " + delta_t);
         System.out.println("delta_f = " + delta_f);
         

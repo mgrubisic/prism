@@ -110,11 +110,8 @@ public class V3Component extends COSMOScontentFormat {
         return varray.getRealArray();
     }
     public void buildV3(V3Process inVvals) throws SmException, FormatException {
-        Double epsilon = 0.001;
         StringBuilder sb = new StringBuilder(MAX_LINE_LENGTH);
         StringBuilder eod = new StringBuilder(MAX_LINE_LENGTH);
-        String realformat = "%10.3f";
-        String freqformat = "%10.3e";
         double time;
         String unitsname;
         int unitscode;
@@ -145,15 +142,14 @@ public class V3Component extends COSMOScontentFormat {
         } else {
             packtype = SmArrayStyle.SINGLE_COLUMN;
         }
-        System.out.println("packtype: " + packtype);
         //Make the V3 damping values line
         V3DampingValues = sb.append(String.format("%1$4s", String.valueOf(V3_DAMPING_VALUES.length)))
                 .append(" damping values for which spectra are computed:")
-                .append(String.format("%1$4s,", String.valueOf(V3_DAMPING_VALUES[0])))
-                .append(String.format("%1$4s,", String.valueOf(V3_DAMPING_VALUES[1])))
-                .append(String.format("%1$4s,", String.valueOf(V3_DAMPING_VALUES[2])))
-                .append(String.format("%1$4s,", String.valueOf(V3_DAMPING_VALUES[3])))
-                .append(String.format("%1$4s,", String.valueOf(V3_DAMPING_VALUES[4])))
+                .append(String.format("%1$04.2f,", V3_DAMPING_VALUES[0]))
+                .append(String.format("%1$04.2f,", V3_DAMPING_VALUES[1]))
+                .append(String.format("%1$04.2f,", V3_DAMPING_VALUES[2]))
+                .append(String.format("%1$04.2f,", V3_DAMPING_VALUES[3]))
+                .append(String.format("%1$04.2f", V3_DAMPING_VALUES[4]))
                 .toString();
         
         //transfer the data arrays, starting with the periods
@@ -166,7 +162,6 @@ public class V3Component extends COSMOScontentFormat {
         Periods.buildArrayParams(packtype);
         line = buildNewDataFormatLine(SECT, SECN, "periods","",0);
         Periods.setFormatLine(line + Periods.getNumberFormat());
-        System.out.println("numform: " + Periods.getFormatLine());
         V3Data.add(Periods);
         
         VRealArray fftvals = new VRealArray();
@@ -190,7 +185,8 @@ public class V3Component extends COSMOScontentFormat {
             sarray.setFieldWidth(REAL_FIELDWIDTH_V3);
             sarray.setDisplayType("E");
             sarray.buildArrayParams(packtype);
-            line = buildNewDataFormatLine(CMT, CMN, "spectra","Sd",s);
+            line = buildNewDataFormatLine(CMT, CMN, "spectra","Sd",
+                                                            V3_DAMPING_VALUES[s]);
             sarray.setFormatLine(line + sarray.getNumberFormat());
             V3Data.add(sarray);
 
@@ -201,7 +197,8 @@ public class V3Component extends COSMOScontentFormat {
             sarray.setFieldWidth(REAL_FIELDWIDTH_V3);
             sarray.setDisplayType("E");
             sarray.buildArrayParams(packtype);
-            line = buildNewDataFormatLine(CMSECT, CMSECN, "spectra","Sv",s);
+            line = buildNewDataFormatLine(CMSECT, CMSECN, "spectra","Sv",
+                                                            V3_DAMPING_VALUES[s]);
             sarray.setFormatLine(line + sarray.getNumberFormat());
             V3Data.add(sarray);
 
@@ -212,7 +209,8 @@ public class V3Component extends COSMOScontentFormat {
             sarray.setFieldWidth(REAL_FIELDWIDTH_V3);
             sarray.setDisplayType("E");
             sarray.buildArrayParams(packtype);
-            line = buildNewDataFormatLine(CMSQSECT, CMSQSECN, "spectra","Sa",s);
+            line = buildNewDataFormatLine(CMSQSECT, CMSQSECN, "spectra","Sa",
+                                                            V3_DAMPING_VALUES[s]);
             sarray.setFormatLine(line + sarray.getNumberFormat());
             V3Data.add(sarray);
         }
@@ -226,7 +224,7 @@ public class V3Component extends COSMOScontentFormat {
         this.endOfData = eod.append(this.endOfData,0,END_OF_DATA_CHAN)
                             .append(" ")
                             .append(String.valueOf(this.channelNum))
-                            .append("response spectra").toString();
+                            .append(" response spectra").toString();
     }
     /**
      * This method creates a new data format line for the V3 component data arrays.
@@ -256,7 +254,8 @@ public class V3Component extends COSMOScontentFormat {
                         .append(String.format("(%1$02d),Format=",unitsCode))
                         .toString();
         } else {
-            outline= line.append(String.format(" values of %1$2s",stype))
+            outline= line.append(String.format("%1$4s values of %2$2s",
+                                            String.valueOf(NUM_T_PERIODS),stype))
                         .append(String.format(" for Damping =%1$4s",String.valueOf(damp)))
                         .append(",         units=")
                         .append(String.format("%1$7s",String.valueOf(units)))

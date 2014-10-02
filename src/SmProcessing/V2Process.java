@@ -305,6 +305,10 @@ public class V2Process {
         if (writeArrays) {
            elog.writeOutArray(velocity, "LinearTrendRemovedVel.txt");
         }
+        //Update Butterworth filter low and high cutoff thresholds for later
+        FilterCutOffThresholds threshold = new FilterCutOffThresholds( magnitude );
+        lowcutadj = threshold.getLowCutOff();
+        highcutadj = threshold.getHighCutOff();
         
         //perform first QA check on velocity, check first and last values of
         //velocity array - should be close to 0.0 with tolerances.  If not,
@@ -313,28 +317,28 @@ public class V2Process {
         double velstart = ArrayOps.findSubsetMean(velocity, 0, window5sec);
         double velend = ArrayOps.findSubsetMean(velocity, (vellen - window5sec),
                                                                     vellen);
-//        System.out.println("window: " + window5sec + " velstart: " + velstart);
-//        System.out.println("velocity[0]: " + velocity[0]);
+        System.out.println("window: " + window5sec + " velstart: " + velstart);
+        System.out.println("velocity[0]: " + velocity[0]);
+        System.out.println("velend: " + velend);
 
 //        if ((Math.abs(velocity[0]) > qavelocityinit) || 
 //                                (Math.abs(velocity[vellen-1]) > qavelocityend)) {
         if ((Math.abs(velstart) > qavelocityinit) || 
                                          (Math.abs(velend) > qavelocityend)){
-        //!!! Adaptive baseline correction here.
             errorlog.add("Velocity QA failed:");
             errorlog.add(String.format("   initial velocity: %f,  limit %f",
                                         Math.abs(velstart), qavelocityinit));
             errorlog.add(String.format("   final velocity: %f,  limit %f",
                                              Math.abs(velend), qavelocityend));
-            errorlog.add("No baseline correction in place yet");
+            errorlog.add("Adapive baseline correction beginning");
+            System.out.println("failed QA1");
+//            AdaptiveBaselineCorrection adapt = new AdaptiveBaselineCorrection(dtime,
+//                    velocity,lowcutadj,highcutadj,numpoles,taperlength,pickIndex);
+//            success = adapt.startIterations();
         }
         
-        //determine new filter coefs based on earthquake local magnitude
-        //distance.
+        //determine new filter coefs based on earthquake magnitude
         filter = new ButterworthFilter();
-        FilterCutOffThresholds threshold = new FilterCutOffThresholds( magnitude );
-        lowcutadj = threshold.getLowCutOff();
-        highcutadj = threshold.getHighCutOff();
         errorlog.add("Acausal bandpass filter:");
         errorlog.add("  earthquake magnitude is " + magnitude + " and M used is " + magtype);
         errorlog.add(String.format("  adjusted lowcut: %f and adjusted highcut: %f Hz",
@@ -398,6 +402,7 @@ public class V2Process {
             errorout = errorlog.toArray(errorout);
             elog.writeToLog(errorout);
             errorlog.clear();
+            System.out.println("failed QA2");
         }
         return success;
     }

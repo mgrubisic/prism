@@ -34,7 +34,7 @@ public final class VFileConstants {
     public static final int REAL_PRECISION_V1 = 3;
     public static final int REAL_FIELDWIDTH_V2 = 12;
     public static final int REAL_PRECISION_V2 = 3;
-    public static final int REAL_FIELDWIDTH_V3 = 10;
+    public static final int REAL_FIELDWIDTH_V3 = 15;
     public static final int REAL_PRECISION_V3 = 3;
     public static final String DEFAULT_REAL_DISPLAYTYPE = "F";
     public static final String DEFAULT_INT_DISPLAYTYPE = "I";

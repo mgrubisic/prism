@@ -61,7 +61,7 @@ public class ArrayOps {
     }
     /**
      * Removes a linear trend (mx + b) from the input array with the given 
-     * timestep.  The linear trend is calculated internally using apache commons
+     * time step.  The linear trend is calculated internally using apache commons
      * math simple regression class.
      * 
      * @param array input array to have linear trend removed from
@@ -113,7 +113,7 @@ public class ArrayOps {
         }
     }
     /**
-     * Make an array of time values, starting at 0 and incrementing by timestep
+     * Make an array of time values, starting at 0 and incrementing by time step
      * to make an array of length timelen.
      * 
      * @param timestep sample interval
@@ -132,7 +132,7 @@ public class ArrayOps {
      * 
      * @param array array to get the sub-array from
      * @param start starting index of the subset array in the input array
-     * @param numval number of values to include in the sub-array
+     * @param end ending index of the subset array in the input array
      * @return mean of the values in the sub-array
      */
     public static double findSubsetMean( double[] array, int start, int end) {

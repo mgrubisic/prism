@@ -29,6 +29,7 @@ import static SmConstants.VFileConstants.DEFAULT_NUM_BREAKS_LOWER;
 import static SmConstants.VFileConstants.DEFAULT_NUM_BREAKS_UPPER;
 import static SmConstants.VFileConstants.DEFAULT_SPLINE_ORDER_LOWER;
 import static SmConstants.VFileConstants.DEFAULT_SPLINE_ORDER_UPPER;
+import SmException.SmException;
 import SmUtilities.ConfigReader;
 import static SmUtilities.SmConfigConstants.FIRST_POLY_ORDER_LOWER;
 import static SmUtilities.SmConfigConstants.FIRST_POLY_ORDER_UPPER;
@@ -51,6 +52,7 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
  */
 public class AdaptiveBaselineCorrection {
     private final int NUM_SEGMENTS = 3;
+    private final int RESULT_PARMS = 14;
 //    private final int NUM_BREAKS = 10;
     
     private final double TOL_RES_DISP = 0.001;
@@ -60,11 +62,16 @@ public class AdaptiveBaselineCorrection {
     
     private final int MOVING_WINDOW = 50;
     private final double EPSILON = 0.001;
-    private double deltat;
+    private double dtime;
     private double lowcut;
     private double highcut;
+    private int numpoles;
+    private double taperlength;
     private int estart;
-    private double[] vel;
+    private double[] velocity;
+    private double[] velfinal;
+    private double[] displace;
+    private double[] accel;
     private final int numbreakslo;
     private final int numbreakshi;
     private final int degreeSlo;
@@ -81,13 +88,16 @@ public class AdaptiveBaselineCorrection {
     private int[] polyBreaks;
 
     
-    public AdaptiveBaselineCorrection(double deltat,double[] invel, double dtime, 
-                                      double lowcut,double highcut, int ppick) {
-        this.deltat = deltat;
+    public AdaptiveBaselineCorrection(double delttime, double[] invel, 
+                                      double lowcut,double highcut, int numpoles,
+                                      double taperlength, int ppick) {
+        this.dtime = delttime;
         this.estart = ppick;
-        this.vel = invel;
+        this.velocity = invel;
         this.lowcut = lowcut;
         this.highcut = highcut;
+        this.numpoles = numpoles;
+        this.taperlength = taperlength;
         this.rms = new double[NUM_SEGMENTS];
         this.polyBreaks = new int[NUM_SEGMENTS-1];
         
@@ -149,18 +159,145 @@ public class AdaptiveBaselineCorrection {
         return outval;
     }
     
-    public void startIterations() {
+    public boolean startIterations() throws SmException {
         //The matlab code works with the time index into the array, while this
         //implementation just uses the index into the array, and only uses the
         //time step to create the time arrays as needed.
         int t11 = estart;
-        int t22 = (int)(0.8 * vel.length);
+        int vlen = velocity.length;
+        int t22 = (int)(0.8 * vlen);
         int dt1 = MOVING_WINDOW;
         int t21 = t11 + dt1;
+        int t1;
+        velfinal = new double[vlen];
+        boolean smooth = false;
+        ButterworthFilter filter;
+        ArrayList<double[]> results = new ArrayList<>();
+        double[] onerun;
+        boolean pass = false;
         
-        
+        int counter = 1;
+        for (int order1 = degreeP1lo; order1 <= degreeP1hi; order1++) {
+            for (int order2 = degreeP2lo; order2 <= degreeP2hi; order2++) {
+                for (int spl_break = numbreakslo; spl_break <= numbreakshi; spl_break++) {
+                    for (int spl_order = degreeSlo; spl_order <= degreeShi; spl_order++) {
+                        for (int t2 = t21; t2 <= t22; t2 += dt1) {
+                            t1 = t11;
+                            if ((t2-t1) >= ((int)1.0/lowcut)) {
+                                System.out.println("ABC: count = " + counter);
+                                System.arraycopy(velocity,0,velfinal,0,vlen);
+                                //remove the spline fit from velocity
+                                makeCorrection(velfinal,t1,t2,spl_break,spl_order,
+                                                            order1,order2,smooth);
+                                //now filter velocity
+                                filter = new ButterworthFilter();
+                                boolean valid = filter.calculateCoefficients(lowcut, 
+                                                 highcut,dtime, numpoles, true);
+                                if (valid) {
+                                    filter.applyFilter(velfinal, taperlength);
+                                } else {
+                                    throw new SmException("ABC: Invalid bandpass "
+                                                     + "filter input parameters");
+                                }
+                                //remove any mean value
+                                ArrayStats velmean = new ArrayStats( velfinal );
+                                ArrayOps.removeValue(velfinal, velmean.getMean());
+                                //integrate to get displacement, differentiate
+                                //for acceleration
+                                displace = ArrayOps.Integrate( velocity, dtime);
+                                accel = ArrayOps.Differentiate(velocity, dtime);
+                                //store the results in an array for comparison
+                                onerun = new double[RESULT_PARMS];
+                                onerun[0] = Math.sqrt(Math.pow(rms[0], 2) +
+                                        Math.pow(rms[1],2) + Math.pow(rms[2],2));
+                                onerun[1] = Math.abs(displace[displace.length-1]);
+                                onerun[2] = Math.abs(velfinal[0]);
+                                onerun[3] = Math.abs(velfinal[velfinal.length-1]);
+                                onerun[4] = t1;
+                                onerun[5] = t2;
+                                onerun[6] = order1;
+                                onerun[7] = order2;
+                                onerun[8] = counter;
+                                onerun[9] = rms[0];
+                                onerun[10] = rms[1];
+                                onerun[11] = rms[2];
+                                onerun[12] = spl_break;
+                                onerun[13]= spl_order;
+                                //Penalty for initial acceleration step
+                                ArrayStats accstat = new ArrayStats(accel);
+                                if ((Math.abs(accel[0]) - Math.abs(accstat.getPeakVal())) < EPSILON) {
+                                    onerun[0] = 10000;
+                                }
+                                results.add(onerun);
+                                counter++;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return pass;
     }
-    
+    public void makeCorrection( double[] array, int break1, int break2, int spl_order,
+                        int degreeS, int degreeP1, int degreeP2, boolean smooth ) {
+        polyBreaks[0] = break1;
+        polyBreaks[1] = break2;
+        double[] h1;
+        double[] h2;
+        double[] h3;
+        double[] time = ArrayOps.makeTimeArray(dtime, array.length);
+        breaks = makeBreaks( break1, break2, spl_order);
+//        System.out.println();
+        
+        h1 = new double[break1];
+        h2 = new double[break2-break1];
+        h3 = new double[array.length-break2];
+        System.arraycopy(array, 0, h1, 0, break1);
+        System.arraycopy(array, break1, h2, 0, break2-break1);
+        System.arraycopy(array, break2, h3, 0, array.length-break2);
+        result = new double[ array.length ];
+        
+        //Get the polynomials that were fitted to the input array
+        //Construct the baseline function from each section
+        PolynomialSplineFunction spfunction = getSplines(h2, breaks, degreeS);
+        double[] coefs1 = ArrayOps.findPolynomialTrend(h1, degreeP1, dtime);
+        double[] coefs3 = ArrayOps.findPolynomialTrend(h3, degreeP2, dtime);
+        
+        PolynomialFunction b1poly = new PolynomialFunction( coefs1 );
+        PolynomialFunction b3poly = new PolynomialFunction( coefs3 );
+
+        bnn = new double[time.length];
+        for (int i = 0; i < bnn.length; i++) {
+            if ( i < break1) {
+                bnn[i] = b1poly.value(time[i]);
+            } else if ( i >= break2) {
+                bnn[i] = b3poly.value(time[i] - (break2*dtime));
+            } else {
+                bnn[i] = spfunction.value(time[i] - (break1*dtime));
+            }
+        }
+        //If smoothing selected, then smooth out discontinuities in the baseline
+        //function before removing it from the input array.
+        if (smooth) {
+            for (int k = 0; k < 1; k++) {
+                bnn = smoothValues(bnn);
+            }
+        }
+        //Remove the baseline function from the input array
+        for (int i = 0; i < result.length; i++) {
+            result[i] = array[i] - bnn[i];
+            if ( i < break1) {                
+                h1[i] = result[i];
+            } else if ( i >= break2) {
+                h3[i-break2] = result[i];
+            } else {
+                h2[i-break1] = result[i];
+            }
+        }
+        rms[0] = ArrayOps.rootMeanSquare(h1);
+        rms[1] = ArrayOps.rootMeanSquare(h2);
+        rms[2] = ArrayOps.rootMeanSquare(h3);
+    }
     public PolynomialSplineFunction getSplines( double[] vals, int[] inbreaks, 
                                                                     int degree ) {
         int len;
@@ -181,7 +318,7 @@ public class AdaptiveBaselineCorrection {
             len = inbreaks[i+1] - inbreaks[i];
             subset = new double[len];
             System.arraycopy(vals,inbreaks[i],subset,0,len);
-            loctime = ArrayOps.makeTimeArray( deltat, len);
+            loctime = ArrayOps.makeTimeArray( dtime, len);
             ArrayList<WeightedObservedPoint> points = new ArrayList<>();
             for (int j = 0; j < len; j++ ){
                 points.add(new WeightedObservedPoint( 1.0, loctime[j], subset[j]));
@@ -194,7 +331,7 @@ public class AdaptiveBaselineCorrection {
         //Calculate the knots for the spline function and create a new spline
         //function object.
         for (int k = 0; k < numbreaks; k++) {
-            knots[k] = inbreaks[k] * deltat;
+            knots[k] = inbreaks[k] * dtime;
         }
         spfunction = new PolynomialSplineFunction( knots, polyArrays );
         return spfunction;    
@@ -208,66 +345,9 @@ public class AdaptiveBaselineCorrection {
         breakers[numbreaks-1] = end-start;
         return breakers;
     }
-    public void makeCorrection( double[] array, int break1, int break2, int smooth ) {
-        polyBreaks[0] = break1;
-        polyBreaks[1] = break2;
-        double[] h1;
-        double[] h2;
-        double[] h3;
-        double[] time = ArrayOps.makeTimeArray(deltat, array.length);
-//        breaks = makeBreaks( break1, break2, numbreaks);
-//        System.out.println();
-        
-        h1 = new double[break1];
-        h2 = new double[break2-break1];
-        h3 = new double[array.length-break2];
-        System.arraycopy(array, 0, h1, 0, break1);
-        System.arraycopy(array, break1, h2, 0, break2-break1);
-        System.arraycopy(array, break2, h3, 0, array.length-break2);
-        result = new double[ array.length ];
-        
-        //Get the polynomials that were fitted to the input array
-        //Construct the baseline function from each section
-//        PolynomialSplineFunction spfunction = getSplines(h2, breaks, degreeS);
-//        double[] coefs1 = ArrayOps.findPolynomialTrend(h1, degreeP1, deltat);
-//        double[] coefs3 = ArrayOps.findPolynomialTrend(h3, degreeP2, deltat);
-        
-//        PolynomialFunction b1poly = new PolynomialFunction( coefs1 );
-//        PolynomialFunction b3poly = new PolynomialFunction( coefs3 );
-//
-//        bnn = new double[time.length];
-//        for (int i = 0; i < bnn.length; i++) {
-//            if ( i < break1) {
-//                bnn[i] = b1poly.value(time[i]);
-//            } else if ( i >= break2) {
-//                bnn[i] = b3poly.value(time[i] - (break2*deltat));
-//            } else {
-//                bnn[i] = spfunction.value(time[i] - (break1*deltat));
-//            }
-//        }
-        //If smoothing selected, then smooth out discontinuities in the baseline
-        //function before removing it from the input array.
-        if (smooth == 1) {
-            for (int k = 0; k < 1; k++) {
-                bnn = smoothValues(bnn);
-            }
-        }
-        //Remove the baseline function from the input array
-        for (int i = 0; i < result.length; i++) {
-            result[i] = array[i] - bnn[i];
-            if ( i < break1) {                
-                h1[i] = result[i];
-            } else if ( i >= break2) {
-                h3[i-break2] = result[i];
-            } else {
-                h2[i-break1] = result[i];
-            }
-        }
-        rms[0] = ArrayOps.rootMeanSquare(h1);
-        rms[1] = ArrayOps.rootMeanSquare(h2);
-        rms[2] = ArrayOps.rootMeanSquare(h3);
-    }
     public double[] smoothValues(double[] array) {
+        //!!! This must be checked.  The current implementation introduces a
+        // phase shift in the fitted line.
         final int WINDOW_SIZE = 21;
         double mean = 0.0;
         int window = WINDOW_SIZE;
@@ -299,5 +379,14 @@ public class AdaptiveBaselineCorrection {
     }
     public int[] getPolyBreaks() {
         return polyBreaks;
+    }
+    public double[] getABCvelocity() {
+        return velfinal;
+    }
+    public double[] getABCdisplacement() {
+        return displace;
+    }
+    public double[] getABCacceleration() {
+        return accel;
     }
 }
