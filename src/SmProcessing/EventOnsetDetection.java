@@ -32,7 +32,7 @@ public class EventOnsetDetection {
     private static final double TN = 0.01; //vibration period
     private final double omegan;
     private final double const_C;
-    private final double deltaT;
+    private final double dtime;
     private final double coef_a; 
     private final double coef_b; 
     private final double coef_c; 
@@ -45,8 +45,8 @@ public class EventOnsetDetection {
     private int bufferedStart;
     
     //constructor
-    public EventOnsetDetection(double deltaT) {
-        this.deltaT = deltaT;
+    public EventOnsetDetection(double dtime) {
+        this.dtime = dtime;
         omegan= 2.0 * Math.PI / TN;
         const_C = 2.0 * XI * omegan;
         
@@ -58,8 +58,8 @@ public class EventOnsetDetection {
         EventOnsetCoefs pickCoef = new EventOnsetCoefs();
         double[] Ae;
         double[] AeB;
-        Ae = pickCoef.getAeCoefs(deltaT);
-        AeB = pickCoef.getAeBCoefs(deltaT);
+        Ae = pickCoef.getAeCoefs(dtime);
+        AeB = pickCoef.getAeBCoefs(dtime);
         coef_a = Ae[0];
         coef_b = Ae[1];
         coef_c = Ae[2];
@@ -110,7 +110,7 @@ public class EventOnsetDetection {
             Edi[i] = const_C * Math.pow(veloc[i], 2);
         }
         //Viscous damping energy over mass (m^2/sec^2)
-        double[] Edoverm = ArrayOps.Integrate(Edi, deltaT);
+        double[] Edoverm = ArrayOps.Integrate(Edi, dtime);
         
         //Spectral viscous damping energy over mass (m^2/sec^2)
         //find largest absolute value in array
@@ -129,7 +129,7 @@ public class EventOnsetDetection {
         }
         
         //Integrand of normalized damping energy (m^2/sec^3)
-        double[] PIM = ArrayOps.Differentiate(EIM, deltaT);
+        double[] PIM = ArrayOps.Differentiate(EIM, dtime);
         
         //!!!Debug 
 //        TextFileWriter textout = new TextFileWriter( "D:/PRISM/filter_test/junit", 
@@ -175,7 +175,7 @@ public class EventOnsetDetection {
     }
     public int applyBuffer(double buffer) {
         bufferVal = buffer;
-        bufferedStart = eventStart - (int)Math.round(bufferVal/deltaT);
+        bufferedStart = eventStart - (int)Math.round(bufferVal/dtime);
         bufferedStart = (bufferedStart < 0) ? 0 : bufferedStart;
         return bufferedStart;
     }

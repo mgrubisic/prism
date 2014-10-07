@@ -114,15 +114,15 @@ public class ArrayOps {
     }
     /**
      * Make an array of time values, starting at 0 and incrementing by time step
-     * to make an array of length timelen.
+     * to make an array of length arraylen.
      * 
      * @param timestep sample interval
-     * @param timelen length of desired array
+     * @param arraylen length of desired array
      * @return an array of times, starting at 0
      */
-    public static double[] makeTimeArray( double timestep, int timelen) {
-        double[] time = new double[timelen];
-        for (int i = 0; i < timelen; i++) {
+    public static double[] makeTimeArray( double timestep, int arraylen) {
+        double[] time = new double[arraylen];
+        for (int i = 0; i < arraylen; i++) {
             time[i] = i * timestep;
         }
         return time;

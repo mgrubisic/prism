@@ -17,6 +17,7 @@
 
 package SmProcessing;
 
+import SmUtilities.SmErrorLogger;
 import java.util.Arrays;
 
 /**
@@ -61,7 +62,7 @@ import java.util.Arrays;
 public class ButterworthFilter {
     private double f1;
     private double f2;
-    private double delt;
+    private double dtime;
     private int nroll;
     private boolean icaus;
     private final double pi = Math.PI;
@@ -75,12 +76,12 @@ public class ButterworthFilter {
     public ButterworthFilter() {
     }
     
-    public boolean calculateCoefficients(double lowCutOff, double highCutOff, double deltaT,
+    public boolean calculateCoefficients(double lowCutOff, double highCutOff, double dtime,
                                 int numberPoles, boolean acausal) {
         
         this.f1 = lowCutOff;
         this.f2 = highCutOff;
-        this.delt = deltaT;
+        this.dtime = dtime;
         this.nroll = numberPoles;
         this.icaus = acausal;           //true if acausal filter
         
@@ -97,14 +98,14 @@ public class ButterworthFilter {
                                                 || (numberPoles > MAXPOLES)){
             return false;
         }
-        double nyquist = (1 / delt) / 2.0;
+        double nyquist = (1.0 / dtime) / 2.0;
         if ((Math.abs(f1 - nyquist) < epsilon) || (Math.abs(f2 - nyquist) < epsilon)) {
             return false;
         }
         
         //for w1 and w2 calc., the 2 in the num. and denom. can be deleted !!!
-        double w1 = 2.0 * Math.tan(((2.0*pi*f1)*delt)/2.0) / delt;
-        double w2 = 2.0 * Math.tan(((2.0*pi*f2)*delt)/2.0) / delt;
+        double w1 = 2.0 * Math.tan(((2.0*pi*f1)*dtime)/2.0) / dtime;
+        double w2 = 2.0 * Math.tan(((2.0*pi*f2)*dtime)/2.0) / dtime;
         
         for (int k = 1; k < nroll+1; k++) {
             pre = (-1.0) * Math.sin((pi*(2.0*k - 1)) / (4.0*nroll));
@@ -122,12 +123,12 @@ public class ButterworthFilter {
                 
                 bj = (-2.0) * sjre;
                 cj = Math.pow(sjre,2) + Math.pow(sjim,2);
-                con = 1.0 / ((2.0/delt) + bj + (cj*delt/2.0));
+                con = 1.0 / ((2.0/dtime) + bj + (cj*dtime/2.0));
                 
                 index = 2*k + i - 3;
                 fact[index] = (w2 - w1) * con;
-                b1[index] = ((cj*delt) - (4.0/delt)) * con;
-                b2[index] = ((2.0/delt) - bj + (cj*delt/2.0)) * con;
+                b1[index] = ((cj*dtime) - (4.0/dtime)) * con;
+                b2[index] = ((2.0/dtime) - bj + (cj*dtime/2.0)) * con;
             }
         }
         return true;
@@ -139,7 +140,9 @@ public class ButterworthFilter {
         double[] filteredS;
         double x1; double x2; double y1; double y2; double xp; double yp;
         
-        int taperlength = 2 * (int)(taplength / delt); 
+//        int taperlength= (int)(((2.0/f1) + 1.0)/dtime);
+        int taperlength = (int)(0.05 * arrayS.length);
+        System.out.println("taperlength: " + taperlength);
 //        System.out.println("+++ taperlength: " + taperlength);
 //        System.out.println("+++ before filter, arrayS[0] = " + arrayS[0]);
 //        System.out.println("+++ before filter, arrayS[end] = " + arrayS[arrayS.length-1]);
@@ -152,8 +155,8 @@ public class ButterworthFilter {
             if (taperlength > 0) {
                 applyCosineTaper( arrayS, taperlength);
             }
-            npad = (int)Math.floor(3.0 * (nroll / (f1 * delt)));
-            int check = (int)Math.floor(6.0 * (nroll / ((f2 - f1) * delt)));
+            npad = (int)Math.floor(3.0 * (nroll / (f1 * dtime)));
+            int check = (int)Math.floor(6.0 * (nroll / ((f2 - f1) * dtime)));
             if (npad < check) {
                 npad = check;
             }
@@ -168,7 +171,8 @@ public class ButterworthFilter {
             filteredS = new double[np2];
             System.arraycopy(arrayS, 0, filteredS, 0, np2);
         }
-        
+        SmErrorLogger elog = SmErrorLogger.INSTANCE;
+        elog.writeOutArray(filteredS, "filteredS.txt");
         //filter the array
         for (int k = 0; k < 2*nroll; k++) {
             x1 = 0.0;
@@ -213,7 +217,7 @@ public class ButterworthFilter {
     }
     
     public void applyCosineTaper( double[] array, int range ) {
-        //The interval is the number of elements at the front and back of the
+        //The range is the number of elements at the front and back of the
         //array that the taper should be applied to.  This could also be a
         //proportion of the array
         

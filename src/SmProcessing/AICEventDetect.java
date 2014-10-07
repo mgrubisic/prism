@@ -116,9 +116,9 @@ public class AICEventDetect {
         }
         return vararray;
     }
-    public int applyBuffer( double buffer, double deltat ) {
+    public int applyBuffer( double buffer, double dtime ) {
         bufferVal = buffer;
-        bufferedIndex = index - (int)Math.round(bufferVal/deltat);
+        bufferedIndex = index - (int)Math.round(bufferVal/dtime);
         bufferedIndex = (bufferedIndex < 0) ? 0 : bufferedIndex;
         return bufferedIndex;
     }

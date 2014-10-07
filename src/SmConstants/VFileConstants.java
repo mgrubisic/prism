@@ -94,7 +94,6 @@ public final class VFileConstants {
     public static final int PEAK_VAL_TIME = 64;
     public static final int AVG_VAL = 65;
     public static final int RECORER_LSB = 21;  //recorder least significant bit in microvolts
-    public static final int RECORDER_FSI = 22;  //recorder full scale input in volts
     public static final int SENSOR_SENSITIVITY = 41; //in volts per g
     public static final int SCALING_FACTOR = 87;
     
@@ -128,7 +127,7 @@ public final class VFileConstants {
     
     //adaptive baseline correction constants
     public static final int DEFAULT_NUM_BREAKS_LOWER = 10;
-    public static final int DEFAULT_NUM_BREAKS_UPPER = 20;
+    public static final int DEFAULT_NUM_BREAKS_UPPER = 12;
     public static final int DEFAULT_SPLINE_ORDER_LOWER = 2;
     public static final int DEFAULT_SPLINE_ORDER_UPPER = 3;
     public static final int DEFAULT_1ST_POLY_ORD_LOWER = 2;

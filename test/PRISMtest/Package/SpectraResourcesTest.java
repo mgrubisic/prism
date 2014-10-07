@@ -17,6 +17,7 @@
 
 package PRISMtest.Package;
 
+import static SmConstants.VFileConstants.MSEC_TO_SEC;
 import static SmConstants.VFileConstants.NUM_COEF_VALS;
 import static SmConstants.VFileConstants.NUM_T_PERIODS;
 import static SmConstants.VFileConstants.V3_DAMPING_VALUES;
@@ -124,6 +125,40 @@ public class SpectraResourcesTest {
                     }
                     org.junit.Assert.assertArrayEquals(expected, cvals[k], EPSILON);
                 }
+            }
+        }
+    }
+    @Test
+    public void checkV3Logic() throws IOException, FormatException {
+        double[][][] spectra;
+        double[] T_periods;
+        double delta_t = 0.01;
+        double sampersec = 1.0 / delta_t;    
+        spectra = new double[V3_DAMPING_VALUES.length][][];
+        spec = new SpectraResources();
+        T_periods = spec.getTperiods();
+        for (int i = 0; i < V3_DAMPING_VALUES.length; i++) {
+            spectra[i] = spec.getCoefArray(sampersec, V3_DAMPING_VALUES[i]);
+        }
+
+        double coef_a; double coef_b;
+        double coef_c; double coef_d;
+        double coef_e; double coef_f;
+        
+        for (int d = 0; d < V3_DAMPING_VALUES.length; d++) {
+            for (int p = 0; p < T_periods.length; p++) {
+                coef_a = spectra[d][p][0];
+                coef_b = spectra[d][p][1];
+                coef_c = spectra[d][p][2];
+                coef_d = spectra[d][p][3];
+                coef_e = spectra[d][p][4];
+                coef_f = spectra[d][p][5];
+                
+//                System.out.println("\ndamping: " + V3_DAMPING_VALUES[d]);
+//                System.out.println("period: " + T_periods[p]);
+//                System.out.println("sampersec: " + sampersec);
+//                System.out.println("a:" +  coef_a + " b: " + coef_b + " c: " + coef_c);
+//                System.out.println("d:" +  coef_d + " e: " + coef_e + " f: " + coef_f);
             }
         }
     }

@@ -37,7 +37,7 @@ public class FilterCutOffThresholds {
             f1 = 0.1;
             f2 = 40.0;
         } else if ((ML > mid) || (Math.abs(ML - mid) < epsilon)) {
-            f1 = 0.2;
+            f1 = 0.3;
             f2 = 35.0;
         } else if ((ML > low) || (Math.abs(ML - low) < epsilon)) {
             f1 = 0.3;

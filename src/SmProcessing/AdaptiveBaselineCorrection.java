@@ -17,28 +17,10 @@
 
 package SmProcessing;
 
-//import static SmConstants.VFileConstants.DEFAULT_1ST_POLY_ORD;
-//import static SmConstants.VFileConstants.DEFAULT_2ND_POLY_ORD;
-//import static SmConstants.VFileConstants.DEFAULT_NUM_BREAKS;
-//import static SmConstants.VFileConstants.DEFAULT_SPLINE_ORDER;
-import static SmConstants.VFileConstants.DEFAULT_1ST_POLY_ORD_LOWER;
-import static SmConstants.VFileConstants.DEFAULT_1ST_POLY_ORD_UPPER;
-import static SmConstants.VFileConstants.DEFAULT_2ND_POLY_ORD_LOWER;
-import static SmConstants.VFileConstants.DEFAULT_2ND_POLY_ORD_UPPER;
-import static SmConstants.VFileConstants.DEFAULT_NUM_BREAKS_LOWER;
-import static SmConstants.VFileConstants.DEFAULT_NUM_BREAKS_UPPER;
-import static SmConstants.VFileConstants.DEFAULT_SPLINE_ORDER_LOWER;
-import static SmConstants.VFileConstants.DEFAULT_SPLINE_ORDER_UPPER;
+import static SmConstants.VFileConstants.*;
 import SmException.SmException;
 import SmUtilities.ConfigReader;
-import static SmUtilities.SmConfigConstants.FIRST_POLY_ORDER_LOWER;
-import static SmUtilities.SmConfigConstants.FIRST_POLY_ORDER_UPPER;
-import static SmUtilities.SmConfigConstants.NUM_SPLINE_BREAKS_LOWER;
-import static SmUtilities.SmConfigConstants.NUM_SPLINE_BREAKS_UPPER;
-import static SmUtilities.SmConfigConstants.SECOND_POLY_ORDER_LOWER;
-import static SmUtilities.SmConfigConstants.SECOND_POLY_ORDER_UPPER;
-import static SmUtilities.SmConfigConstants.SPLINE_ORDER_LOWER;
-import static SmUtilities.SmConfigConstants.SPLINE_ORDER_UPPER;
+import static SmUtilities.SmConfigConstants.*;
 import java.util.ArrayList;
 import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
 import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
@@ -60,7 +42,7 @@ public class AdaptiveBaselineCorrection {
     private final double TOL_RES_VEL = 0.001;
     private final double TOL_RMS_VEL = 0.001;
     
-    private final int MOVING_WINDOW = 50;
+    private final int MOVING_WINDOW = 500;
     private final double EPSILON = 0.001;
     private double dtime;
     private double lowcut;
@@ -138,11 +120,10 @@ public class AdaptiveBaselineCorrection {
                                                 DEFAULT_2ND_POLY_ORD_UPPER,
                                                 degreeP2lo,
                                                 DEFAULT_2ND_POLY_ORD_UPPER);
-        
     }
     
-    public int validateConfigParam( String configparm, int defval, int upper,
-                                                                    int lower) {
+    public int validateConfigParam( String configparm, int defval, int lower,
+                                                                    int upper) {
         int outval = 0;
         ConfigReader config = ConfigReader.INSTANCE;
         String inval = config.getConfigValue(configparm);
@@ -178,9 +159,13 @@ public class AdaptiveBaselineCorrection {
         
         int counter = 1;
         for (int order1 = degreeP1lo; order1 <= degreeP1hi; order1++) {
+            System.out.println("ABC: order1 = " + order1);
             for (int order2 = degreeP2lo; order2 <= degreeP2hi; order2++) {
+                System.out.println("ABC: order2 = " + order2);
                 for (int spl_break = numbreakslo; spl_break <= numbreakshi; spl_break++) {
+                    System.out.println("ABC: spl_break = " + spl_break);
                     for (int spl_order = degreeSlo; spl_order <= degreeShi; spl_order++) {
+                        System.out.println("ABC: spl_order = " + spl_order);
                         for (int t2 = t21; t2 <= t22; t2 += dt1) {
                             t1 = t11;
                             if ((t2-t1) >= ((int)1.0/lowcut)) {
@@ -247,7 +232,6 @@ public class AdaptiveBaselineCorrection {
         double[] h3;
         double[] time = ArrayOps.makeTimeArray(dtime, array.length);
         breaks = makeBreaks( break1, break2, spl_order);
-//        System.out.println();
         
         h1 = new double[break1];
         h2 = new double[break2-break1];
@@ -337,12 +321,12 @@ public class AdaptiveBaselineCorrection {
         return spfunction;    
     }
     public int[] makeBreaks(int start, int end, int numbreaks) {
-        int[] breakers = new int[numbreaks];
-        int interval = Math.round((end-start) / (numbreaks-1));
-        for (int i = 0; i < numbreaks-1; i++) {
+        int[] breakers = new int[numbreaks+1];
+        int interval = Math.round((end-start) / (numbreaks));
+        for (int i = 0; i < numbreaks; i++) {
             breakers[i] = i * interval;
         }
-        breakers[numbreaks-1] = end-start;
+        breakers[numbreaks] = end-start;
         return breakers;
     }
     public double[] smoothValues(double[] array) {
@@ -388,5 +372,16 @@ public class AdaptiveBaselineCorrection {
     }
     public double[] getABCacceleration() {
         return accel;
+    }public int[] getConfigRanges() {
+        int[] out = new int[8];
+        out[0] = numbreakslo;
+        out[1] = numbreakshi;
+        out[2] = degreeSlo;
+        out[3] = degreeShi;
+        out[4] = degreeP1lo;
+        out[5] = degreeP1hi;
+        out[6] = degreeP2lo;
+        out[7] = degreeP2hi;
+        return out;
     }
 }

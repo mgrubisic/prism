@@ -17,9 +17,13 @@
 
 package PRISMtest.Package;
 
+import static SmConstants.VFileConstants.*;
+import SmException.SmException;
 import SmProcessing.AdaptiveBaselineCorrection;
 import SmProcessing.ArrayOps;
 import static SmProcessing.ArrayOps.makeTimeArray;
+import SmProcessing.FilterCutOffThresholds;
+import SmUtilities.PrismXMLReader;
 import SmUtilities.TextFileReader;
 import SmUtilities.TextFileWriter;
 import java.io.IOException;
@@ -27,10 +31,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import javax.xml.parsers.ParserConfigurationException;
 import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.xml.sax.SAXException;
 
 /**
  *
@@ -38,18 +44,21 @@ import org.junit.Test;
  */
 public class AdaptiveBaselineTest {
     static final String splinetest = "D:/PRISM/matlab_code/PRISM_V2/adaptiveBaseline/vel.txt";
+    static final String adapttest = "D:/PRISM/adaptive_test/junit3/Vel.txt";
     static String[] fileContents;
     
     static final int NUM_BREAKS = 10;
     
-    double deltat = 0.005;
+    double deltat1 = 0.005;
+    double dtime2 = 0.01;
+    double mag = 5.1;
     double[] time;
     static double[] hnn;
     AdaptiveBaselineCorrection adapt;
     
     int break1 = 2023;
-//    int break2 = 4636;
-    int break2 = 7038;
+    int break2 = 4636;
+//    int break2 = 7038;
     
     String outdir = "D:/PRISM/adaptive_test/junit2";
     int degreeL = 1;
@@ -58,39 +67,73 @@ public class AdaptiveBaselineTest {
     int degreeS = 3;
     
     public AdaptiveBaselineTest() {
-        System.out.println("in constructor");
-        time = ArrayOps.makeTimeArray(deltat, hnn.length);
-        adapt = new AdaptiveBaselineCorrection(deltat, hnn, NUM_BREAKS, degreeP1,
-                                                                degreeP2, degreeS);
+        FilterCutOffThresholds threshold = new FilterCutOffThresholds( mag );
+        double lowcut = threshold.getLowCutOff();
+        double highcut = threshold.getHighCutOff();
+        time = ArrayOps.makeTimeArray(dtime2, hnn.length);
+        adapt = new AdaptiveBaselineCorrection(dtime2, hnn, lowcut, highcut,2, 
+                                                                    1.0, 2028 );
     }
     
     @BeforeClass
     public static void setUpClass() throws IOException {
-        System.out.println("setUpClass");
         int next = 0;
-        Path name = Paths.get( splinetest );
+        Path name = Paths.get( adapttest );
         TextFileReader infile = new TextFileReader( name.toFile() );
         fileContents = infile.readInTextFile();
         hnn = new double[fileContents.length];
         for (String num : fileContents) {
             hnn[next++] = Double.parseDouble(num);
         }
+        try {
+            PrismXMLReader xml = new PrismXMLReader();
+            xml.readFile("D:/PRISM/config_files/prism_config.xml");
+        } catch (ParserConfigurationException | SAXException | IOException err) {
+            System.out.println("config read error");
+        }
     }
-        
     @Test
-    public void adaptiveBaselineTest() {
-        adapt.makeCorrection(hnn, break1, break2, 1);
+    public void checkRangesTest() {
+        int[] check = adapt.getConfigRanges();
+        org.junit.Assert.assertEquals(DEFAULT_NUM_BREAKS_LOWER,check[0]);
+        org.junit.Assert.assertEquals(DEFAULT_NUM_BREAKS_LOWER,check[1]);
+        org.junit.Assert.assertEquals(DEFAULT_SPLINE_ORDER_UPPER,check[2]);
+        org.junit.Assert.assertEquals(DEFAULT_SPLINE_ORDER_UPPER,check[3]);
+        org.junit.Assert.assertEquals(DEFAULT_1ST_POLY_ORD_LOWER,check[4]);
+        org.junit.Assert.assertEquals(DEFAULT_1ST_POLY_ORD_LOWER,check[5]);
+        org.junit.Assert.assertEquals(DEFAULT_2ND_POLY_ORD_LOWER,check[6]);
+        org.junit.Assert.assertEquals(DEFAULT_2ND_POLY_ORD_LOWER,check[7]);
+    }
+    @Test
+    public void makeBreaksTest() {
+        int[] breaks = adapt.makeBreaks(50, 100, 10);
+        org.junit.Assert.assertEquals(0,breaks[0]);
+        org.junit.Assert.assertEquals(5,breaks[1]);
+        org.junit.Assert.assertEquals(10,breaks[2]);
+        org.junit.Assert.assertEquals(15,breaks[3]);
+        org.junit.Assert.assertEquals(20,breaks[4]);
+        org.junit.Assert.assertEquals(25,breaks[5]);
+        org.junit.Assert.assertEquals(30,breaks[6]);
+        org.junit.Assert.assertEquals(35,breaks[7]);
+        org.junit.Assert.assertEquals(40,breaks[8]);
+        org.junit.Assert.assertEquals(45,breaks[9]);
+        org.junit.Assert.assertEquals(50,breaks[10]);
+    }
+    @Test
+    public void adaptiveBaselineTest() throws SmException {
+        adapt.makeCorrection( hnn, break1, break2, NUM_BREAKS,
+                        degreeS, degreeP1, degreeP2, false );
         double[] result = adapt.getBaselineCorrectedArray();
         double[] bnn = adapt.getBaselineFunction();
         double[] rms = adapt.getRMSvalues();
         
-        TextFileWriter textsm2 = new TextFileWriter( "D:/PRISM/adaptive_test/junit2", "baseline_smooth.txt", bnn);
+        TextFileWriter textsm2 = new TextFileWriter( "D:/PRISM/adaptive_test/junit3", "baseline_nosmooth.txt", bnn);
         try {
             textsm2.writeOutArray();
         } catch (IOException err) {
             System.out.println("Error printing out result in MathSplineTest");
         }
-        TextFileWriter textout = new TextFileWriter( "D:/PRISM/adaptive_test/junit2", "velocity.txt", result);
+        TextFileWriter textout = new TextFileWriter( "D:/PRISM/adaptive_test/junit3", "velocity1.txt", result);
         try {
             textout.writeOutArray();
         } catch (IOException err) {
@@ -98,4 +141,8 @@ public class AdaptiveBaselineTest {
         }
         System.out.println("rms1: " + rms[0] + " rms2: " + rms[1] + " rms3: " + rms[2]);
     }
+//    @Test
+//    public void test2DimSort() {
+//        double[] test = new double{0.5,0.02,1.6};
+//    }
 }

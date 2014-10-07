@@ -113,15 +113,15 @@ public class V2Component extends COSMOScontentFormat {
         }  
         double dtime = MSEC_TO_SEC * delta_t;
         if (procType == V2DataType.ACC) {
-            time = (inVvals.getMaxIndex(V2DataType.ACC)) * dtime;
+            time = (inVvals.getPeakIndex(V2DataType.ACC)) * dtime;
             unitsname = inVvals.getDataUnits(V2DataType.ACC);
             unitscode = inVvals.getDataUnitCode(V2DataType.ACC);
         } else if (procType == V2DataType.VEL) {
-            time = (inVvals.getMaxIndex(V2DataType.VEL)) * dtime;
+            time = (inVvals.getPeakIndex(V2DataType.VEL)) * dtime;
             unitsname = inVvals.getDataUnits(V2DataType.VEL);
             unitscode = inVvals.getDataUnitCode(V2DataType.VEL);
         } else {
-            time = (inVvals.getMaxIndex(V2DataType.DIS)) * dtime;
+            time = (inVvals.getPeakIndex(V2DataType.DIS)) * dtime;
             unitsname = inVvals.getDataUnits(V2DataType.DIS);
             unitscode = inVvals.getDataUnitCode(V2DataType.DIS);
         }
@@ -148,7 +148,7 @@ public class V2Component extends COSMOScontentFormat {
             this.textHeader[0] = CORACC.concat(this.textHeader[0].substring(END_OF_DATATYPE));
             this.textHeader[10] = sb.append("Processed:").append(val).append(", ")
                                 .append(agabbrev).append(", Max = ")
-                                .append(String.format(realformat,inVvals.getMaxVal(V2DataType.ACC)))
+                                .append(String.format(realformat,inVvals.getPeakVal(V2DataType.ACC)))
                                 .append(" ").append(unitsname).append(" at ")
                                 .append(String.format(realformat,time))
                                 .append(" sec").toString();
@@ -156,7 +156,7 @@ public class V2Component extends COSMOScontentFormat {
             this.textHeader[0] = VELOCITY.concat(this.textHeader[0].substring(END_OF_DATATYPE));
             this.textHeader[10] = sb.append("Processed:").append(val).append(", ")
                                 .append(agabbrev).append(", Max = ")
-                                .append(String.format(realformat,inVvals.getMaxVal(V2DataType.VEL)))
+                                .append(String.format(realformat,inVvals.getPeakVal(V2DataType.VEL)))
                                 .append(" ").append(unitsname).append(" at ")
                                 .append(String.format(realformat,time))
                                 .append(" sec").toString();
@@ -164,7 +164,7 @@ public class V2Component extends COSMOScontentFormat {
             this.textHeader[0] = DISPLACE.concat(this.textHeader[0].substring(END_OF_DATATYPE));
             this.textHeader[10] = sb.append("Processed:").append(val).append(", ")
                                 .append(agabbrev).append(", Max = ")
-                                .append(String.format(realformat,inVvals.getMaxVal(V2DataType.DIS)))
+                                .append(String.format(realformat,inVvals.getPeakVal(V2DataType.DIS)))
                                 .append(" ").append(unitsname).append(" at ")
                                 .append(String.format(realformat,time))
                                 .append(" sec").toString();
@@ -207,17 +207,17 @@ public class V2Component extends COSMOScontentFormat {
         this.intHeader.setIntValue(V_UNITS_INDEX, unitscode);
         if (procType == V2DataType.ACC) {
             this.intHeader.setIntValue(DATA_PHYSICAL_PARAM_CODE, ACC_PARM_CODE);
-            this.realHeader.setRealValue(PEAK_VAL, inVvals.getMaxVal(V2DataType.ACC));
+            this.realHeader.setRealValue(PEAK_VAL, inVvals.getPeakVal(V2DataType.ACC));
             this.realHeader.setRealValue(AVG_VAL, inVvals.getAvgVal(V2DataType.ACC));
             eodname = " acceleration";
         } else if (procType == V2DataType.VEL) {
             this.intHeader.setIntValue(DATA_PHYSICAL_PARAM_CODE, VEL_PARM_CODE);
-            this.realHeader.setRealValue(PEAK_VAL, inVvals.getMaxVal(V2DataType.VEL));
+            this.realHeader.setRealValue(PEAK_VAL, inVvals.getPeakVal(V2DataType.VEL));
             this.realHeader.setRealValue(AVG_VAL, inVvals.getAvgVal(V2DataType.VEL));
             eodname = " velocity";
         } else {
             this.intHeader.setIntValue(DATA_PHYSICAL_PARAM_CODE, DIS_ABS_PARM_CODE);
-            this.realHeader.setRealValue(PEAK_VAL, inVvals.getMaxVal(V2DataType.DIS));
+            this.realHeader.setRealValue(PEAK_VAL, inVvals.getPeakVal(V2DataType.DIS));
             this.realHeader.setRealValue(AVG_VAL, inVvals.getAvgVal(V2DataType.DIS));            
             eodname = " displacement";
         }

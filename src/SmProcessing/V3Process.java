@@ -24,6 +24,7 @@ import static SmConstants.VFileConstants.NUM_T_PERIODS;
 import static SmConstants.VFileConstants.V3_DAMPING_VALUES;
 import SmException.FormatException;
 import SmException.SmException;
+import SmUtilities.SmErrorLogger;
 import java.io.IOException;
 import java.util.ArrayList;
 /**
@@ -35,34 +36,39 @@ public class V3Process {
     private ArrayList<double[]> V3Data;
     private double[][][] spectra;
     private double[] T_periods;
-    private final double delta_t;
     private double dtime;
+    private double samplerate;
     private final double noRealVal;
     private double[] velocity;
     private double[] accel;
     private SpectraResources spec;
+    private SmErrorLogger elog;
+    private boolean writeArrays;
     
     public V3Process(final V2Component v2acc, final V2Component v2vel,
                       final V2Component v2dis) throws IOException, SmException, 
                                                                 FormatException {
 
+        this.elog = SmErrorLogger.INSTANCE;
+        writeArrays = true;
         this.velocity = v2vel.getDataArray();
         this.accel = v2acc.getDataArray();
         this.V3Data = new ArrayList<>();
         this.noRealVal = v2vel.getNoRealVal();
-        this.delta_t = v2vel.getRealHeaderValue(DELTA_T);
+        double delta_t = v2vel.getRealHeaderValue(DELTA_T);
         if ((Math.abs(delta_t - noRealVal) < EPSILON) || (delta_t < 0.0)){
             throw new SmException("Real header #62, delta t, is invalid: " + 
                                                                        delta_t);
         }
         //Get the periods to compute spectra and coeficients for the input
         //sampling interval.
-        dtime = delta_t * MSEC_TO_SEC;    
+        dtime = delta_t * MSEC_TO_SEC;  
+        samplerate = 1.0 / dtime;
         spectra = new double[V3_DAMPING_VALUES.length][][];
         spec = new SpectraResources();
         T_periods = spec.getTperiods();
         for (int i = 0; i < V3_DAMPING_VALUES.length; i++) {
-            spectra[i] = spec.getCoefArray(delta_t, V3_DAMPING_VALUES[i]);
+            spectra[i] = spec.getCoefArray(samplerate, V3_DAMPING_VALUES[i]);
         }
         //Add the T-periods to the V3 data list
         V3Data.add(T_periods);
@@ -74,33 +80,46 @@ public class V3Process {
         double pval;
         double interpolated;
         double dindex;
-        double ulim;
-        double llim;
+        int ulim;
+        int llim;
         double uval;
         double lval;
         double scale;
-        System.out.println("velocity length: " + velocity.length);
+        System.out.println("V3 process");
+//        System.out.println("velocity length: " + velocity.length);
         FFourierTransform fft = new FFourierTransform();
         double[] velspec = fft.calculateFFT(velocity);
         double delta_f = 1.0 / (fft.getPowerLength() * dtime);
         
-        System.out.println("V3: powerlength= " + fft.getPowerLength());
-        System.out.println("return fft length: " + velspec.length);
-        System.out.println("delta_t = " + delta_t);
-        System.out.println("delta_f = " + delta_f);
+//        System.out.println("V3: powerlength= " + fft.getPowerLength());
+//        System.out.println("return fft length: " + velspec.length);
+//        System.out.println("delta_t = " + delta_t);
+//        System.out.println("delta_f = " + delta_f);
+        if (writeArrays) {
+            elog.writeOutArray(velspec, "V3velocityFFT.txt");
+        } 
         
         double[] velfftvals = new double[NUM_T_PERIODS];
-        for (int f = 0; f < NUM_T_PERIODS; f++) {
-            dindex = (1.0/T_periods[f])/delta_f;
-            ulim = Math.ceil(dindex);
-            llim = Math.floor(dindex);
-            scale = dindex - llim;
-            if (ulim <= velfftvals.length) {
-                uval = velspec[(int)ulim];
-                lval = velspec[(int)llim];
-                velfftvals[f] = lval + scale * (uval - lval);
+        int ctr = 0;
+        for (int f = NUM_T_PERIODS-1; f >=0; f--) {
+            for (int arr = ctr; arr < velspec.length; arr++) {
+                if ((arr*delta_f > (1.0/T_periods[f])) || 
+                        (Math.abs(arr*delta_f - (1.0/T_periods[f])) < EPSILON)) {
+                    ctr = arr;
+                    break;
+                }
+            }
+            if (ctr == 0) {
+                velfftvals[f] = velspec[ctr];
+            } else if (Math.abs(ctr*delta_f - (1.0/T_periods[f])) < EPSILON){
+                velfftvals[f] = velspec[ctr];
             } else {
-                velfftvals[f] = 0.0;
+                ulim = ctr;
+                llim = ctr - 1;
+                uval = velspec[ulim];
+                lval = velspec[llim];
+                scale = ((1.0/T_periods[f])-(llim*delta_f)) /(delta_f*(ulim-llim));
+                velfftvals[f] = lval + scale * (uval - lval);
             }
         }
         V3Data.add(velfftvals);
@@ -139,10 +158,16 @@ public class V3Process {
                                                               coef_f * accel[k];
                 }
         
-                //Get the relative displacement (sec)
+                //Get the relative displacement (cm)
                 double[] disp = y[0];
+//                System.out.println("\ndamping: " + V3_DAMPING_VALUES[d]);
+//                System.out.println("period: " + T_periods[p]);
+//                System.out.println("a:" +  coef_a + " b: " + coef_b + " c: " + coef_c);
+//                System.out.println("d:" +  coef_d + " e: " + coef_e + " f: " + coef_f);
+//                SmErrorLogger elog = SmErrorLogger.INSTANCE;
+//                elog.writeOutArray(disp, "y0inV3.txt");
                 ArrayStats stat = new ArrayStats(disp);
-                sd[p] = stat.getPeakVal();
+                sd[p] = Math.abs(stat.getPeakVal());
                 sv[p] = sd[p] * omega;
                 sa[p] = sv[p] * omega;
             }

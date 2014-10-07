@@ -43,29 +43,28 @@ import java.util.Arrays;
 public class V2Process {
     //need 3 sets of these params, for each data type
     private double[] accel;
-    private double AmaxVal;
-    private int AmaxIndex;
+    private double ApeakVal;
+    private int ApeakIndex;
     private double AavgVal;
     private final int acc_unit_code;
     private final String acc_units;
     
     private double[] velocity;
-    private double VmaxVal;
-    private int VmaxIndex;
+    private double VpeakVal;
+    private int VpeakIndex;
     private double VavgVal;
     private final int vel_unit_code;
     private final String vel_units;
     
     private double[] displace;
-    private double DmaxVal;
-    private int DmaxIndex;
+    private double DpeakVal;
+    private int DpeakIndex;
     private double DavgVal;
     private final int dis_unit_code;
     private final String dis_units;
     
     private final V1Component inV1;
     private final int data_unit_code;
-    private final double delta_t;
     private final double dtime;
     private final double samplerate;
     private final double noRealVal;
@@ -125,7 +124,7 @@ public class V2Process {
         
         this.noRealVal = inV1.getNoRealVal();
         //verify that real header value delta t is defined and valid
-        this.delta_t = inV1.getRealHeaderValue(DELTA_T);
+        double delta_t = inV1.getRealHeaderValue(DELTA_T);
         if ((Math.abs(delta_t - noRealVal) < epsilon) || (delta_t < 0.0)){
             throw new SmException("Real header #62, delta t, is invalid: " + 
                                                                         delta_t);
@@ -235,7 +234,7 @@ public class V2Process {
         //Pick P-wave and remove baseline
         errorlog.add("Start of V2 processing for " + V0name.toString());
         //remove linear trend before finding event onset
-        errorlog.add(String.format("delta_t in msec: %f and sec %f",delta_t,dtime));
+        errorlog.add(String.format("time per sample in sec %f",dtime));
         errorlog.add(String.format("sample rate (samp/sec): %f",samplerate));
         errorlog.add("Event detection: remove linear trend, filter, event onset detection");
         
@@ -274,6 +273,8 @@ public class V2Process {
                                                 pickIndex,ebuffer,startIndex));
         errorlog.add(String.format("pick time in seconds: %f, buffered time: %f",
                                           (pickIndex*dtime),(startIndex*dtime)));
+//        System.out.println(String.format("pick index: %d,  pick buffer: %f,  start index: %d",
+//                                                pickIndex,ebuffer,startIndex));
 
         //Remove pre-event mean from acceleration record
         if (startIndex > 0) {
@@ -309,17 +310,19 @@ public class V2Process {
         FilterCutOffThresholds threshold = new FilterCutOffThresholds( magnitude );
         lowcutadj = threshold.getLowCutOff();
         highcutadj = threshold.getHighCutOff();
+//        System.out.println("lowcutadj: " + lowcutadj);
         
         //perform first QA check on velocity, check first and last values of
         //velocity array - should be close to 0.0 with tolerances.  If not,
         //perform adaptive baseline correction.
-        int window5sec = (int)(5.0 / dtime);
-        double velstart = ArrayOps.findSubsetMean(velocity, 0, window5sec);
-        double velend = ArrayOps.findSubsetMean(velocity, (vellen - window5sec),
+//        int window5sec = (int)(5.0 / dtime);
+        int window = (int)(pickIndex * 0.5);
+        double velstart = ArrayOps.findSubsetMean(velocity, 0, window);
+        double velend = ArrayOps.findSubsetMean(velocity, (vellen - window),
                                                                     vellen);
-        System.out.println("window: " + window5sec + " velstart: " + velstart);
-        System.out.println("velocity[0]: " + velocity[0]);
-        System.out.println("velend: " + velend);
+//        System.out.println("window: " + window + " velstart: " + velstart);
+//        System.out.println("velocity[0]: " + velocity[0]);
+//        System.out.println("velend: " + velend + " velocity[n-1]: " + velocity[vellen-1]);
 
 //        if ((Math.abs(velocity[0]) > qavelocityinit) || 
 //                                (Math.abs(velocity[vellen-1]) > qavelocityend)) {
@@ -350,26 +353,29 @@ public class V2Process {
         } else {
             throw new SmException("Invalid bandpass filter calculated parameters");
         }
+        if (writeArrays) {
+           elog.writeOutArray(velocity, "finalV2velocity.txt");
+        }
         
         ArrayStats statVel = new ArrayStats( velocity );
-        VmaxVal = statVel.getPeakVal();
-        VmaxIndex = statVel.getPeakValIndex();
+        VpeakVal = statVel.getPeakVal();
+        VpeakIndex = statVel.getPeakValIndex();
         VavgVal = statVel.getMean();
         
         //Integrate the velocity to get displacement.
         displace = ArrayOps.Integrate( velocity, dtime);
         errorlog.add("Velocity integrated to displacement (trapezoidal method)");
         ArrayStats statDis = new ArrayStats( displace );
-        DmaxVal = statDis.getPeakVal();
-        DmaxIndex = statDis.getPeakValIndex();
+        DpeakVal = statDis.getPeakVal();
+        DpeakIndex = statDis.getPeakValIndex();
         DavgVal = statDis.getMean();
 
         //Differentiate velocity for final acceleration
         accel = ArrayOps.Differentiate(velocity, dtime);
         errorlog.add("Velocity differentiated to corrected acceleration");
         ArrayStats statAcc = new ArrayStats( accel );
-        AmaxVal = statAcc.getPeakVal();
-        AmaxIndex = statAcc.getPeakValIndex();
+        ApeakVal = statAcc.getPeakVal();
+        ApeakIndex = statAcc.getPeakValIndex();
         AavgVal = statAcc.getMean();
 
         //perform second QA check on velocity and displacement, check first and 
@@ -378,11 +384,14 @@ public class V2Process {
         //needing additional processing.
         vellen = velocity.length;
         int dislen = displace.length;
-        velstart = ArrayOps.findSubsetMean(velocity, 0, window5sec);
-        velend = ArrayOps.findSubsetMean(velocity, (vellen - window5sec),
+        velstart = ArrayOps.findSubsetMean(velocity, 0, window);
+        velend = ArrayOps.findSubsetMean(velocity, (vellen - window),
                                                                     vellen);
-        double disend = ArrayOps.findSubsetMean(displace, (dislen - window5sec),
+        double disend = ArrayOps.findSubsetMean(displace, (dislen - window),
                                                                     dislen);
+//        System.out.println("2window: " + window + " velstart: " + velstart);
+//        System.out.println("2velocity[0]: " + velocity[0]);
+//        System.out.println("2velend: " + velend + " velocity[n-1]: " + velocity[vellen-1]);
 //        success = (Math.abs(velocity[0]) <= qavelocityinit) && 
 //                        (Math.abs(velocity[vellen-1]) <= qavelocityend) && 
 //                                (Math.abs(displace[dislen-1]) <= qadisplacend);
@@ -406,22 +415,22 @@ public class V2Process {
         }
         return success;
     }
-    public double getMaxVal(V2DataType dType) {
+    public double getPeakVal(V2DataType dType) {
         if (dType == V2DataType.ACC) {
-            return this.AmaxVal;
+            return this.ApeakVal;
         } else if (dType == V2DataType.VEL) {
-            return this.VmaxVal;
+            return this.VpeakVal;
         } else {
-            return this.DmaxVal;
+            return this.DpeakVal;
         }
     }
-    public int getMaxIndex(V2DataType dType) {
+    public int getPeakIndex(V2DataType dType) {
         if (dType == V2DataType.ACC) {
-            return this.AmaxIndex;
+            return this.ApeakIndex;
         } else if (dType == V2DataType.VEL) {
-            return this.VmaxIndex;
+            return this.VpeakIndex;
         } else {
-            return this.DmaxIndex;
+            return this.DpeakIndex;
         }
     }
     public double getAvgVal(V2DataType dType) {

@@ -94,14 +94,14 @@ public class SpectraResources {
         }
         return tout;
     }
-    public final double[][] getCoefArray( double samppersec, double damping) 
+    public final double[][] getCoefArray( double samplerate, double damping) 
                                                         throws FormatException {
         int index;
         int samp = 0;
         int damp = 0;
         int len = V3_DAMPING_VALUES.length;
         for (int i = 0; i < V3_SAMPLING_RATES.length; i++) {
-            if (Math.abs(samppersec-V3_SAMPLING_RATES[i]) < EPSILON) {
+            if (Math.abs(samplerate-V3_SAMPLING_RATES[i]) < EPSILON) {
                 samp = i;
             }
         }

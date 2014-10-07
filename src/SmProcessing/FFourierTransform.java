@@ -45,7 +45,7 @@ public class FFourierTransform {
         FastFourierTransformer fft = new FastFourierTransformer( DftNormalization.STANDARD);
         Complex[] transfreq = fft.transform(arrpad, TransformType.FORWARD);
          
-        fftlen = powerlength / 2;
+        fftlen = (powerlength / 2) + 1;
         double[] mags = new double[fftlen];
         for (int i = 0; i < fftlen; i++) {
             mags[i]= Math.sqrt(Math.pow(transfreq[i].getReal(),2) + 
