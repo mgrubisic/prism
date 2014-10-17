@@ -110,7 +110,7 @@ public class SmQueue {
             //Create the V2 processing object and do the processing.  V2 processing
             //produces 3 V2 objects: corrected acceleration, velocity, and displacement
             V2Process v2val = new V2Process(v1rec, this.fileName);
-//            System.out.println("V0 file: " + this.fileName);
+            System.out.println("V0 file: " + this.fileName);
             boolean success = v2val.processV2Data();
             
             //create the V2 components to get the processing results

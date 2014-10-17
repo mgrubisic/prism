@@ -27,44 +27,45 @@ import java.util.TreeSet;
  * @author jmjones
  */
 public class ABCSortPairs {
-    private SortedSet<SortVals> pairs = new TreeSet<>();
+//    private SortedSet<SortVals> pairs = new TreeSet<>();
+    private SortedSet<SortVals> sorter;
     
     public ABCSortPairs() {
+        sorter = new TreeSet<>(new Comparator<SortVals>()
+            {
+                @Override
+                public int compare(SortVals a, SortVals b) {
+                    double vala = a.getReal();
+                    double valb = b.getReal();
+                    return Double.compare(vala,valb);
+                }
+            });
     }
     public void addPair( double first, int second) {
-        pairs.add(new SortVals(first, second));
+        sorter.add(new SortVals(first, second));
     }
-    public ArrayList<Integer> getSortedVals() {
-        ArrayList<Integer> out = new ArrayList<>();
-        if (!pairs.isEmpty()) {
-            SortedSet<SortVals> sortByFirst = 
-                new TreeSet<>(new Comparator<SortVals>()
-                {
-                    @Override
-                    public int compare(SortVals a, SortVals b) {
-                        double vala = a.getRMS();
-                        double valb = b.getRMS();
-                        return Double.compare(vala,valb);
-                    }
-                });
-            sortByFirst.addAll(pairs);
-            for (SortVals each : sortByFirst) {
-                out.add(each.getIndex());
+    public int[] getSortedVals() {
+        int[] outint = new int[0];
+        if (!sorter.isEmpty()) {
+            outint = new int[sorter.size()];
+            int idx = 0;
+            for (SortVals each : sorter) {
+                outint[idx++] = each.getIndex();
             }
         }
-        return out;
+        return outint;
     }
     
     public class SortVals {
-        private double rmsval;
+        private double realval;
         private int index;
         
         public SortVals( double rval, int idx) {
-            this.rmsval = rval;
+            this.realval = rval;
             this.index = idx;
         }
-        public double getRMS() {
-            return rmsval;
+        public double getReal() {
+            return realval;
         }
         public int getIndex() {
             return index;

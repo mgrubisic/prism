@@ -134,15 +134,23 @@ public class ButterworthFilter {
         return true;
     }
     
-    public double[] applyFilter( double[] arrayS, double taplength ) {
+    public double[] applyFilter( double[] arrayS, int eventOnsetIndex ) {
         
         int npad = 0; int np1; int np2;
         double[] filteredS;
         double x1; double x2; double y1; double y2; double xp; double yp;
+        int taperlength = 0;
         
 //        int taperlength= (int)(((2.0/f1) + 1.0)/dtime);
-        int taperlength = (int)(0.05 * arrayS.length);
-        System.out.println("taperlength: " + taperlength);
+        if (eventOnsetIndex > 0) {
+            taperlength = (int)(0.05 * arrayS.length);
+            if (taperlength > eventOnsetIndex) {
+                taperlength = (int)(0.8 * eventOnsetIndex);
+            }
+        } else {
+            taperlength = (int)(3.0 / dtime);  // set a 3 sec length for taper
+        }
+//        System.out.println("taperlength: " + taperlength);
 //        System.out.println("+++ taperlength: " + taperlength);
 //        System.out.println("+++ before filter, arrayS[0] = " + arrayS[0]);
 //        System.out.println("+++ before filter, arrayS[end] = " + arrayS[arrayS.length-1]);
@@ -171,8 +179,8 @@ public class ButterworthFilter {
             filteredS = new double[np2];
             System.arraycopy(arrayS, 0, filteredS, 0, np2);
         }
-        SmErrorLogger elog = SmErrorLogger.INSTANCE;
-        elog.writeOutArray(filteredS, "filteredS.txt");
+//        SmErrorLogger elog = SmErrorLogger.INSTANCE;
+//        elog.writeOutArray(filteredS, "filteredS.txt");
         //filter the array
         for (int k = 0; k < 2*nroll; k++) {
             x1 = 0.0;
@@ -218,8 +226,7 @@ public class ButterworthFilter {
     
     public void applyCosineTaper( double[] array, int range ) {
         //The range is the number of elements at the front and back of the
-        //array that the taper should be applied to.  This could also be a
-        //proportion of the array
+        //array that the taper should be applied to.
         
         int len = array.length;
         //range is N, the number of samples over which to apply the taper,

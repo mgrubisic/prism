@@ -39,7 +39,6 @@ public class V3Process {
     private double dtime;
     private double samplerate;
     private final double noRealVal;
-    private double[] velocity;
     private double[] accel;
     private SpectraResources spec;
     private SmErrorLogger elog;
@@ -50,8 +49,7 @@ public class V3Process {
                                                                 FormatException {
 
         this.elog = SmErrorLogger.INSTANCE;
-        writeArrays = true;
-        this.velocity = v2vel.getDataArray();
+        writeArrays = false;
         this.accel = v2acc.getDataArray();
         this.V3Data = new ArrayList<>();
         this.noRealVal = v2vel.getNoRealVal();
@@ -77,9 +75,6 @@ public class V3Process {
     public void processV3Data() {        
         //Calculate FFT for the velocity array.  Select magnitudes for the
         //given T values only.  (freq = 1/T)
-        double pval;
-        double interpolated;
-        double dindex;
         int ulim;
         int llim;
         double uval;
@@ -88,7 +83,7 @@ public class V3Process {
         System.out.println("V3 process");
 //        System.out.println("velocity length: " + velocity.length);
         FFourierTransform fft = new FFourierTransform();
-        double[] velspec = fft.calculateFFT(velocity);
+        double[] accspec = fft.calculateFFT(accel);
         double delta_f = 1.0 / (fft.getPowerLength() * dtime);
         
 //        System.out.println("V3: powerlength= " + fft.getPowerLength());
@@ -96,13 +91,19 @@ public class V3Process {
 //        System.out.println("delta_t = " + delta_t);
 //        System.out.println("delta_f = " + delta_f);
         if (writeArrays) {
-            elog.writeOutArray(velspec, "V3velocityFFT.txt");
+            elog.writeOutArray(accspec, "V3accelFFT.txt");
+        } 
+        //Now use 3-point smoothing to smooth out the frequency response
+        double[] accsmooth = ArrayOps.perform3PtSmoothing(accspec);
+        int acclen = accsmooth.length;
+        if (writeArrays) {
+            elog.writeOutArray(accsmooth, "V3accsmoothFFT.txt");
         } 
         
-        double[] velfftvals = new double[NUM_T_PERIODS];
+        double[] accfftvals = new double[NUM_T_PERIODS];
         int ctr = 0;
         for (int f = NUM_T_PERIODS-1; f >=0; f--) {
-            for (int arr = ctr; arr < velspec.length; arr++) {
+            for (int arr = ctr; arr < acclen; arr++) {
                 if ((arr*delta_f > (1.0/T_periods[f])) || 
                         (Math.abs(arr*delta_f - (1.0/T_periods[f])) < EPSILON)) {
                     ctr = arr;
@@ -110,19 +111,19 @@ public class V3Process {
                 }
             }
             if (ctr == 0) {
-                velfftvals[f] = velspec[ctr];
+                accfftvals[f] = accsmooth[ctr];
             } else if (Math.abs(ctr*delta_f - (1.0/T_periods[f])) < EPSILON){
-                velfftvals[f] = velspec[ctr];
+                accfftvals[f] = accsmooth[ctr];
             } else {
                 ulim = ctr;
                 llim = ctr - 1;
-                uval = velspec[ulim];
-                lval = velspec[llim];
+                uval = accsmooth[ulim];
+                lval = accsmooth[llim];
                 scale = ((1.0/T_periods[f])-(llim*delta_f)) /(delta_f*(ulim-llim));
-                velfftvals[f] = lval + scale * (uval - lval);
+                accfftvals[f] = lval + scale * (uval - lval);
             }
         }
-        V3Data.add(velfftvals);
+        V3Data.add(accfftvals);
         
         //Calculate the spectra for each damping value
         double omega;

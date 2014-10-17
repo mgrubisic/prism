@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
  */
 public class COSMOScontentFormat {
     protected final String procType;  //data file type flag
-    protected int channelNum; //the channel number for this record
+    protected String channel; //the channel number for this record
     protected int noIntVal;  //NoData value for integer header array
     protected double noRealVal;  //NoData value for real header array
     protected String[] textHeader;  //Holds the text header lines
@@ -57,7 +57,7 @@ public class COSMOScontentFormat {
     public int loadComponent (int start, String[] infile) 
                                 throws FormatException, SmException {
         int current = start;
-        int channel;
+        int channelNum;
         
         //Read in text header, look for number of lines and int, real NoData vals
         current = parseTextHeader(current, infile);
@@ -65,14 +65,12 @@ public class COSMOScontentFormat {
         //get integer header values
         intHeader = new VIntArray();    
         current = intHeader.parseValues( current, infile);
-        channel = intHeader.getIntValue(STATION_CHANNEL_NUMBER);
-        if (channel != noIntVal) {
-            channelNum = channel;
+        channelNum = intHeader.getIntValue(STATION_CHANNEL_NUMBER);
+        if (channelNum != noIntVal) {
+            channel = String.valueOf(channelNum);
         } else {
-            throw new SmException("Int header #" + (STATION_CHANNEL_NUMBER+1) 
-                                    + ", station channel number, is undefined");            
+            channel = "";            
         }
-        
         //get real header values
         realHeader = new VRealArray();     
         current = realHeader.parseValues( current, infile);
@@ -257,8 +255,8 @@ public class COSMOScontentFormat {
      * Getter for the channel number, which is needed for the output file name
      * @return channel number
      */
-    public int getChannelNum(){
-        return channelNum;
+    public String getChannel(){
+        return channel;
     }
     /**
      * Getter for the NoData value used in the integer header
@@ -287,13 +285,12 @@ public class COSMOScontentFormat {
      * in the integer header.
      * @throws SmException if value in header is set to NoData
      */
-    public void setChannelNum() throws SmException {
+    public void setChannel() throws SmException {
         int num = intHeader.getIntValue(STATION_CHANNEL_NUMBER);
         if (num == noIntVal) {
-            throw new SmException("Undefined station channel number in int. header, index " 
-                                                        + (STATION_CHANNEL_NUMBER+1));
+            channel = "";
         }
-        channelNum = num;
+        channel = String.valueOf(num);
     }
     public String getEventDateTime() {
         StringBuilder sb = new StringBuilder(MAX_LINE_LENGTH);

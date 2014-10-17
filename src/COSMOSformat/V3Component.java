@@ -63,7 +63,7 @@ public class V3Component extends COSMOScontentFormat {
         //Leave updates for buildV3 method
         this.intHeader = new VIntArray(pV2.intHeader);        
         this.realHeader = new VRealArray(pV2.realHeader);
-        this.setChannelNum();
+        this.setChannel();
         
         //The buildV2 method fills in these data values, the format line, and
         //the individual params for the real arrays.
@@ -223,7 +223,7 @@ public class V3Component extends COSMOScontentFormat {
         //Update the end-of-data line with the new data type
         this.endOfData = eod.append(this.endOfData,0,END_OF_DATA_CHAN)
                             .append(" ")
-                            .append(String.valueOf(this.channelNum))
+                            .append(String.valueOf(this.channel))
                             .append(" response spectra").toString();
     }
     /**

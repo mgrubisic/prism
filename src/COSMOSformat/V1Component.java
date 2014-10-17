@@ -49,7 +49,7 @@ public class V1Component extends COSMOScontentFormat {
         //Leave updates for buildV1 method
         this.intHeader = new VIntArray(pV0.intHeader);        
         this.realHeader = new VRealArray(pV0.realHeader);
-        this.setChannelNum();
+        this.setChannel();
         
         //The buildV1 method fills in these data values, the format line, and
         //the individual params for the real array.
@@ -161,7 +161,7 @@ public class V1Component extends COSMOScontentFormat {
         //Update the end-of-data line with the new data type
         this.endOfData = eod.append(this.endOfData,0,END_OF_DATA_CHAN)
                             .append(" ")
-                            .append(String.valueOf(this.channelNum))
+                            .append(this.channel)
                             .append(" acceleration").toString();
     }
     /**

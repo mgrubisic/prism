@@ -11,7 +11,6 @@ import COSMOSformat.V1Component;
 import COSMOSformat.V2Component;
 import COSMOSformat.V3Component;
 import static SmConstants.VFileConstants.MAX_LINE_LENGTH;
-import SmConstants.VFileConstants.OutputStyle;
 import SmUtilities.ConfigReader;
 import static SmUtilities.SmConfigConstants.OUT_FILE_FORMAT;
 import SmUtilities.TextFileWriter;
@@ -39,7 +38,6 @@ public class SmProduct {
     private ArrayList<COSMOScontentFormat> V2List;
     private ArrayList<COSMOScontentFormat> V3List;
     private final Charset ENCODING = StandardCharsets.UTF_8;
-    private OutputStyle bundleFlag;
     private File stationDir; //value is set in the setDirectories method
     private File eventDir;  //value is set in the setDirectories method
     private File logDir;  //value is set in the setDirectories method
@@ -54,21 +52,12 @@ public class SmProduct {
         this.V2List = new ArrayList<>();
         this.V3List = new ArrayList<>();
         this.outFolder = newFolder;
-        this.numInInputList= 1;
+        this.numInInputList = 1;
         this.stationDir = new File( newFolder );
         this.eventDir = new File( newFolder );
         this.logDir = new File( newFolder );
-        this.loglist = new ArrayList<>();
-        
-        this.loglist.add(inFileName.toString());
-        
-        ConfigReader config = ConfigReader.INSTANCE;
-        String outStyle = config.getConfigValue(OUT_FILE_FORMAT);
-        if ((outStyle == null) || (outStyle.contentEquals("SingleChannel"))) {
-            this.bundleFlag = OutputStyle.SINGLE_CHANNEL;
-        } else {
-            this.bundleFlag = OutputStyle.BUNDLED;
-        }
+        this.loglist = new ArrayList<>();        
+        this.loglist.add(inFileName.toString());       
     }
     public void addProduct(COSMOScontentFormat newprod, String ext ) {
         if (ext.equalsIgnoreCase("V1")) {
@@ -155,23 +144,11 @@ public class SmProduct {
         added = false;
         while (iter.hasNext()) {
             V1Component rec1 = (V1Component)iter.next();
-            if (this.bundleFlag == OutputStyle.SINGLE_CHANNEL) {
-                outName = buildFilename(this.bundleFlag, "V1",rec1.getChannelNum());
-            } else {
-                outName = buildFilename(this.bundleFlag, "V1", 0);
-            }
+            outName = buildFilename("V1",rec1.getChannel(),"");
             contents = rec1.VrecToText();
             textout = new TextFileWriter(outName, contents);
-            if (this.bundleFlag == OutputStyle.SINGLE_CHANNEL) {
-                textout.writeOutToFile();
-                this.loglist.add(outName.toString());
-            } else {
-                textout.appendToFile();
-                if (!added) {
-                    this.loglist.add(outName.toString());
-                    added = true;
-                }
-            }
+            textout.writeOutToFile();
+            this.loglist.add(outName.toString());
         }
         this.V1List.clear();
         
@@ -179,36 +156,29 @@ public class SmProduct {
         added = false;
         while (iter.hasNext()) {
             V2Component rec2 = (V2Component)iter.next();
-            if (this.bundleFlag == OutputStyle.SINGLE_CHANNEL) {
-                outName = buildFilename(this.bundleFlag, "V2",rec2.getChannelNum());
-            } else {
-                outName = buildFilename(this.bundleFlag, "V2", 0);
-            }
+            outName = buildFilename("V2",rec2.getChannel(),"acc");
             contents = rec2.VrecToText();
             textout = new TextFileWriter(outName, contents);
-            if (this.bundleFlag == OutputStyle.SINGLE_CHANNEL) {
+            textout.writeOutToFile();
+            this.loglist.add(outName.toString());
+            
+            //get velocity and write to file
+            if (iter.hasNext()) {
+                rec2 = (V2Component)iter.next();
+                outName = buildFilename("V2",rec2.getChannel(),"vel");
+                contents = rec2.VrecToText();
+                textout = new TextFileWriter(outName, contents);
                 textout.writeOutToFile();
                 this.loglist.add(outName.toString());
-            } else {
-                textout.appendToFile();
-                if (!added) {
-                    this.loglist.add(outName.toString());
-                    added = true;
-                }
             }
-            //get velocity and append to file
+            //get displacement and write to file
             if (iter.hasNext()) {
                 rec2 = (V2Component)iter.next();
+                outName = buildFilename("V2",rec2.getChannel(),"dis");
                 contents = rec2.VrecToText();
                 textout = new TextFileWriter(outName, contents);
-                textout.appendToFile();
-            }
-            //get displacement and append
-            if (iter.hasNext()) {
-                rec2 = (V2Component)iter.next();
-                contents = rec2.VrecToText();
-                textout = new TextFileWriter(outName, contents);
-                textout.appendToFile();
+                textout.writeOutToFile();
+                this.loglist.add(outName.toString());
             }
         }
         this.V2List.clear();
@@ -217,23 +187,11 @@ public class SmProduct {
         added = false;
         while (iter.hasNext()) {
             V3Component rec3 = (V3Component)iter.next();
-            if (this.bundleFlag == OutputStyle.SINGLE_CHANNEL) {
-                outName = buildFilename(this.bundleFlag, "V3",rec3.getChannelNum());
-            } else {
-                outName = buildFilename(this.bundleFlag, "V3", 0);
-            }
+            outName = buildFilename("V3",rec3.getChannel(),"");
             contents = rec3.VrecToText();
             textout = new TextFileWriter(outName, contents);
-            if (this.bundleFlag == OutputStyle.SINGLE_CHANNEL) {
-                textout.writeOutToFile();
-                this.loglist.add(outName.toString());
-            } else {
-                textout.appendToFile();
-                if (!added) {
-                    this.loglist.add(outName.toString());
-                    added = true;
-                }
-            }
+            textout.writeOutToFile();
+            this.loglist.add(outName.toString());
         }
         this.V3List.clear();
         
@@ -241,18 +199,23 @@ public class SmProduct {
         outlist = loglist.toArray(outlist);
         return outlist;
     }
-    public Path buildFilename( OutputStyle aBundleFlag, String fileExtension, int aChannelNum) {
+    public Path buildFilename(String fileExtension, String channel, String ext) {
         String startName = this.fileName.getName();
         String name = "";
-        String getExtensionRegex = "\\.(?i)V\\d$";
+        String getExtensionRegex = "\\.(?i)V\\d(?i)c??$";
         Pattern extension = Pattern.compile( getExtensionRegex );
         Matcher matcher = extension.matcher(startName);
-        if ((aBundleFlag == OutputStyle.SINGLE_CHANNEL) && (this.numInInputList > 1)) {
-            String channel = String.valueOf(aChannelNum);
-            name = matcher.replaceFirst("." + channel + "." + fileExtension);
-        } else {
-            name = matcher.replaceFirst("." + fileExtension);
+        StringBuilder sb = new StringBuilder();
+        if (!ext.isEmpty()) {
+            sb.append(".");
+            sb.append(ext);
         }
+        if (this.numInInputList > 1) {
+            sb.append(".");
+            sb.append(channel);
+        }
+        sb.append("." + fileExtension);
+        name = matcher.replaceFirst(sb.toString());
 //        System.out.println("fileExtension " + fileExtension);
 //        System.out.println("name: " + name);
 //        System.out.println("stationDir: " + this.stationDir);

@@ -265,5 +265,15 @@ public class ArrayOps {
         }
         return result;
     }
-    
+    public static double[] perform3PtSmoothing(final double[] inArray) {
+        int length = inArray.length;
+        double[] result = new double[length];
+        result[0] = inArray[0];
+        result[1] = inArray[1];
+        result[length-1] = inArray[length-1];
+        for (int i = 2; i < length-1; i++) {
+            result[i] = 0.5 * inArray[i] + 0.25 * (inArray[i-1] + inArray[i+1]);
+        }
+        return result;
+    }
 }

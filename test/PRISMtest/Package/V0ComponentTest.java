@@ -105,7 +105,7 @@ public class V0ComponentTest {
     public void testLoadComponent() throws FormatException, SmException {
         int lineNum = v0.loadComponent(0, infile);
         org.junit.Assert.assertEquals(48, lineNum);
-        org.junit.Assert.assertEquals(76, v0.getChannelNum());
+        org.junit.Assert.assertEquals("76", v0.getChannel());
     }
     @Test
     public void testParseHeader() throws FormatException, SmException {
@@ -217,7 +217,7 @@ public class V0ComponentTest {
         int num = v0.getIntHeaderValue(STATION_CHANNEL_NUMBER);
         org.junit.Assert.assertEquals(DEFAULT_NOINTVAL, num);
         
-        v0.setChannelNum();
+        v0.setChannel();
     }
     @Test
     public void testGetSetHeaderVals() throws IndexOutOfBoundsException, FormatException, SmException {

@@ -69,7 +69,6 @@ public final class VFileConstants {
     public static final String GUNITST = "g";
     public static final int GLN = 2;
     
-    public enum OutputStyle { SINGLE_CHANNEL, BUNDLED };
     public enum SmArrayStyle { SINGLE_COLUMN, PACKED };
     
     public static final String DEFAULT_ARRAY_STYLE = "packed";
@@ -123,7 +122,7 @@ public final class VFileConstants {
     public static final int DEFAULT_NUM_POLES = 2;
     public static final double DEFAULT_HIGHCUT = 0.5;
     public static final double DEFAULT_LOWCUT = 30.0;
-    public static final double DEFAULT_TAPER_LENGTH = 1.0;
+    public static final double DEFAULT_TAPER_LENGTH = 3.0;
     
     //adaptive baseline correction constants
     public static final int DEFAULT_NUM_BREAKS_LOWER = 10;
