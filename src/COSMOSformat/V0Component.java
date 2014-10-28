@@ -7,6 +7,9 @@
 package COSMOSformat;
 
 import SmException.FormatException;
+import java.io.File;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * This class extends the COSMOScontentFormat base class to define a V0 record.
@@ -16,6 +19,10 @@ import SmException.FormatException;
  */
 public class V0Component extends COSMOScontentFormat {
     private VIntArray V0Data;  //raw acceleration counts
+    private String fileName;
+    private File stationDir;
+    private String rcrdId;
+    private String SCNLauth;
     /**
      * Default constructor
      * @param procType identifies the data type of raw accel., uncorrected 
@@ -24,6 +31,10 @@ public class V0Component extends COSMOScontentFormat {
      */
     public V0Component( String procType){
         super( procType );
+        this.fileName = "";
+        this.rcrdId = "";
+        this.SCNLauth = "";
+        this.stationDir = null;
     }
     /**
      * This method defines the steps for parsing a V0 data record, which contains
@@ -47,6 +58,71 @@ public class V0Component extends COSMOScontentFormat {
      * Getter for the length of the data array
      * @return the number of values in the data array
      */
+    public void checkForRcrdIdAndAuth() {
+        String line = this.textHeader[7];
+        String[] segments;
+        
+        //Get the record id if available
+        String matchRegex = "(RcrdId:)";
+        Pattern regField = Pattern.compile(matchRegex);
+        Matcher m = regField.matcher( line );
+        rcrdId = (m.find()) ? line.substring(m.end()) : "";
+        
+        //Look for the SCNL and Auth tags and save if found
+        String authRegex = "(<AUTH>)";
+        Pattern authfield = Pattern.compile(authRegex);
+        for (String each : this.comments) {
+            m = authfield.matcher(each);
+            if (m.find()) {
+                SCNLauth = each.substring(1);
+                break;                
+            }
+        }
+        //Get the channel code if no channel number defined
+        String scnlRegex = "(<SCNL>)(\\S+)";
+        Pattern scnlfield = Pattern.compile(scnlRegex);
+        if ((!SCNLauth.isEmpty()) && (channel.isEmpty())) {
+            m = scnlfield.matcher( SCNLauth );
+            if (m.find()) {
+                segments = m.group(2).split("\\.");
+                this.setChannel(segments[1]);
+            }
+        }
+    }
+    @Override
+    public String[] VrecToText() {
+        //add up the length of the text portions of the component, which are
+        //the text header, the comments, and the end-of-data line.
+        int totalLength = 0;
+        int currentLength = 0;
+        int textLength = this.textHeader.length + this.comments.length + 1;
+        
+        //get the header and data arrays as text
+        String[] intHeaderText = this.intHeader.numberSectionToText();
+        String[] realHeaderText = this.realHeader.numberSectionToText();
+        String[] V0DataText = this.V0Data.numberSectionToText();
+        
+        //add the array lengths to the text lengths to get the total and declare
+        //an array of this length, then build it by combining all the component
+        //pieces into a text version of the component.
+        totalLength = textLength + intHeaderText.length + realHeaderText.length + 
+                                                        V0DataText.length;
+        String[] outText = new String[totalLength];
+        System.arraycopy(this.textHeader, 0, outText, currentLength, 
+                                                        this.textHeader.length);
+        currentLength = currentLength + this.textHeader.length;
+        System.arraycopy(intHeaderText, 0, outText, currentLength, 
+                                                            intHeaderText.length);
+        currentLength = currentLength + intHeaderText.length;
+        System.arraycopy(realHeaderText, 0, outText, currentLength, 
+                                                          realHeaderText.length);
+        currentLength = currentLength + realHeaderText.length;
+        System.arraycopy(this.comments, 0, outText, currentLength, this.comments.length);
+        currentLength = currentLength + this.comments.length;
+        System.arraycopy(V0DataText, 0, outText, currentLength, V0DataText.length);
+        outText[totalLength-1] = this.endOfData;
+        return outText;
+    }
     public int getDataLength() {
         return V0Data.getNumVals();
     }
@@ -57,5 +133,23 @@ public class V0Component extends COSMOScontentFormat {
      */
     public int[] getDataArray() {
         return V0Data.getIntArray();
+    }
+    public String getFileName() {
+        return fileName;
+    }
+    public void setFileName( String inName ) {
+        fileName = inName;
+    }
+    public File getStationDir() {
+        return stationDir;
+    }
+    public void setStationDir( File inDir ) {
+        stationDir = inDir;
+    }
+    public String getRcrdId() {
+        return rcrdId;
+    }
+    public String getSCNLauth() {
+        return SCNLauth;
     }
 }

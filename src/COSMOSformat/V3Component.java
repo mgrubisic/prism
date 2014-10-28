@@ -29,6 +29,7 @@ import static SmUtilities.SmConfigConstants.OUT_ARRAY_FORMAT;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_ABBREV;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_CODE;
 import SmUtilities.SmTimeFormatter;
+import java.io.File;
 import java.util.ArrayList;
 
 /**
@@ -40,11 +41,19 @@ public class V3Component extends COSMOScontentFormat {
     private ArrayList<VRealArray> V3Data;
     private final V1Component parentV1;  //link back to the parent V1 record
     private final V2Component parentV2;
+    private String fileName;
+    private File stationDir;
+    private String rcrdId;
+    private String SCNLauth;
 
     public V3Component(String procType) {
         super(procType);
         this.parentV1 = null;
         this.parentV2 = null;
+        this.fileName = "";
+        this.stationDir = null;
+        this.rcrdId = "";
+        this.SCNLauth = "";
     }
     //Use this constructor when the V2 component is created from processing
     //done on a V1 component.  In this case, the contents of V2 are initialized
@@ -63,7 +72,10 @@ public class V3Component extends COSMOScontentFormat {
         //Leave updates for buildV3 method
         this.intHeader = new VIntArray(pV2.intHeader);        
         this.realHeader = new VRealArray(pV2.realHeader);
-        this.setChannel();
+        this.setChannel(pV2.getChannel());
+        this.fileName = pV2.getFileName();
+        this.rcrdId = pV2.getRcrdId();
+        this.SCNLauth = pV2.getSCNLauth();
         
         //The buildV2 method fills in these data values, the format line, and
         //the individual params for the real arrays.
@@ -221,10 +233,7 @@ public class V3Component extends COSMOScontentFormat {
         this.textHeader[0] = SPECTRA.concat(this.textHeader[0].substring(END_OF_DATATYPE));
         
         //Update the end-of-data line with the new data type
-        this.endOfData = eod.append(this.endOfData,0,END_OF_DATA_CHAN)
-                            .append(" ")
-                            .append(String.valueOf(this.channel))
-                            .append(" response spectra").toString();
+        this.endOfData.replaceAll(" acceleration", " response spectra");
     }
     /**
      * This method creates a new data format line for the V3 component data arrays.
@@ -314,5 +323,17 @@ public class V3Component extends COSMOScontentFormat {
         V3DataText.clear();
         outText[totalLength-1] = this.endOfData;
         return outText;
+    }
+    public String getFileName() {
+        return fileName;
+    }
+    public void setFileName( String inName ) {
+        fileName = inName;
+    }
+    public File getStationDir() {
+        return stationDir;
+    }
+    public void setStationDir( File inDir ) {
+        stationDir = inDir;
     }
 }

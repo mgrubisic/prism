@@ -6,6 +6,8 @@
 
 package SMCOSMOScontrol;
 
+import COSMOSformat.COSMOScontentFormat;
+import COSMOSformat.V0Component;
 import static SmConstants.VFileConstants.CORACC;
 import static SmConstants.VFileConstants.RAWACC;
 import static SmConstants.VFileConstants.UNCORACC;
@@ -95,7 +97,7 @@ public class Prism {
             }
             //get the list of filenames in the input directory
             try {
-                smc.inVList = smc.getFileList( smc.inFolder, "*.[vV]0" );
+                smc.inVList = smc.getFileList( smc.inFolder, "*.[vV]0*" );
             }
             catch (IOException err) {
                 throw new SmException("Unable to access V0 file list: " + err.getMessage());
@@ -110,11 +112,10 @@ public class Prism {
             //Attempt to process all the files in the list.
             for (File each: smc.inVList){
                 smc.smqueue = new SmQueue( each );
-                smc.Vproduct = new SmProduct(each, smc.outFolder);
-                //add V3 products eventually
+                smc.Vproduct = new SmProduct(smc.inFolder, smc.outFolder);
                 try {
                     smc.smqueue.readInFile( each );
-                    
+                    System.out.println("prism: infile " + each);
                     //This if stmt is used to test v2 reads only
 //                    if (each.toString().endsWith("2")) {
 //                        recordCount = smc.smqueue.parseVFile( CORACC );
@@ -128,7 +129,7 @@ public class Prism {
 
                     String[] outlist = smc.Vproduct.writeOutProducts();
                     log.writeToLog(outlist);
-                    smc.Vproduct.moveV0AfterProcessing();
+                    smc.Vproduct.deleteV0AfterProcessing(each);
                 }
                 catch (FormatException | IOException | SmException err) {
                     String[] logtxt = new String[2];

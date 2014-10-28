@@ -22,6 +22,7 @@ import SmException.SmException;
 import SmUtilities.ABCSortPairs;
 import SmUtilities.ConfigReader;
 import static SmUtilities.SmConfigConstants.*;
+import SmUtilities.SmErrorLogger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
@@ -39,12 +40,15 @@ public class AdaptiveBaselineCorrection {
     private final int RESULT_PARMS = 14;
 //    private final int NUM_BREAKS = 10;
     
+//    private final double TOL_RES_DISP = 0.001;
+//    private final double TOL_INIT_VEL = 0.001;
+//    private final double TOL_RES_VEL = 0.001;
+//    private final double TOL_RMS_VEL = 0.001;
     private final double TOL_RES_DISP = 0.001;
-    private final double TOL_INIT_VEL = 0.001;
-    private final double TOL_RES_VEL = 0.001;
-    private final double TOL_RMS_VEL = 0.001;
+    private final double TOL_INIT_VEL = 0.002;
+    private final double TOL_RES_VEL = 0.002;
     
-    private int MOVING_WINDOW = 50;
+    private int MOVING_WINDOW = 200;
     private final double EPSILON = 0.001;
     private double dtime;
     private double lowcut;
@@ -52,13 +56,9 @@ public class AdaptiveBaselineCorrection {
     private int numpoles;
     private int estart;
     private double[] velocity;
-    private double[] velfinal;
+    private double[] velstart;
     private double[] displace;
     private double[] accel;
-    private final int numbreakslo;
-    private final int numbreakshi;
-    private final int degreeSlo;
-    private final int degreeShi;
     private final int degreeP1lo;
     private final int degreeP1hi;
     private final int degreeP2lo;
@@ -72,13 +72,15 @@ public class AdaptiveBaselineCorrection {
     private int[] ranking;
     private int solution;
     private int counter;
+    private SmErrorLogger elog;
+    private boolean writeArrays;
     
     public AdaptiveBaselineCorrection(double delttime, double[] invel, 
                                       double lowcut,double highcut,int numpoles,
                                       int ppick) {
         this.dtime = delttime;
         this.estart = ppick;
-        this.velocity = invel;
+        this.velstart = invel;
         this.lowcut = lowcut;
         this.highcut = highcut;
         this.numpoles = numpoles;
@@ -86,26 +88,11 @@ public class AdaptiveBaselineCorrection {
         this.polyBreaks = new int[NUM_SEGMENTS-1];
         this.solution = 0;
         this.counter = 1;
+        this.elog = SmErrorLogger.INSTANCE;
+        writeArrays = true;
         
         //Get the values out of the configuration file and screen for correctness.
         //Number of spline breaks
-        this.numbreakslo = validateConfigParam(NUM_SPLINE_BREAKS_LOWER, 
-                                                DEFAULT_NUM_BREAKS_LOWER,
-                                                DEFAULT_NUM_BREAKS_LOWER,
-                                                DEFAULT_NUM_BREAKS_UPPER);
-        this.numbreakshi = validateConfigParam(NUM_SPLINE_BREAKS_UPPER, 
-                                                DEFAULT_NUM_BREAKS_UPPER,
-                                                numbreakslo,
-                                                DEFAULT_NUM_BREAKS_UPPER);
-        //spline order
-        this.degreeSlo = validateConfigParam(SPLINE_ORDER_LOWER, 
-                                                DEFAULT_SPLINE_ORDER_LOWER,
-                                                DEFAULT_SPLINE_ORDER_LOWER,
-                                                DEFAULT_SPLINE_ORDER_UPPER);
-        this.degreeShi = validateConfigParam(SPLINE_ORDER_UPPER, 
-                                                DEFAULT_SPLINE_ORDER_UPPER,
-                                                degreeSlo,
-                                                DEFAULT_SPLINE_ORDER_UPPER);
         //First polynomial order
         this.degreeP1lo = validateConfigParam(FIRST_POLY_ORDER_LOWER, 
                                                 DEFAULT_1ST_POLY_ORD_LOWER,
@@ -151,79 +138,85 @@ public class AdaptiveBaselineCorrection {
         //checking if ever values are compared against a time-based measurement
         //such as frequency cut-off!!!
         int t11 = estart;  
-        int vlen = velocity.length;
+        int vlen = velstart.length;
         int t22 = (int)(0.8 * vlen);
         int dt1 = MOVING_WINDOW;
         int t21 = t11 + dt1;
-        int t1;
-        velfinal = new double[vlen];
+        velocity = new double[vlen];
         boolean success = false;
-        boolean smooth = false;
         ButterworthFilter filter;
         params = new ArrayList<>();
         double[] onerun;
         boolean pass = false;
         
         for (int order1 = degreeP1lo; order1 <= degreeP1hi; order1++) {
-//            System.out.println("ABC: order1 = " + order1);
+            System.out.println("ABC: order1 = " + order1);
             for (int order2 = degreeP2lo; order2 <= degreeP2hi; order2++) {
-//                System.out.println("ABC: order2 = " + order2);
-                for (int spl_break = numbreakslo; spl_break <= numbreakshi; spl_break++) {
-//                    System.out.println("ABC: spl_break = " + spl_break);
-                    for (int spl_order = degreeSlo; spl_order <= degreeShi; spl_order++) {
-//                        System.out.println("ABC: spl_order = " + spl_order);
-                        for (int t2 = t21; t2 <= t22; t2 += dt1) {
-                            t1 = t11;
-                            if (((t2-t1)*dtime) >= ((int)1.0/lowcut)) {
-//                                System.out.println("ABC: count = " + counter);
-//                                System.out.println("t2: " + t2);
-                                System.arraycopy(velocity,0,velfinal,0,vlen);
-                                //remove the spline fit from velocity
-                                makeCorrection(velfinal,t1,t2,spl_break,spl_order,
-                                                            order1,order2,smooth);
-                                //now filter velocity
-                                filter = new ButterworthFilter();
-                                boolean valid = filter.calculateCoefficients(lowcut, 
-                                                 highcut,dtime, numpoles, true);
-                                if (valid) {
-                                    filter.applyFilter(velfinal, estart);
-                                } else {
-                                    throw new SmException("ABC: Invalid bandpass "
-                                                     + "filter input parameters");
-                                }
-                                //remove any mean value
-                                ArrayStats velmean = new ArrayStats( velfinal );
-                                ArrayOps.removeValue(velfinal, velmean.getMean());
-                                //integrate to get displacement, differentiate
-                                //for acceleration
-                                displace = ArrayOps.Integrate( velfinal, dtime);
-                                accel = ArrayOps.Differentiate(velfinal, dtime);
-                                //store the results in an array for comparison
-                                onerun = new double[RESULT_PARMS];
-                                onerun[0] = Math.sqrt(Math.pow(rms[0], 2) +
-                                        Math.pow(rms[1],2) + Math.pow(rms[2],2));
-                                onerun[1] = Math.abs(displace[displace.length-1]);
-                                onerun[2] = Math.abs(velfinal[0]);
-                                onerun[3] = Math.abs(velfinal[velfinal.length-1]);
-                                onerun[4] = t1;
-                                onerun[5] = t2;
-                                onerun[6] = order1;
-                                onerun[7] = order2;
-                                onerun[8] = counter;
-                                onerun[9] = rms[0];
-                                onerun[10] = rms[1];
-                                onerun[11] = rms[2];
-                                onerun[12] = spl_break;
-                                onerun[13]= spl_order;
-                                //Penalty for initial acceleration step
-                                ArrayStats accstat = new ArrayStats(accel);
-                                if (Math.abs(Math.abs(accel[0]) - Math.abs(accstat.getPeakVal())) < EPSILON) {
-                                    onerun[0] = 1000;
-                                }
-                                params.add(onerun);
-                                counter++;
-                            }
+                System.out.println("ABC: order2 = " + order2);
+                System.out.println("t21: " + t21 + "  t22: " + t22 + " dt1: " + dt1);
+                for (int t2 = t21; t2 <= t22; t2 += dt1) {
+                    if (((t2-t11)*dtime) >= (1.0/lowcut)) {
+                        System.out.println("ABC: count = " + counter);
+                        System.out.println("t2: " + t2);
+                        //remove the spline fit from velocity
+                        velocity = makeCorrection(velstart,t11,t2,order1,order2);
+                        //now filter velocity
+                        filter = new ButterworthFilter();
+                        boolean valid = filter.calculateCoefficients(lowcut, 
+                                         highcut,dtime, numpoles, true);
+                        if (valid) {
+                            filter.applyFilter(velocity, estart);
+                        } else {
+                            throw new SmException("ABC: Invalid bandpass "
+                                             + "filter input parameters");
                         }
+                        //remove any mean value
+                        ArrayStats velmean = new ArrayStats( velocity );
+                        ArrayOps.removeValue(velocity, velmean.getMean());
+                        //integrate to get displacement, differentiate
+                        //for acceleration
+                        displace = ArrayOps.Integrate( velocity, dtime);
+                        accel = ArrayOps.Differentiate(velocity, dtime);
+                        //store the results in an array for comparison
+                        int vellen = velocity.length;
+                        int dislen = displace.length;
+                        int window = (int)(estart * 0.25);
+                        int velwindowstart = ArrayOps.findZeroCrossing(velocity, window, 1);
+                        int velwindowend = ArrayOps.findZeroCrossing(velocity, vellen-window, 0);
+                        int diswindowend = ArrayOps.findZeroCrossing(displace, dislen-window, 0);
+                        System.out.println("\ncounter: " + counter);
+                        System.out.println("window: " + window);
+                        System.out.println("start v: " + velwindowstart);
+                        System.out.println("end v: " + velwindowend);
+                        System.out.println("end d: " + diswindowend);
+                        double velstart = ArrayOps.findSubsetMean(velocity, 0, velwindowstart);
+                        double velend = ArrayOps.findSubsetMean(velocity, velwindowend,
+                                                                        vellen);
+                        double disend = ArrayOps.findSubsetMean(displace, diswindowend,
+                                                                        dislen);
+                        onerun = new double[RESULT_PARMS];
+                        onerun[0] = Math.sqrt(Math.pow(rms[0], 2) +
+                                Math.pow(rms[1],2) + Math.pow(rms[2],2));
+                        onerun[1] = Math.abs(disend);
+                        onerun[2] = Math.abs(velstart);
+                        onerun[3] = Math.abs(velend);
+                        onerun[4] = t11;
+                        onerun[5] = t2;
+                        onerun[6] = order1;
+                        onerun[7] = order2;
+                        onerun[8] = counter;
+                        onerun[9] = rms[0];
+                        onerun[10] = rms[1];
+                        onerun[11] = rms[2];
+                        onerun[12] = 0;
+                        onerun[13]= 0;
+                        //Penalty for initial acceleration step
+                        ArrayStats accstat = new ArrayStats(accel);
+                        if (Math.abs(Math.abs(accel[0]) - Math.abs(accstat.getPeakVal())) < EPSILON) {
+                            onerun[0] = 1000;
+                        }
+                        params.add(onerun);
+                        counter++;
                     }
                 }
             }
@@ -235,15 +228,14 @@ public class AdaptiveBaselineCorrection {
         double[] temp;
         for (int i = 0; i < params.size(); i++) {
             temp = params.get(i);
-//            System.out.println("total rms: " + temp[0]);
+            System.out.println("total rms: " + temp[0]);
             sorter.addPair(temp[0], count++);
         }
         ranking = sorter.getSortedVals();
         double[] eachrun;
-        smooth = true;
-//        for (int each : ranking) {
-//            System.out.println("rank: " + each);
-//        }
+        for (int each : ranking) {
+            System.out.println("rank: " + each);
+        }
         
         //check each solution against the QA values and find the first that passes
         for (int idx : ranking) {
@@ -252,9 +244,8 @@ public class AdaptiveBaselineCorrection {
                                 (eachrun[3] <= TOL_RES_VEL) && 
                                             (eachrun[1] <= TOL_RES_DISP);
             if (success) {
-                makeCorrection(velocity,(int)eachrun[4],(int)eachrun[5],
-                                        (int)eachrun[12],(int)eachrun[13],
-                                        (int)eachrun[6],(int)eachrun[7],smooth);
+                velocity = makeCorrection(velocity,(int)eachrun[4],(int)eachrun[5],
+                                        (int)eachrun[6],(int)eachrun[7]);
                 //now filter velocity
                 filter = new ButterworthFilter();
                 filter.calculateCoefficients(lowcut,highcut,dtime,numpoles,true);
@@ -270,16 +261,21 @@ public class AdaptiveBaselineCorrection {
                 solution = idx;
                 System.out.println("ABC: found passing solution");
                 System.out.println("ABC: winning rank: " + solution);
+                System.out.println("ABC: poly1 order: " + eachrun[6]);
+                System.out.println("ABC: poly2 order: " + eachrun[7]);
                 System.out.println("ABC: start: " + eachrun[4] + "  stop: " + eachrun[5]);
+                
+                if (writeArrays) {
+                    elog.writeOutArray(bnn, "baseline.txt");
+                } 
                 break;
             }
         }
         if (!pass) {
             solution = 0;
             eachrun = params.get(solution);
-            makeCorrection(velocity,(int)eachrun[4],(int)eachrun[5],
-                                    (int)eachrun[12],(int)eachrun[13],
-                                    (int)eachrun[6],(int)eachrun[7],smooth);
+            velocity = makeCorrection(velocity,(int)eachrun[4],(int)eachrun[5],
+                                    (int)eachrun[6],(int)eachrun[7]);
             //now filter velocity
             filter = new ButterworthFilter();
             filter.calculateCoefficients(lowcut,highcut,dtime,numpoles,true);
@@ -294,8 +290,8 @@ public class AdaptiveBaselineCorrection {
         }
         return pass;
     }
-    public void makeCorrection( double[] array, int break1, int break2, int spl_order,
-                        int degreeS, int degreeP1, int degreeP2, boolean smooth ) {
+    public double[] makeCorrection( double[] array, int break1, int break2, 
+                                int degreeP1, int degreeP2 ) {
         polyBreaks[0] = break1;
         polyBreaks[1] = break2;
         double[] h1;
@@ -329,12 +325,7 @@ public class AdaptiveBaselineCorrection {
             }
         }
         getSpline( bnn, break1, break2);
-        //If smoothing selected, then smooth out discontinuities in the baseline
-        //function before removing it from the input array.
-        if (smooth) {
-            double[] temp = Arrays.copyOf(bnn, bnn.length);
-            bnn = smoothValues( temp );
-        }
+        
         //Remove the baseline function from the input array
         for (int i = 0; i < result.length; i++) {
             result[i] = array[i] - bnn[i];
@@ -342,7 +333,20 @@ public class AdaptiveBaselineCorrection {
         rms[0] = ArrayOps.rootMeanSquare(Arrays.copyOfRange(result,0,break1));
         rms[1] = ArrayOps.rootMeanSquare(Arrays.copyOfRange(result,break1,break2));
         rms[2] = ArrayOps.rootMeanSquare(Arrays.copyOfRange(result,break2,array.length));
+        
+        return result;
     }
+    /**
+     * The getSpline algorithm is from:
+     * 
+     * Processing of near-field earthquake accelerograms, by Luo-Jia Wang,
+     * EERL 96-04, Earthquake Engineering Research Laboratory, 
+     * California Institute of Technology Pasadena, 1996-09, 25 pages.
+     * 
+     * @param vals
+     * @param break1
+     * @param break2 
+     */
     public void getSpline( double[] vals, int break1, int break2 ) {
         double start;
         double end;
@@ -362,13 +366,13 @@ public class AdaptiveBaselineCorrection {
                     - 16.0 * vals[break1-4] 
                     + 36.0 * vals[break1-3] 
                     - 48.0 * vals[break1-2] 
-                    + 25.0 * vals[break1-1]   )/ time12;
+                    + 25.0 * vals[break1-1] )/ time12;
         
         double d = ( -25.0 * vals[break2] 
                     + 48.0 * vals[break2+1] 
                     - 36.0 * vals[break2+2] 
                     + 16.0 * vals[break2+3] 
-                    -  3.0 * vals[break2+4]   )/ time12;
+                    -  3.0 * vals[break2+4] )/ time12;
 
         for (int i = break1; i < break2; i++) {
             start = loctime[i] - t1;
@@ -381,9 +385,6 @@ public class AdaptiveBaselineCorrection {
                       end * ssq * d;
             vals[i] = vals[i] / Math.pow(intlen, 2);
         }
-    }
-    public double[] smoothValues(double[] array) {
-        return ArrayOps.perform3PtSmoothing(array);
     }
     public double[] getBaselineFunction() {
         return bnn;
@@ -419,7 +420,7 @@ public class AdaptiveBaselineCorrection {
         return polyBreaks;
     }
     public double[] getABCvelocity() {
-        return velfinal;
+        return velocity;
     }
     public double[] getABCdisplacement() {
         return displace;
@@ -427,15 +428,11 @@ public class AdaptiveBaselineCorrection {
     public double[] getABCacceleration() {
         return accel;
     }public int[] getConfigRanges() {
-        int[] out = new int[8];
-        out[0] = numbreakslo;
-        out[1] = numbreakshi;
-        out[2] = degreeSlo;
-        out[3] = degreeShi;
-        out[4] = degreeP1lo;
-        out[5] = degreeP1hi;
-        out[6] = degreeP2lo;
-        out[7] = degreeP2hi;
+        int[] out = new int[4];
+        out[0] = degreeP1lo;
+        out[1] = degreeP1hi;
+        out[2] = degreeP2lo;
+        out[3] = degreeP2hi;
         return out;
     }
     public void clearParamsArray() {

@@ -15,6 +15,9 @@ import static SmUtilities.SmConfigConstants.OUT_ARRAY_FORMAT;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_ABBREV;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_CODE;
 import SmUtilities.SmTimeFormatter;
+import java.io.File;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -23,6 +26,10 @@ import SmUtilities.SmTimeFormatter;
 public class V1Component extends COSMOScontentFormat {
     private VRealArray V1Data;  //raw acceleration counts
     private final V0Component parentV0;  //link back to the parent V0 record
+    private String fileName;
+    private File stationDir;
+    private String rcrdId;
+    private String SCNLauth;
 
     //Use this constructor when the V1 component is read in from a file and
     //filled in with the loadComponent method.  In this case, there is no parentV0
@@ -30,6 +37,10 @@ public class V1Component extends COSMOScontentFormat {
     public V1Component( String procType) {
         super( procType );
         this.parentV0 = null;
+        this.fileName = "";
+        this.stationDir = null;
+        this.rcrdId = "";
+        this.SCNLauth = "";
     }
     
     //Use this constructor when the V1 component is created from processing
@@ -49,14 +60,18 @@ public class V1Component extends COSMOScontentFormat {
         //Leave updates for buildV1 method
         this.intHeader = new VIntArray(pV0.intHeader);        
         this.realHeader = new VRealArray(pV0.realHeader);
-        this.setChannel();
+        this.setChannel(pV0.getChannel());
+        this.fileName = pV0.getFileName();
+        this.rcrdId = pV0.getRcrdId();
+        this.SCNLauth = pV0.getSCNLauth();
         
         //The buildV1 method fills in these data values, the format line, and
         //the individual params for the real array.
         this.V1Data = new VRealArray();
         
         this.comments = pV0.getComments(); //leave update for processing, if any
-        this.endOfData = pV0.endOfData; //same as V0
+        this.endOfData = pV0.endOfData;
+        this.updateEndOfDataLine(UNCORACC, pV0.getChannel());
     }
     @Override
     public int parseDataSection (int startLine, String[] infile) throws 
@@ -158,11 +173,7 @@ public class V1Component extends COSMOScontentFormat {
         this.realHeader.setRealValue(SCALING_FACTOR, inVvals.getConversionFactor());
         this.realHeader.setRealValue(MEAN_ZERO, inVvals.getMeanToZero());
         
-        //Update the end-of-data line with the new data type
-        this.endOfData = eod.append(this.endOfData,0,END_OF_DATA_CHAN)
-                            .append(" ")
-                            .append(this.channel)
-                            .append(" acceleration").toString();
+        //No need to update the end-of-data line.
     }
     /**
      * This method creates a new data format line for the V1 component data array.
@@ -226,5 +237,23 @@ public class V1Component extends COSMOScontentFormat {
         System.arraycopy(V1DataText, 0, outText, currentLength, V1DataText.length);
         outText[totalLength-1] = this.endOfData;
         return outText;
+    }
+    public String getFileName() {
+        return fileName;
+    }
+    public void setFileName( String inName ) {
+        fileName = inName;
+    }
+    public File getStationDir() {
+        return stationDir;
+    }
+    public void setStationDir( File inDir ) {
+        stationDir = inDir;
+    }
+    public String getRcrdId() {
+        return rcrdId;
+    }
+    public String getSCNLauth() {
+        return SCNLauth;
     }
 }

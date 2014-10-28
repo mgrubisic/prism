@@ -239,7 +239,6 @@ public class COSMOScontentFormat {
         }
         return (current + 1);
     }
-
     /**
      * This  method must be overridden by each extending class.  It is called to
      * format the V component into its text file format for writing out to file.
@@ -250,7 +249,46 @@ public class COSMOScontentFormat {
         System.err.println("method VrecToText must be overridden");
         return temp;
     }
-
+    public void updateEndOfDataLine(String dtype, String channel) {
+        String line = this.endOfData;
+        String end = "";
+        String group = "";
+        String result = "";
+        StringBuilder sb = new StringBuilder();
+        String[] segments = line.split(" ");
+        String endOfDataRegex1 = "^(?i)(\\s*End-of-data\\s+for\\s+Chan\\s+\\S+)";
+        String endOfDataRegex2 = "^(?i)(\\s*End-of-data\\s+for\\s+\\S+)";
+        
+        if (dtype.matches(UNCORACC) || (dtype.matches(CORACC))) {
+            end = "acceleration";
+        } else if (dtype.matches(VELOCITY)) {
+            end = "velocity";
+        } else if (dtype.matches(DISPLACE)) {
+            end = "displacement";
+        } else {
+            end = "response spectra";
+        }
+//        System.out.println("dtype: " + dtype);
+        Pattern reg1 = Pattern.compile( endOfDataRegex1 );
+        Pattern reg2 = Pattern.compile( endOfDataRegex2 );
+        Matcher m1 = reg1.matcher( line );
+        Matcher m2 = reg2.matcher( line );
+        if (m1.find(0)){
+            group = m1.group(0);
+//            System.out.println("1st group: " + group);
+            result = sb.append(group).append(" ").append(end).toString();
+        } else if (m2.find(0)) {
+            group = m2.group(0);
+            result = sb.append(group).append(" ").append(end).toString();
+//            System.out.println("2nd group: " + group);
+        } else {
+            StringBuilder sb2 = new StringBuilder();
+            result = sb2.append("End-of-data for Chan ").append(channel)
+                                            .append(" ").append(end).toString();
+//            System.out.println("no group: " + result);
+        }
+        this.endOfData = result;
+    }
     /**
      * Getter for the channel number, which is needed for the output file name
      * @return channel number
@@ -281,16 +319,11 @@ public class COSMOScontentFormat {
         return location.substring(SENSOR_LOCATION_START);
     }
     /**
-     * Setter for the channel number.  It sets the number to the channel value
-     * in the integer header.
-     * @throws SmException if value in header is set to NoData
+     * Setter for the channel number.
+     * @param inChannel Characters to set the channel to
      */
-    public void setChannel() throws SmException {
-        int num = intHeader.getIntValue(STATION_CHANNEL_NUMBER);
-        if (num == noIntVal) {
-            channel = "";
-        }
-        channel = String.valueOf(num);
+    public void setChannel(String inChannel) {
+            channel = inChannel;
     }
     public String getEventDateTime() {
         StringBuilder sb = new StringBuilder(MAX_LINE_LENGTH);

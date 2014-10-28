@@ -147,9 +147,7 @@ public class AdaptiveBaselineTest {
         double lowcut = threshold.getLowCutOff();
         double highcut = threshold.getHighCutOff();
         
-        adapt.makeCorrection( hnn, break1, break2, NUM_BREAKS,
-                        degreeS, degreeP1, degreeP2, true );
-        double[] result = adapt.getBaselineCorrectedArray();
+        double[] result = adapt.makeCorrection( hnn, break1, break2,degreeP1, degreeP2 );
         double[] bnn = adapt.getBaselineFunction();
         double[] rms = adapt.getRMSvalues();
         
@@ -179,9 +177,7 @@ public class AdaptiveBaselineTest {
         FilterCutOffThresholds threshold = new FilterCutOffThresholds( mag );
         double lowcut = threshold.getLowCutOff();
         double highcut = threshold.getHighCutOff();
-        adapt2.makeCorrection( hn2, breakh1, breakh2, NUM_BREAKS,
-                        degreeS, degreeP1, degreeP2, true );
-        double[] result = adapt2.getBaselineCorrectedArray();
+        double[] result = adapt2.makeCorrection( hn2, breakh1, breakh2,degreeP1, degreeP2 );
         double[] bnn = adapt2.getBaselineFunction();
         double[] rms = adapt2.getRMSvalues();
         

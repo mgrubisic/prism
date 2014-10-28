@@ -276,4 +276,25 @@ public class ArrayOps {
         }
         return result;
     }
+    public static int findZeroCrossing(final double[] inArray, int start, int flag) {
+        int cross = -1;
+        if (flag == 0) {  //work from start of subsection to the end
+            for (int k = 1; k < start; k++) {
+                if ((inArray[k] * inArray[k-1]) < 0.0) {
+                    cross = k-1;
+                    break;
+                }
+                cross = 0;
+            }
+        } else { //work from the end of the subsection forward
+            for (int k = start-1; k > 0; k--) {
+                if ((inArray[k] * inArray[k-1]) < 0.0) {
+                    cross = k-1;
+                    break;
+                }
+                cross = start;
+           }
+        }
+        return cross;
+    }
 }

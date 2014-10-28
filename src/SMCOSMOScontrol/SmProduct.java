@@ -7,12 +7,12 @@
 package SMCOSMOScontrol;
 
 import COSMOSformat.COSMOScontentFormat;
+import COSMOSformat.V0Component;
 import COSMOSformat.V1Component;
 import COSMOSformat.V2Component;
 import COSMOSformat.V3Component;
 import static SmConstants.VFileConstants.MAX_LINE_LENGTH;
-import SmUtilities.ConfigReader;
-import static SmUtilities.SmConfigConstants.OUT_FILE_FORMAT;
+import SmConstants.VFileConstants.V2Status;
 import SmUtilities.TextFileWriter;
 import java.io.File;
 import java.io.IOException;
@@ -33,56 +33,65 @@ import java.util.regex.Pattern;
  */
 public class SmProduct {
     private String outFolder;
-    private File fileName;
+    private String inFolder;
+    private ArrayList<COSMOScontentFormat> V0List;
     private ArrayList<COSMOScontentFormat> V1List;
     private ArrayList<COSMOScontentFormat> V2List;
     private ArrayList<COSMOScontentFormat> V3List;
     private final Charset ENCODING = StandardCharsets.UTF_8;
-    private File stationDir; //value is set in the setDirectories method
-    private File eventDir;  //value is set in the setDirectories method
-    private File logDir;  //value is set in the setDirectories method
-    private int numInInputList;
+    private File stationDir;
+    private File eventDir;
+    private File logDir;
     private ArrayList<String> loglist;
     
     //The products package assumes a file name structure for the V0 files.
     //
-    public SmProduct(final File inFileName, final String newFolder) {
-        this.fileName = inFileName;
+    public SmProduct(final String inFolder, final String newFolder) {
+        this.inFolder = inFolder;
+        this.V0List = new ArrayList<>();
         this.V1List = new ArrayList<>();
         this.V2List = new ArrayList<>();
         this.V3List = new ArrayList<>();
         this.outFolder = newFolder;
-        this.numInInputList = 1;
         this.stationDir = new File( newFolder );
         this.eventDir = new File( newFolder );
         this.logDir = new File( newFolder );
         this.loglist = new ArrayList<>();        
-        this.loglist.add(inFileName.toString());       
+//        this.loglist.add(inFileName.toString());       
     }
     public void addProduct(COSMOScontentFormat newprod, String ext ) {
-        if (ext.equalsIgnoreCase("V1")) {
-            this.V1List.add((V1Component)newprod);
+        if (ext.equalsIgnoreCase("V0")) {
+            V0Component rec = (V0Component)newprod;
+            rec.setStationDir(this.stationDir);
+            this.V0List.add(rec);
+        } else if (ext.equalsIgnoreCase("V1")) {
+            V1Component rec = (V1Component)newprod;
+            rec.setStationDir(this.stationDir);
+            this.V1List.add(rec);
         } else if (ext.equalsIgnoreCase("V2")) {
-            this.V2List.add((V2Component)newprod);
+            V2Component rec = (V2Component)newprod;
+            rec.setStationDir(this.stationDir);
+            this.V2List.add(rec);
         } else {
-            this.V3List.add((V3Component)newprod);
+            V3Component rec = (V3Component)newprod;
+            rec.setStationDir(this.stationDir);
+            this.V3List.add(rec);
         }
     }
-    public void setDirectories(String eventMarker, boolean passedQA, int numlist) {
+    public void setDirectories(String rcid, String scnlauth, String eventMarker, 
+                                                            V2Status V2result) {
         String event;
         String station;
-        this.numInInputList = numlist;
         StringBuilder sb = new StringBuilder(MAX_LINE_LENGTH);
-        String name = this.fileName.getName();        
-        boolean validname = validateFileName( name );
-        String[] sections = name.split("\\.");
+        boolean validid = validateRcrdId( rcid );
+        String[] sections = rcid.split("\\.");
         
-        if (validname) {
+        if ((!scnlauth.isEmpty()) && (validid)) {
             event = sb.append(sections[0]).append(".").append(sections[1]).toString(); 
         } else {
             event = "Orphan";
         }
-        if (passedQA) {
+        if (V2result == V2Status.GOOD) {
             if (event.equals("Orphan")) {
                 station = eventMarker;
             } else {
@@ -120,32 +129,47 @@ public class SmProduct {
         if (!V1Id.isDirectory()) {
             V1Id.mkdir();
         }
-        File V2Id = Paths.get(stationId.toString(), "V2").toFile();
-        if (!V2Id.isDirectory()) {
-            V2Id.mkdir();
+        if (V2result != V2Status.NOEVENT) {
+            File V2Id = Paths.get(stationId.toString(), "V2").toFile();
+            if (!V2Id.isDirectory()) {
+                V2Id.mkdir();
+            }
         }
-        if (passedQA) {  //V3 processing only occurs on valid V2 products
+        if (V2result == V2Status.GOOD) {  //V3 processing only occurs on valid V2 products
             File V3Id = Paths.get(stationId.toString(), "V3").toFile();
             if (!V3Id.isDirectory()) {
                 V3Id.mkdir();
             }        
         }
+//        System.out.println("success: " + passedQA);
+//        System.out.println("eventdir: " + this.eventDir.toString());
+//        System.out.println("stationdir: " + this.stationDir.toString());
+        
     }
-    
     public String[] writeOutProducts() throws IOException {
         TextFileWriter textout;
         Iterator iter;
         Path outName = null;
         String[] contents;
-        boolean added;
 //        System.out.println("productlist length: " + this.V1List.size());
+        iter = this.V0List.iterator();
+        while (iter.hasNext()) {
+            V0Component rec0 = (V0Component)iter.next();
+            contents = rec0.VrecToText();
+            outName = buildFilename(rec0.getStationDir(), rec0.getFileName(),"V0",
+                                                         rec0.getChannel(), "");
+            textout = new TextFileWriter(outName, contents);
+            textout.writeOutToFile();
+            this.loglist.add(outName.toString());
+        }
+        this.V0List.clear();
         
         iter = this.V1List.iterator();
-        added = false;
         while (iter.hasNext()) {
             V1Component rec1 = (V1Component)iter.next();
-            outName = buildFilename("V1",rec1.getChannel(),"");
             contents = rec1.VrecToText();
+            outName = buildFilename(rec1.getStationDir(), rec1.getFileName(),"V1",
+                                                         rec1.getChannel(), "");
             textout = new TextFileWriter(outName, contents);
             textout.writeOutToFile();
             this.loglist.add(outName.toString());
@@ -153,11 +177,11 @@ public class SmProduct {
         this.V1List.clear();
         
         iter = this.V2List.iterator();
-        added = false;
         while (iter.hasNext()) {
             V2Component rec2 = (V2Component)iter.next();
-            outName = buildFilename("V2",rec2.getChannel(),"acc");
             contents = rec2.VrecToText();
+            outName = buildFilename(rec2.getStationDir(), rec2.getFileName(),"V2",
+                                                         rec2.getChannel(), "acc");
             textout = new TextFileWriter(outName, contents);
             textout.writeOutToFile();
             this.loglist.add(outName.toString());
@@ -165,7 +189,8 @@ public class SmProduct {
             //get velocity and write to file
             if (iter.hasNext()) {
                 rec2 = (V2Component)iter.next();
-                outName = buildFilename("V2",rec2.getChannel(),"vel");
+                outName = buildFilename(rec2.getStationDir(), rec2.getFileName(),"V2",
+                                                         rec2.getChannel(), "vel");
                 contents = rec2.VrecToText();
                 textout = new TextFileWriter(outName, contents);
                 textout.writeOutToFile();
@@ -174,7 +199,8 @@ public class SmProduct {
             //get displacement and write to file
             if (iter.hasNext()) {
                 rec2 = (V2Component)iter.next();
-                outName = buildFilename("V2",rec2.getChannel(),"dis");
+                outName = buildFilename(rec2.getStationDir(), rec2.getFileName(),"V2",
+                                                         rec2.getChannel(), "dis");
                 contents = rec2.VrecToText();
                 textout = new TextFileWriter(outName, contents);
                 textout.writeOutToFile();
@@ -184,10 +210,10 @@ public class SmProduct {
         this.V2List.clear();
         
         iter = this.V3List.iterator();
-        added = false;
         while (iter.hasNext()) {
             V3Component rec3 = (V3Component)iter.next();
-            outName = buildFilename("V3",rec3.getChannel(),"");
+            outName = buildFilename(rec3.getStationDir(), rec3.getFileName(),"V3",
+                                                         rec3.getChannel(), "");
             contents = rec3.VrecToText();
             textout = new TextFileWriter(outName, contents);
             textout.writeOutToFile();
@@ -199,30 +225,32 @@ public class SmProduct {
         outlist = loglist.toArray(outlist);
         return outlist;
     }
-    public Path buildFilename(String fileExtension, String channel, String ext) {
-        String startName = this.fileName.getName();
-        String name = "";
+    public Path buildFilename(File outloc, String fileName, String fileExtension, 
+                                                    String channel, String ext) {
+        Path pathname = Paths.get(fileName);
+        String name = pathname.getFileName().toString();
         String getExtensionRegex = "\\.(?i)V\\d(?i)c??$";
         Pattern extension = Pattern.compile( getExtensionRegex );
-        Matcher matcher = extension.matcher(startName);
+        Matcher matcher = extension.matcher(name);
         StringBuilder sb = new StringBuilder();
+        if (!channel.isEmpty()) {
+            sb.append(".");
+            sb.append(channel);
+        }
         if (!ext.isEmpty()) {
             sb.append(".");
             sb.append(ext);
         }
-        if (this.numInInputList > 1) {
-            sb.append(".");
-            sb.append(channel);
-        }
-        sb.append("." + fileExtension);
+        sb.append(".");
+        sb.append(fileExtension);
         name = matcher.replaceFirst(sb.toString());
 //        System.out.println("fileExtension " + fileExtension);
 //        System.out.println("name: " + name);
 //        System.out.println("stationDir: " + this.stationDir);
-        Path outName = Paths.get(this.stationDir.toString(),fileExtension, name);
+        Path outName = Paths.get(outloc.toString(),fileExtension, name);
         return outName;
     }
-    public boolean validateFileName( String name ) {
+    public boolean validateRcrdId( String id ) {
         StringBuilder sb = new StringBuilder(80);
         String pat = sb.append("^")
                        .append("(\\w+)")
@@ -233,23 +261,17 @@ public class SmProduct {
                        .append("(\\.)")
                        .append("(\\w+)")
                        .append("(\\.)")
-                       .append("([-\\s\\w]*)")
+                       .append("(\\w+)")
                        .append("(\\.)")
                        .append("\\w+")
-                       .append("(\\.)")
-                       .append("[vV][0123]")
                        .append("$")
                        .toString();
         Pattern officialname = Pattern.compile(pat);
-        Matcher m = officialname.matcher(name);
+        Matcher m = officialname.matcher(id);
         return m.matches();
     }
-    public void moveV0AfterProcessing() throws IOException {
-//        System.out.println("stationDir: " + this.stationDir.toString());
+    public void deleteV0AfterProcessing(File source) throws IOException {
 //        System.out.println("filename: " + this.fileName.getName());
-        Path target = Paths.get(this.stationDir.toString(),"V0", this.fileName.getName());
-        Path source = this.fileName.toPath();
-        Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
 //        Files.deleteIfExists(source);
     }
 }

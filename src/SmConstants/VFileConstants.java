@@ -22,7 +22,7 @@ public final class VFileConstants {
     public static final int SENSOR_LOCATION_LINE = 8;
     public static final int SENSOR_LOCATION_START = 46;
     public static final int NODATA_LINE = 12;
-    public static final int END_OF_DATA_CHAN = 21;
+    public static final int END_OF_DATA_CHAN = 17;
     
     //data arrays, display default parameters
     public static final int DEFAULT_NOINTVAL = -999;
@@ -56,6 +56,7 @@ public final class VFileConstants {
     public static final String SPECTRA =  "Response spectra         ";
     
     public enum V2DataType { ACC, VEL, DIS };
+    public enum V2Status { GOOD, FAILQC, NOEVENT };
     
     //units names and codes
     public static final String SECT = "sec";
@@ -125,14 +126,10 @@ public final class VFileConstants {
     public static final double DEFAULT_TAPER_LENGTH = 3.0;
     
     //adaptive baseline correction constants
-    public static final int DEFAULT_NUM_BREAKS_LOWER = 10;
-    public static final int DEFAULT_NUM_BREAKS_UPPER = 12;
-    public static final int DEFAULT_SPLINE_ORDER_LOWER = 2;
-    public static final int DEFAULT_SPLINE_ORDER_UPPER = 3;
-    public static final int DEFAULT_1ST_POLY_ORD_LOWER = 2;
-    public static final int DEFAULT_1ST_POLY_ORD_UPPER = 3;
-    public static final int DEFAULT_2ND_POLY_ORD_LOWER = 2;
-    public static final int DEFAULT_2ND_POLY_ORD_UPPER = 3;
+    public static final int DEFAULT_1ST_POLY_ORD_LOWER = 1;
+    public static final int DEFAULT_1ST_POLY_ORD_UPPER = 2;
+    public static final int DEFAULT_2ND_POLY_ORD_LOWER = 1;
+    public static final int DEFAULT_2ND_POLY_ORD_UPPER = 2;
     
     //QA check constants
     public static final double DEFAULT_QA_INITIAL_VELOCITY = 0.002;

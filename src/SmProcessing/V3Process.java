@@ -73,7 +73,7 @@ public class V3Process {
     }
     
     public void processV3Data() {        
-        //Calculate FFT for the velocity array.  Select magnitudes for the
+        //Calculate FFT for the acceleration array.  Select magnitudes for the
         //given T values only.  (freq = 1/T)
         int ulim;
         int llim;
