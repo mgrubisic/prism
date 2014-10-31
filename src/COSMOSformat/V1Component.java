@@ -170,10 +170,9 @@ public class V1Component extends COSMOScontentFormat {
         this.realHeader.setRealValue(PEAK_VAL, inVvals.getPeakVal());
         this.realHeader.setRealValue(AVG_VAL, inVvals.getAvgVal());
         this.realHeader.setRealValue(PEAK_VAL_TIME, ptime);
-        this.realHeader.setRealValue(SCALING_FACTOR, inVvals.getConversionFactor());
         this.realHeader.setRealValue(MEAN_ZERO, inVvals.getMeanToZero());
         
-        //No need to update the end-of-data line.
+        this.updateEndOfDataLine(UNCORACC, this.parentV0.getChannel());
     }
     /**
      * This method creates a new data format line for the V1 component data array.

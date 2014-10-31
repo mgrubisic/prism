@@ -40,6 +40,9 @@ public class EventOnsetCoefs {
     private final double[] aeb_005 = {0.000, 
                                       0.00018};
     
+    private final double[] aeb_002 = {0.0000, 
+                                      0.00079};
+    
     private final double[] ae_01 = {-0.00932, 
                                     -0.00004, 
                                      17.22045, 
@@ -55,16 +58,23 @@ public class EventOnsetCoefs {
                                     -70.09431, 
                                      -0.18977};
     
+    private final double[] ae_002 = {0.55004, 
+                                     0.00079, 
+                                    -311.99721, 
+                                    -0.04583};
+    
     public EventOnsetCoefs() {
         AeB = new HashMap<>();
         AeB.put(100, aeb_01);
         AeB.put(200, aeb_02);
         AeB.put(50, aeb_005);
+        AeB.put(20, aeb_002);
         
         Ae = new HashMap<>();
         Ae.put(100, ae_01);
         Ae.put(200, ae_02);
         Ae.put(50, ae_005);
+        Ae.put(20, ae_002);
     }
     
     public double[] getAeBCoefs(double deltaT) {

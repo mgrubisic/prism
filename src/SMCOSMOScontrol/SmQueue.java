@@ -91,6 +91,10 @@ public class SmQueue {
     public void processQueueContents(SmProduct Vprod) 
                                 throws FormatException, SmException, IOException {
 
+        V2Component V2acc;
+        V2Component V2vel;
+        V2Component V2dis;
+        
         for (COSMOScontentFormat rec : smlist) {
             //declare rec as a V0 channel record
             V0Component v0rec = (V0Component)rec;
@@ -111,31 +115,31 @@ public class SmQueue {
             System.out.println("V0 file: " + this.fileName);
             V2Status V2result = v2val.processV2Data();
             
-            //create the V2 components to get the processing results
-            V2Component V2acc = new V2Component( CORACC, v1rec );
-            V2acc.buildV2(V2DataType.ACC, v2val);
-            V2Component V2vel = new V2Component( VELOCITY, v1rec );
-            V2vel.buildV2(V2DataType.VEL, v2val);
-            V2Component V2dis = new V2Component( DISPLACE, v1rec );
-            V2dis.buildV2(V2DataType.DIS, v2val);
-            
             Vprod.setDirectories(v0rec.getRcrdId(),v0rec.getSCNLauth(), 
-                                                V2acc.getEventDateTime(),V2result);
+                                                v1rec.getEventDateTime(),V2result);
             Vprod.addProduct(v0rec, "V0");
             Vprod.addProduct(v1rec, "V1");
-            if (V2result != V2Status.NOEVENT) {
+            
+            if ((V2result == V2Status.GOOD) || (V2result == V2Status.FAILQC)) {
+                //create the V2 components to get the processing results
+                V2acc = new V2Component( CORACC, v1rec );
+                V2acc.buildV2(V2DataType.ACC, v2val);
+                V2vel = new V2Component( VELOCITY, v1rec );
+                V2vel.buildV2(V2DataType.VEL, v2val);
+                V2dis = new V2Component( DISPLACE, v1rec );
+                V2dis.buildV2(V2DataType.DIS, v2val);
                 Vprod.addProduct(V2acc, "V2");
                 Vprod.addProduct(V2vel, "V2");
                 Vprod.addProduct(V2dis, "V2");
-            }
-            if (V2result == V2Status.GOOD) {
-                //Create the V3 processing object and do the processing.  V3
-                //processing produces 1  V3 object: response spectra.
-                V3Process v3val = new V3Process(V2acc, V2vel, V2dis);
-                v3val.processV3Data();
-                V3Component V3rec = new V3Component( SPECTRA, V2acc);
-                V3rec.buildV3(v3val);
-                Vprod.addProduct(V3rec, "V3");
+                if (V2result == V2Status.GOOD) {
+                    //Create the V3 processing object and do the processing.  V3
+                    //processing produces 1  V3 object: response spectra.
+                    V3Process v3val = new V3Process(V2acc, V2vel, V2dis);
+                    v3val.processV3Data();
+                    V3Component V3rec = new V3Component( SPECTRA, V2acc);
+                    V3rec.buildV3(v3val);
+                    Vprod.addProduct(V3rec, "V3");
+                }
             }
         }
     }

@@ -36,7 +36,6 @@ public class V1Process {
     private final String data_units;
     private final double lsb;
     private final double sensitivity;
-    private double conversion_factor;
     
     /**
      * The constructor for V1Process retrieves the recorder LSB (least significant
@@ -80,7 +79,6 @@ public class V1Process {
         }
         
         //initialize the results values
-        this.conversion_factor = 0.0;
         this.peakVal = Double.MIN_VALUE;  //Set default to large neg. number
         this.peakIndex = -1;  //Set index to out-of-range
         this.avgVal = 0.0;
@@ -98,7 +96,6 @@ public class V1Process {
         } else {
             conv = RawTraceConversion.countToG(lsb, sensitivity);
         }
-        conversion_factor = conv;
 //        System.out.println("+++ V1 conversion: " + conv);
         
         //convert counts to physical values
@@ -169,14 +166,5 @@ public class V1Process {
      */
     public String getDataUnits() {
         return this.data_units;
-    }
-    /**
-     * Getter for the calculated conversion factor used to convert the counts
-     * to physical values.  This is the value returned from the RawTraceConversion
-     * method.
-     * @return the value used to convert counts to physical values
-     */
-    public double getConversionFactor() {
-        return this.conversion_factor;
     }
 }

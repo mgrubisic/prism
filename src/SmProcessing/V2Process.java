@@ -287,171 +287,181 @@ public class V2Process {
         if (pickIndex <= 0) {
             //No pick index detected, so skip all V2 processing
             procStatus  = V2Status.NOEVENT;
+            System.out.println("V2process: exit staus = " + procStatus);
+            return procStatus;
+        }
+        //Remove pre-event mean from acceleration record
+        if (startIndex > 0) {
+            double[] subset = Arrays.copyOfRange( accraw, 0, startIndex );
+            ArrayStats accsub = new ArrayStats( subset );
+            ArrayOps.removeValue(accraw, accsub.getMean());
+            errorlog.add("Pre-event mean removed from uncorrected acceleration");
+        }
+        else {
+            ArrayStats accmean = new ArrayStats( accraw );
+            ArrayOps.removeValue(accraw, accmean.getMean());
+            errorlog.add("Full array mean removed from uncorrected acceleration");
+        }
+
+        if (writeArrays) {
+            elog.writeOutArray(accraw, "initialBaselineCorrection.txt");
+        } 
+
+        //Integrate the acceleration to get velocity.
+        velocity = ArrayOps.Integrate( accraw, dtime);
+        errorlog.add("acceleration integrated to velocity (trapezoidal method)");
+        int vellen = velocity.length;
+        if (writeArrays) {
+           elog.writeOutArray(velocity, "afterIntegrationToVel.txt");
+        }
+        //Remove any linear trend from velocity
+        ArrayOps.removeLinearTrend( velocity, dtime);
+        errorlog.add("linear trend removed from velocity");
+        if (writeArrays) {
+           elog.writeOutArray(velocity, "LinearTrendRemovedVel.txt");
+        }
+        //Update Butterworth filter low and high cutoff thresholds for later
+        FilterCutOffThresholds threshold = new FilterCutOffThresholds( magnitude );
+        lowcutadj = threshold.getLowCutOff();
+        highcutadj = threshold.getHighCutOff();
+
+        //perform first QA check on velocity, check first and last sections of
+        //velocity array - should be close to 0.0 with tolerances.  If not,
+        //perform adaptive baseline correction.
+//        int window5sec = (int)(5.0 / dtime);
+        ///////////////////////////////
+        //
+        // First QC Test
+        //
+        ///////////////////////////////
+        int window = (int)(pickIndex * 0.25);
+        vellen = velocity.length;
+        int velwindowstart = ArrayOps.findZeroCrossing(velocity, window, 1);
+        int velwindowend = ArrayOps.findZeroCrossing(velocity, vellen-window, 0);
+        if (startIndex > 0) {
+            velstart = ArrayOps.findSubsetMean(velocity, 0, velwindowstart);
+            velend = ArrayOps.findSubsetMean(velocity, velwindowend, vellen);
         } else {
-            //Remove pre-event mean from acceleration record
-            if (startIndex > 0) {
-                double[] subset = Arrays.copyOfRange( accraw, 0, startIndex );
-                ArrayStats accsub = new ArrayStats( subset );
-                ArrayOps.removeValue(accraw, accsub.getMean());
-                errorlog.add("Pre-event mean removed from uncorrected acceleration");
+            velstart = velocity[0];
+            velend = velocity[vellen-1];
+        }
+        if ((Math.abs(velstart) > qavelocityinit) || 
+                                         (Math.abs(velend) > qavelocityend)){
+            errorlog.add("Velocity QA failed:");
+            errorlog.add(String.format("   initial velocity: %f,  limit %f",
+                                        Math.abs(velstart), qavelocityinit));
+            errorlog.add(String.format("   final velocity: %f,  limit %f",
+                                             Math.abs(velend), qavelocityend));
+            errorlog.add("Adapive baseline correction beginning");
+            System.out.println("failed QA1");
+        ///////////////////////////////
+        //
+        // Adaptive Baseline Correction
+        //
+        ///////////////////////////////
+            AdaptiveBaselineCorrection adapt = new AdaptiveBaselineCorrection(
+                        dtime,velocity,lowcutadj,highcutadj,numpoles,pickIndex);
+            procStatus = adapt.startIterations();
+            
+            //If unable to perform any iterations in ABC, just exit with no V2
+            if (procStatus == V2Status.NOABC) {
+                System.out.println("V2process: exit staus = " + procStatus);
+                return procStatus;
             }
-            else {
-                ArrayStats accmean = new ArrayStats( accraw );
-                ArrayOps.removeValue(accraw, accmean.getMean());
-                errorlog.add("(No pre-event) Full array mean removed from uncorrected acceleration");
+            int solution = adapt.getSolution();
+            double[] parms = adapt.getSolutionParms(solution);
+            velstart = parms[2];
+            velend = parms[3];
+            disend = parms[1];
+            accel = adapt.getABCacceleration();
+            velocity = adapt.getABCvelocity();
+            displace = adapt.getABCdisplacement();
+            adapt.clearParamsArray();
+        } else {
+            //determine new filter coefs based on earthquake magnitude
+            filter = new ButterworthFilter();
+            errorlog.add("Acausal bandpass filter:");
+            errorlog.add("  earthquake magnitude is " + magnitude + " and M used is " + magtype);
+            errorlog.add(String.format("  adjusted lowcut: %f and adjusted highcut: %f Hz",
+                                                            lowcutadj, highcutadj));
+            valid = filter.calculateCoefficients(lowcutadj, highcutadj, 
+                                                dtime, DEFAULT_NUM_POLES, true);
+            if (valid) {
+                filter.applyFilter(velocity, pickIndex);
+            } else {
+                throw new SmException("Invalid bandpass filter calculated parameters");
             }
-
             if (writeArrays) {
-                elog.writeOutArray(accraw, "initialBaselineCorrection.txt");
-            } 
-
-            //Integrate the acceleration to get velocity.
-            velocity = ArrayOps.Integrate( accraw, dtime);
-            errorlog.add("acceleration integrated to velocity (trapezoidal method)");
-            int vellen = velocity.length;
-            if (writeArrays) {
-               elog.writeOutArray(velocity, "afterIntegrationToVel.txt");
+               elog.writeOutArray(velocity, "finalV2velocity.txt");
             }
-            //Remove any linear trend from velocity
-            ArrayOps.removeLinearTrend( velocity, dtime);
-            errorlog.add("linear trend removed from velocity");
-            if (writeArrays) {
-               elog.writeOutArray(velocity, "LinearTrendRemovedVel.txt");
-            }
-            //Update Butterworth filter low and high cutoff thresholds for later
-            FilterCutOffThresholds threshold = new FilterCutOffThresholds( magnitude );
-            lowcutadj = threshold.getLowCutOff();
-            highcutadj = threshold.getHighCutOff();
-    //        System.out.println("lowcutadj: " + lowcutadj);
+           //Integrate the velocity to get displacement.
+            displace = ArrayOps.Integrate( velocity, dtime);
+            errorlog.add("Velocity integrated to displacement (trapezoidal method)");
 
-            //perform first QA check on velocity, check first and last values of
-            //velocity array - should be close to 0.0 with tolerances.  If not,
-            //perform adaptive baseline correction.
-    //        int window5sec = (int)(5.0 / dtime);
-            int window = (int)(pickIndex * 0.5);
-            vellen = velocity.length;
-            int velwindowstart = ArrayOps.findZeroCrossing(velocity, window, 1);
-            int velwindowend = ArrayOps.findZeroCrossing(velocity, vellen-window, 0);
+            //Differentiate velocity for final acceleration
+            accel = ArrayOps.Differentiate(velocity, dtime);
+            errorlog.add("Velocity differentiated to corrected acceleration");
+
+            //perform second QA check on velocity and displacement, check first and 
+            //last values of velocity array and last value of displacement array. 
+            //They should be close to 0.0 with tolerances.  If not, flag as
+            //needing additional processing.
+
+            dislen = displace.length;
+            velwindowstart = ArrayOps.findZeroCrossing(velocity, window, 1);
+            velwindowend = ArrayOps.findZeroCrossing(velocity, vellen-window, 0);
+            int diswindowend = ArrayOps.findZeroCrossing(displace, dislen-window, 0);
             if (startIndex > 0) {
                 velstart = ArrayOps.findSubsetMean(velocity, 0, velwindowstart);
                 velend = ArrayOps.findSubsetMean(velocity, velwindowend, vellen);
+                disend = ArrayOps.findSubsetMean(displace, diswindowend, dislen);
             } else {
                 velstart = velocity[0];
                 velend = velocity[vellen-1];
+                disend = displace[dislen-1];
             }
-    //        System.out.println("window: " + window + " velstart: " + velstart);
-    //        System.out.println("velocity[0]: " + velocity[0]);
-    //        System.out.println("velend: " + velend + " velocity[n-1]: " + velocity[vellen-1]);
-
-    //        if ((Math.abs(velocity[0]) > qavelocityinit) || 
-    //                                (Math.abs(velocity[vellen-1]) > qavelocityend)) {
-            if ((Math.abs(velstart) > qavelocityinit) || 
-                                             (Math.abs(velend) > qavelocityend)){
-                errorlog.add("Velocity QA failed:");
-                errorlog.add(String.format("   initial velocity: %f,  limit %f",
-                                            Math.abs(velstart), qavelocityinit));
-                errorlog.add(String.format("   final velocity: %f,  limit %f",
-                                                 Math.abs(velend), qavelocityend));
-                errorlog.add("Adapive baseline correction beginning");
-                System.out.println("failed QA1");
-                AdaptiveBaselineCorrection adapt = new AdaptiveBaselineCorrection(
-                            dtime,velocity,lowcutadj,highcutadj,numpoles,pickIndex);
-                success = adapt.startIterations();
-                int solution = adapt.getSolution();
-                double[] parms = adapt.getSolutionParms(solution);
-                velstart = parms[2];
-                velend = parms[3];
-                disend = parms[1];
-                accel = adapt.getABCacceleration();
-                velocity = adapt.getABCvelocity();
-                displace = adapt.getABCdisplacement();
-                adapt.clearParamsArray();
-            } else {
-                //determine new filter coefs based on earthquake magnitude
-                filter = new ButterworthFilter();
-                errorlog.add("Acausal bandpass filter:");
-                errorlog.add("  earthquake magnitude is " + magnitude + " and M used is " + magtype);
-                errorlog.add(String.format("  adjusted lowcut: %f and adjusted highcut: %f Hz",
-                                                                lowcutadj, highcutadj));
-                valid = filter.calculateCoefficients(lowcutadj, highcutadj, 
-                                                    dtime, DEFAULT_NUM_POLES, true);
-                if (valid) {
-                    filter.applyFilter(velocity, pickIndex);
-                } else {
-                    throw new SmException("Invalid bandpass filter calculated parameters");
-                }
-                if (writeArrays) {
-                   elog.writeOutArray(velocity, "finalV2velocity.txt");
-                }
-               //Integrate the velocity to get displacement.
-                displace = ArrayOps.Integrate( velocity, dtime);
-                errorlog.add("Velocity integrated to displacement (trapezoidal method)");
-
-                //Differentiate velocity for final acceleration
-                accel = ArrayOps.Differentiate(velocity, dtime);
-                errorlog.add("Velocity differentiated to corrected acceleration");
-
-                //perform second QA check on velocity and displacement, check first and 
-                //last values of velocity array and last value of displacement array. 
-                //They should be close to 0.0 with tolerances.  If not, flag as
-                //needing additional processing.
-
-                dislen = displace.length;
-                velwindowstart = ArrayOps.findZeroCrossing(velocity, window, 1);
-                velwindowend = ArrayOps.findZeroCrossing(velocity, vellen-window, 0);
-                int diswindowend = ArrayOps.findZeroCrossing(displace, dislen-window, 0);
-                if (startIndex > 0) {
-                    velstart = ArrayOps.findSubsetMean(velocity, 0, velwindowstart);
-                    velend = ArrayOps.findSubsetMean(velocity, velwindowend, vellen);
-                    disend = ArrayOps.findSubsetMean(displace, diswindowend, dislen);
-                } else {
-                    velstart = velocity[0];
-                    velend = velocity[vellen-1];
-                    disend = displace[dislen-1];
-                }
-        //        System.out.println("2window: " + window + " velstart: " + velstart);
-        //        System.out.println("2velocity[0]: " + velocity[0]);
-        //        System.out.println("2velend: " + velend + " velocity[n-1]: " + velocity[vellen-1]);
-        //        success = (Math.abs(velocity[0]) <= qavelocityinit) && 
-        //                        (Math.abs(velocity[vellen-1]) <= qavelocityend) && 
-        //                                (Math.abs(displace[dislen-1]) <= qadisplacend);
-                success = (Math.abs(velstart) <= qavelocityinit) && 
-                                    (Math.abs(velend) <= qavelocityend) && 
-                                                  (Math.abs(disend) <= qadisplacend);
-            }
-            if (!success) {
-                errorlog.add("Final QA failed - V2 processing unsuccessful:");
-                errorlog.add(String.format("   initial velocity: %f, limit %f",
-                                            Math.abs(velstart), qavelocityinit));
-                errorlog.add(String.format("   final velocity: %f, limit %f",
-                                      Math.abs(velend), qavelocityend));
-                errorlog.add(String.format("   final displacement,: %f, limit %f",
-                                      Math.abs(disend), qadisplacend));
-                elog.writeToLog(logstart);
-                String[] errorout = new String[errorlog.size()];
-                errorout = errorlog.toArray(errorout);
-                elog.writeToLog(errorout);
-                errorlog.clear();
-                System.out.println("failed QA2");
-            }
-            //calculate final array params for headers
-            ArrayStats statVel = new ArrayStats( velocity );
-            VpeakVal = statVel.getPeakVal();
-            VpeakIndex = statVel.getPeakValIndex();
-            VavgVal = statVel.getMean();
-
-            ArrayStats statDis = new ArrayStats( displace );
-            DpeakVal = statDis.getPeakVal();
-            DpeakIndex = statDis.getPeakValIndex();
-            DavgVal = statDis.getMean();
-
-            ArrayStats statAcc = new ArrayStats( accel );
-            ApeakVal = statAcc.getPeakVal();
-            ApeakIndex = statAcc.getPeakValIndex();
-            AavgVal = statAcc.getMean();
-            
+        ///////////////////////////////
+        //
+        // Second QC Test (also performed in ABC)
+        //
+        ///////////////////////////////
+            success = (Math.abs(velstart) <= qavelocityinit) && 
+                                (Math.abs(velend) <= qavelocityend) && 
+                                              (Math.abs(disend) <= qadisplacend);
             procStatus = (success) ? V2Status.GOOD : V2Status.FAILQC;
         }
+        if (procStatus == V2Status.FAILQC) {
+            errorlog.add("Final QA failed - V2 processing unsuccessful:");
+            errorlog.add(String.format("   initial velocity: %f, limit %f",
+                                        Math.abs(velstart), qavelocityinit));
+            errorlog.add(String.format("   final velocity: %f, limit %f",
+                                  Math.abs(velend), qavelocityend));
+            errorlog.add(String.format("   final displacement,: %f, limit %f",
+                                  Math.abs(disend), qadisplacend));
+            elog.writeToLog(logstart);
+            String[] errorout = new String[errorlog.size()];
+            errorout = errorlog.toArray(errorout);
+            elog.writeToLog(errorout);
+            errorlog.clear();
+            System.out.println("failed QA2");
+        }
+        //calculate final array params for headers
+        ArrayStats statVel = new ArrayStats( velocity );
+        VpeakVal = statVel.getPeakVal();
+        VpeakIndex = statVel.getPeakValIndex();
+        VavgVal = statVel.getMean();
+
+        ArrayStats statDis = new ArrayStats( displace );
+        DpeakVal = statDis.getPeakVal();
+        DpeakIndex = statDis.getPeakValIndex();
+        DavgVal = statDis.getMean();
+
+        ArrayStats statAcc = new ArrayStats( accel );
+        ApeakVal = statAcc.getPeakVal();
+        ApeakIndex = statAcc.getPeakValIndex();
+        AavgVal = statAcc.getMean();
+
+        System.out.println("V2process: exit staus = " + procStatus);
         return procStatus;
     }
     public double getPeakVal(V2DataType dType) {

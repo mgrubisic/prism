@@ -47,6 +47,15 @@ public final class VFileConstants {
     public static final int START_TIME_MIN = 44;
     public static final int START_TIME_SEC = 29;
     
+    //V2 processing header markers
+    public static final int LOW_FREQ_FILTER_TYPE = 60;
+    public static final int HIGH_FREQ_FILTER_TYPE = 61;
+    public static final int LOW_FREQ_CORNER = 53;
+    public static final int HIGH_FREQ_CORNER = 56;
+    public static final int FILTER_DOMAIN_FLAG = 63;
+    public static final int INITIAL_VELOCITY_VAL = 67;
+    public static final int INITIAL_DISPLACE_VAL = 68;
+    
     //data product names
     public static final String RAWACC =   "Raw acceleration counts  ";
     public static final String UNCORACC = "Uncorrected acceleration ";
@@ -56,7 +65,7 @@ public final class VFileConstants {
     public static final String SPECTRA =  "Response spectra         ";
     
     public enum V2DataType { ACC, VEL, DIS };
-    public enum V2Status { GOOD, FAILQC, NOEVENT };
+    public enum V2Status { GOOD, FAILQC, NOEVENT, NOABC };
     
     //units names and codes
     public static final String SECT = "sec";
@@ -70,6 +79,10 @@ public final class VFileConstants {
     public static final String GUNITST = "g";
     public static final int GLN = 2;
     
+    //filter code
+    public static final int BUTTER_A_CODE = 5;
+    public static final int TIME_DOMAIN = 1;
+    
     public enum SmArrayStyle { SINGLE_COLUMN, PACKED };
     
     public static final String DEFAULT_ARRAY_STYLE = "packed";
@@ -81,7 +94,6 @@ public final class VFileConstants {
     
     //int header index values
     public static final int STATION_CHANNEL_NUMBER = 49;
-    public static final int LENGTH_OF_RAW_RECORD = 34;
     public static final int PROCESSING_STAGE_INDEX = 0;
     public static final int DATA_PHYSICAL_PARAM_CODE = 1;
     public static final int V_UNITS_INDEX = 2;
@@ -103,6 +115,10 @@ public final class VFileConstants {
     public static final int MOMENT_MAGNITUDE = 12;
     public static final int SURFACE_MAGNITUDE = 13;
     public static final int OTHER_MAGNITUDE = 15;
+    
+    //V3 response spectrum parameter codes
+    public static final int NUM_SPECTRA_PERIODS = 69;
+    public static final int NUM_DAMPING_VALUES = 70;
     
     //Processing stages
     public static final int V1_STAGE = 1;

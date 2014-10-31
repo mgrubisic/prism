@@ -154,7 +154,6 @@ public class V1ProcessTest {
         org.junit.Assert.assertEquals(0.0, v1p.getAvgVal(), EPSILON);
         org.junit.Assert.assertEquals(-0.0277712701279, v1p.getPeakVal(), EPSILON);
         org.junit.Assert.assertEquals(6, v1p.getPeakIndex(), EPSILON);
-        org.junit.Assert.assertEquals(0.00046612555868, v1p.getConversionFactor(), EPSILON);
         org.junit.Assert.assertEquals(4, v1p.getDataUnitCode());
         org.junit.Assert.assertEquals("cm/sec2", v1p.getDataUnits());
         org.junit.Assert.assertEquals(19, v1p.getV1ArrayLength());
@@ -176,7 +175,6 @@ public class V1ProcessTest {
         org.junit.Assert.assertEquals(0.0, v2p.getAvgVal(), EPSILON);
         org.junit.Assert.assertEquals(-2.83188144044e-05, v2p.getPeakVal(), EPSILON);
         org.junit.Assert.assertEquals(6, v2p.getPeakIndex(), EPSILON);
-        org.junit.Assert.assertEquals(4.75315789474e-07, v2p.getConversionFactor(), EPSILON);
         org.junit.Assert.assertEquals(2, v2p.getDataUnitCode());
         org.junit.Assert.assertEquals("g", v2p.getDataUnits());
         org.junit.Assert.assertEquals(19, v2p.getV1ArrayLength());

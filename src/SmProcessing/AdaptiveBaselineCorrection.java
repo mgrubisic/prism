@@ -131,7 +131,7 @@ public class AdaptiveBaselineCorrection {
         return outval;
     }
     
-    public boolean startIterations() throws SmException {
+    public V2Status startIterations() throws SmException {
         //The matlab code works with the time index into the array, while this
         //implementation just uses the index into the array, and only uses the
         //time step to create the time arrays as needed.  However, this requires
@@ -143,21 +143,16 @@ public class AdaptiveBaselineCorrection {
         int dt1 = MOVING_WINDOW;
         int t21 = t11 + dt1;
         velocity = new double[vlen];
-        boolean success = false;
+        boolean success;
         ButterworthFilter filter;
         params = new ArrayList<>();
         double[] onerun;
-        boolean pass = false;
+        V2Status status = V2Status.NOABC;
         
         for (int order1 = degreeP1lo; order1 <= degreeP1hi; order1++) {
-            System.out.println("ABC: order1 = " + order1);
             for (int order2 = degreeP2lo; order2 <= degreeP2hi; order2++) {
-                System.out.println("ABC: order2 = " + order2);
-                System.out.println("t21: " + t21 + "  t22: " + t22 + " dt1: " + dt1);
                 for (int t2 = t21; t2 <= t22; t2 += dt1) {
                     if (((t2-t11)*dtime) >= (1.0/lowcut)) {
-                        System.out.println("ABC: count = " + counter);
-                        System.out.println("t2: " + t2);
                         //remove the spline fit from velocity
                         velocity = makeCorrection(velstart,t11,t2,order1,order2);
                         //now filter velocity
@@ -184,11 +179,6 @@ public class AdaptiveBaselineCorrection {
                         int velwindowstart = ArrayOps.findZeroCrossing(velocity, window, 1);
                         int velwindowend = ArrayOps.findZeroCrossing(velocity, vellen-window, 0);
                         int diswindowend = ArrayOps.findZeroCrossing(displace, dislen-window, 0);
-                        System.out.println("\ncounter: " + counter);
-                        System.out.println("window: " + window);
-                        System.out.println("start v: " + velwindowstart);
-                        System.out.println("end v: " + velwindowend);
-                        System.out.println("end d: " + diswindowend);
                         double velstart = ArrayOps.findSubsetMean(velocity, 0, velwindowstart);
                         double velend = ArrayOps.findSubsetMean(velocity, velwindowend,
                                                                         vellen);
@@ -221,6 +211,11 @@ public class AdaptiveBaselineCorrection {
                 }
             }
         }
+        //exit with error status if no estimates performed
+        if (params.isEmpty()) {
+            status = V2Status.NOABC;
+            return status;
+        }
         //Sort the results based on cumulative rms
         System.out.println("length of params: " + params.size());
         int count = 0;
@@ -228,14 +223,14 @@ public class AdaptiveBaselineCorrection {
         double[] temp;
         for (int i = 0; i < params.size(); i++) {
             temp = params.get(i);
-            System.out.println("total rms: " + temp[0]);
+//            System.out.println("total rms: " + temp[0]);
             sorter.addPair(temp[0], count++);
         }
         ranking = sorter.getSortedVals();
         double[] eachrun;
-        for (int each : ranking) {
-            System.out.println("rank: " + each);
-        }
+//        for (int each : ranking) {
+//            System.out.println("rank: " + each);
+//        }
         
         //check each solution against the QA values and find the first that passes
         for (int idx : ranking) {
@@ -257,7 +252,7 @@ public class AdaptiveBaselineCorrection {
                 //for acceleration
                 displace = ArrayOps.Integrate( velocity, dtime);
                 accel = ArrayOps.Differentiate(velocity, dtime);
-                pass = true;
+                status = V2Status.GOOD;
                 solution = idx;
                 System.out.println("ABC: found passing solution");
                 System.out.println("ABC: winning rank: " + solution);
@@ -265,13 +260,13 @@ public class AdaptiveBaselineCorrection {
                 System.out.println("ABC: poly2 order: " + eachrun[7]);
                 System.out.println("ABC: start: " + eachrun[4] + "  stop: " + eachrun[5]);
                 
-                if (writeArrays) {
-                    elog.writeOutArray(bnn, "baseline.txt");
-                } 
+//                if (writeArrays) {
+//                    elog.writeOutArray(bnn, "baseline.txt");
+//                } 
                 break;
             }
         }
-        if (!pass) {
+        if (status != V2Status.GOOD) {
             solution = 0;
             eachrun = params.get(solution);
             velocity = makeCorrection(velocity,(int)eachrun[4],(int)eachrun[5],
@@ -287,8 +282,9 @@ public class AdaptiveBaselineCorrection {
             //for acceleration
             displace = ArrayOps.Integrate( velocity, dtime);
             accel = ArrayOps.Differentiate(velocity, dtime);
+            status = V2Status.FAILQC;
         }
-        return pass;
+        return status;
     }
     public double[] makeCorrection( double[] array, int break1, int break2, 
                                 int degreeP1, int degreeP2 ) {

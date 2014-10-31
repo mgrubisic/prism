@@ -130,6 +130,7 @@ public class V3Component extends COSMOScontentFormat {
         String eodname;
         String line;
         SmArrayStyle packtype;
+        String freqformat = "%4.2f";
 
         SmTimeFormatter proctime = new SmTimeFormatter();
         ConfigReader config = ConfigReader.INSTANCE;
@@ -144,6 +145,8 @@ public class V3Component extends COSMOScontentFormat {
         
         String agcode = config.getConfigValue(PROC_AGENCY_CODE);
         int agency_code = (agcode == null) ? 0 : Integer.parseInt(agcode);
+        unitsname = inVvals.getDataUnits();
+
         
         //get real header value 62 (it has already been validated in the processing)
         double delta_t = this.realHeader.getRealValue(DELTA_T);
@@ -231,9 +234,17 @@ public class V3Component extends COSMOScontentFormat {
         String val = proctime.getGMTdateTime();
         //update values in the text header
         this.textHeader[0] = SPECTRA.concat(this.textHeader[0].substring(END_OF_DATATYPE));
+        sb = new StringBuilder(MAX_LINE_LENGTH);
+        this.textHeader[10] = sb.append("Processed:").append(val).append(",")
+                            .append(agabbrev).append(", SaMax= ")
+                            .append(String.format(freqformat,inVvals.getPeakVal()))
+                            .append(" ").append(unitsname).append(" at ")
+                            .append(String.format(freqformat,inVvals.getPeakPeriod()))
+                            .append(" secp, 5%damp").toString();
         
         //Update the end-of-data line with the new data type
-        this.endOfData.replaceAll(" acceleration", " response spectra");
+        this.endOfData = this.parentV2.endOfData;
+        this.updateEndOfDataLine(SPECTRA, this.parentV2.getChannel());
     }
     /**
      * This method creates a new data format line for the V3 component data arrays.

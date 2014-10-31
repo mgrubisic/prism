@@ -18,6 +18,7 @@
 package SmProcessing;
 
 import COSMOSformat.V2Component;
+import static SmConstants.VFileConstants.CMSQSECT;
 import static SmConstants.VFileConstants.DELTA_T;
 import static SmConstants.VFileConstants.MSEC_TO_SEC;
 import static SmConstants.VFileConstants.NUM_T_PERIODS;
@@ -40,6 +41,8 @@ public class V3Process {
     private double samplerate;
     private final double noRealVal;
     private double[] accel;
+    private double peakVal;
+    private double peakIndex;
     private SpectraResources spec;
     private SmErrorLogger elog;
     private boolean writeArrays;
@@ -51,6 +54,8 @@ public class V3Process {
         this.elog = SmErrorLogger.INSTANCE;
         writeArrays = false;
         this.accel = v2acc.getDataArray();
+        this.peakVal = 0.0;
+        this.peakIndex = 0;
         this.V3Data = new ArrayList<>();
         this.noRealVal = v2vel.getNoRealVal();
         double delta_t = v2vel.getRealHeaderValue(DELTA_T);
@@ -161,17 +166,19 @@ public class V3Process {
         
                 //Get the relative displacement (cm)
                 double[] disp = y[0];
-//                System.out.println("\ndamping: " + V3_DAMPING_VALUES[d]);
-//                System.out.println("period: " + T_periods[p]);
-//                System.out.println("a:" +  coef_a + " b: " + coef_b + " c: " + coef_c);
-//                System.out.println("d:" +  coef_d + " e: " + coef_e + " f: " + coef_f);
-//                SmErrorLogger elog = SmErrorLogger.INSTANCE;
-//                elog.writeOutArray(disp, "y0inV3.txt");
                 ArrayStats stat = new ArrayStats(disp);
                 sd[p] = Math.abs(stat.getPeakVal());
                 sv[p] = sd[p] * omega;
                 sa[p] = sv[p] * omega;
             }
+            //get the max value for 5% damping
+            if (Math.abs(V3_DAMPING_VALUES[d] - 0.05) < EPSILON) {
+                ArrayStats stat = new ArrayStats( sa );
+                peakVal = stat.getPeakVal();
+                int index = stat.getPeakValIndex();
+                peakIndex = 1.0 / T_periods[index];
+            }
+            
             V3Data.add(sd);
             V3Data.add(sv);
             V3Data.add(sa);
@@ -182,5 +189,14 @@ public class V3Process {
     }
     public int getV3ListLength() {
         return V3Data.size();
+    }
+    public double getPeakVal() {
+        return peakVal;
+    }
+    public double getPeakPeriod() {
+        return peakIndex;
+    }
+    public String getDataUnits() {
+        return CMSQSECT;
     }
 }

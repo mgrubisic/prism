@@ -202,19 +202,28 @@ public class V2Component extends COSMOScontentFormat {
         } else if (procType == V2DataType.VEL) {
             V2Data.setRealArray(inVvals.getV2Array(V2DataType.VEL));
             V2Data.setNumVals(inVvals.getV2ArrayLength(V2DataType.VEL));
+            this.realHeader.setRealValue(INITIAL_VELOCITY_VAL, V2Data.getRealValue(0));
             V2Data.buildArrayParams( packtype );
             this.buildNewDataFormatLine(unitsname, unitscode, "velocity    ");
         }else {
             V2Data.setRealArray(inVvals.getV2Array(V2DataType.DIS));
             V2Data.setNumVals(inVvals.getV2ArrayLength(V2DataType.DIS));
+            this.realHeader.setRealValue(INITIAL_DISPLACE_VAL, V2Data.getRealValue(0));            
             V2Data.buildArrayParams( packtype );
             this.buildNewDataFormatLine(unitsname, unitscode, "displacement");            
         }
         
-        //update the headers with the V2 values
+        //update the headers and end-of-data line with the V2 values
         this.intHeader.setIntValue(PROCESSING_STAGE_INDEX, V2_STAGE);
         this.realHeader.setRealValue(PEAK_VAL_TIME, time);
         this.intHeader.setIntValue(V_UNITS_INDEX, unitscode);
+        this.realHeader.setRealValue(SCALING_FACTOR, FROM_G_CONVERSION);
+        this.intHeader.setIntValue(LOW_FREQ_FILTER_TYPE, BUTTER_A_CODE);
+        this.intHeader.setIntValue(HIGH_FREQ_FILTER_TYPE, BUTTER_A_CODE);
+        this.realHeader.setRealValue(LOW_FREQ_CORNER, inVvals.getLowCut());
+        this.realHeader.setRealValue(HIGH_FREQ_CORNER, inVvals.getHighCut());
+        this.intHeader.setIntValue(FILTER_DOMAIN_FLAG, TIME_DOMAIN);
+        
         this.endOfData = this.parentV1.endOfData;
         if (procType == V2DataType.ACC) {
             this.intHeader.setIntValue(DATA_PHYSICAL_PARAM_CODE, ACC_PARM_CODE);

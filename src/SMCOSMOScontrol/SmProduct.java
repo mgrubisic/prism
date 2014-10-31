@@ -263,7 +263,7 @@ public class SmProduct {
                        .append("(\\.)")
                        .append("(\\w+)")
                        .append("(\\.)")
-                       .append("\\w+")
+                       .append("[\\w-]+")
                        .append("$")
                        .toString();
         Pattern officialname = Pattern.compile(pat);

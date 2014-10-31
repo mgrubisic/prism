@@ -195,7 +195,6 @@ public class V1ComponentTest {
         String[] text = v1rec.getTextHeader();
         org.junit.Assert.assertEquals(true, text[0].startsWith(UNCORACC));
         org.junit.Assert.assertEquals(V1_STAGE, v1rec.getIntHeaderValue(PROCESSING_STAGE_INDEX));
-        org.junit.Assert.assertEquals(v1val.getConversionFactor(), v1rec.getRealHeaderValue(SCALING_FACTOR),delta);
         String test1 = v1rec.getEndOfData();
         String test2 = v0.getEndOfData();
         org.junit.Assert.assertEquals(true, test1.equalsIgnoreCase(test2));
