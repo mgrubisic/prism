@@ -29,7 +29,7 @@ import java.nio.file.Paths;
 public class SmErrorLogger {
     private Path logfile;
     private static boolean logReady = false;
-    private String logname = "ErrorLog.txt";
+    private String logname = "ErrorDebugLog.txt";
     public final static SmErrorLogger INSTANCE = new SmErrorLogger();
     private String finalFolder;
 
@@ -42,7 +42,7 @@ public class SmErrorLogger {
             if (!logId.isDirectory()) {
                 logId.mkdir();
             }
-            this.logfile = Paths.get(logId.toString(),"ErrorLog.txt");
+            this.logfile = Paths.get(logId.toString(),logname);
             logReady = true;
         }
     }

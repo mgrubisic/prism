@@ -119,6 +119,13 @@ public final class VFileConstants {
     //V3 response spectrum parameter codes
     public static final int NUM_SPECTRA_PERIODS = 69;
     public static final int NUM_DAMPING_VALUES = 70;
+    public static final int VALUE_SA_0P2 = 69;
+    public static final int VALUE_SA_0P3 = 70;
+    public static final int VALUE_SA_1P0 = 71;
+    public static final int VALUE_SA_3P0 = 72;
+    public static final int MAX_SA_SPECTRUM = 73;
+    public static final int PERIOD_OF_MAX = 74;
+    public static final int TIME_OF_MAX = 75;
     
     //Processing stages
     public static final int V1_STAGE = 1;
@@ -152,12 +159,12 @@ public final class VFileConstants {
     public static final double DEFAULT_QA_RESIDUAL_VELOCITY = 0.002;
     public static final double DEFAULT_QA_RESIDUAL_DISPLACE = 0.001;
     
-    public static final String DEBUG_ARRAY_WRITE_ON = "On";
+    public static final String DEBUG_TO_LOG_ON = "On";
     
     //V3 processing
     public static final int NUM_COEF_VALS = 6;
     public static final double[] V3_DAMPING_VALUES = {0.00,0.02,0.05,0.10,0.20};
-    public static final double[] V3_SAMPLING_RATES = {50.0, 100.0, 200.0};
+    public static final double[] V3_SAMPLING_RATES = {50.0, 100.0, 200.0, 500.0};
     public static final int NUM_T_PERIODS = 91;
     //1 array for periods, 1 for fft, 3 for each of 5 damping values = 17
     public static final int NUM_V3_SPECTRA_ARRAYS = 15;

@@ -27,13 +27,10 @@ public class SmConfigConstants {
     public static final String PROC_AGENCY_ABBREV = "PRISM/ProcessingAgency/StrongMotionNetworkCode/AgencyAbbreviation";
     public static final String PROC_AGENCY_IRIS = "PRISM/ProcessingAgency/StrongMotionNetworkCode/AgencyIRISCode";
     
-    public static final String OUT_FILE_FORMAT = "PRISM/OutputFileFormat";
     public static final String OUT_ARRAY_FORMAT = "PRISM/OutputArrayFormat";
     
     public static final String DATA_UNITS_CODE = "PRISM/DataUnitsForCountConversion/DataUnitCodes/DataUnitCode";
     public static final String DATA_UNITS_NAME = "PRISM/DataUnitsForCountConversion/DataUnitCodes/DataUnitName";
-    
-    public static final String BASELINE_CORRECTION_TYPE = "PRISM/BaselineCorrectionType";
     
     public static final String QA_INITIAL_VELOCITY = "QAparameters/InitialVelocity";
     public static final String QA_RESIDUAL_VELOCITY = "QAparameters/ResidualVelocity";
@@ -49,12 +46,8 @@ public class SmConfigConstants {
     public static final String EVENT_ONSET_BUFFER = "PRISM/EventOnsetBufferAmount";
     public static final String EVENT_ONSET_METHOD = "PRISM/EventDetectionMethod";
     
-    public static final String DEBUG_ARRAY_WRITE = "PRISM/DebugArrayWrite";
+    public static final String DEBUG_TO_LOG = "PRISM/DebugToLog";
     
-    public static final String NUM_SPLINE_BREAKS_LOWER = "PRISM/AdaptiveBaselineCorrection/NumberSplineBreaks/LowerLimit";
-    public static final String NUM_SPLINE_BREAKS_UPPER = "PRISM/AdaptiveBaselineCorrection/NumberSplineBreaks/UpperLimit";
-    public static final String SPLINE_ORDER_LOWER      = "PRISM/AdaptiveBaselineCorrection/SplineOrder/LowerLimit";
-    public static final String SPLINE_ORDER_UPPER      = "PRISM/AdaptiveBaselineCorrection/SplineOrder/UpperLimit";
     public static final String FIRST_POLY_ORDER_LOWER  = "PRISM/AdaptiveBaselineCorrection/FirstPolyOrder/LowerLimit";
     public static final String FIRST_POLY_ORDER_UPPER  = "PRISM/AdaptiveBaselineCorrection/FirstPolyOrder/UpperLimit";
     public static final String SECOND_POLY_ORDER_LOWER = "PRISM/AdaptiveBaselineCorrection/SecondPolyOrder/LowerLimit";

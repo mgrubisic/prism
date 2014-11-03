@@ -88,10 +88,11 @@ public class V2Process {
     private V2Status procStatus;
     
     private ArrayList<String> errorlog;
-    private boolean writeArrays;
+    private boolean writeDebug;
     private SmErrorLogger elog;
     private String[] logstart;
     private final File V0name;
+    private final String channel;
         
     public V2Process(final V1Component v1rec, File inName) throws SmException {
         double epsilon = 0.0001;
@@ -101,8 +102,9 @@ public class V2Process {
         errorlog = new ArrayList<>();
         elog = SmErrorLogger.INSTANCE;
         ConfigReader config = ConfigReader.INSTANCE;
-        writeArrays = false;
+        writeDebug = false;
         this.V0name = inName;
+        this.channel = inV1.getChannel();
         
         //Get config values to cm/sec2 (acc), cm/sec (vel), cm (dis)
         this.acc_unit_code = CMSQSECN;
@@ -205,8 +207,8 @@ public class V2Process {
             String qaenddis = config.getConfigValue(QA_RESIDUAL_DISPLACE);
             this.qadisplacend = (qaenddis == null) ? DEFAULT_QA_RESIDUAL_DISPLACE : Double.parseDouble(qaenddis);
             
-            String debugon = config.getConfigValue(DEBUG_ARRAY_WRITE);
-            this.writeArrays = debugon.equalsIgnoreCase(DEBUG_ARRAY_WRITE_ON);
+            String debugon = config.getConfigValue(DEBUG_TO_LOG);
+            this.writeDebug = debugon.equalsIgnoreCase(DEBUG_TO_LOG_ON);
             
         } catch (NumberFormatException err) {
             throw new SmException("Error extracting numeric values from configuration file");
@@ -238,10 +240,12 @@ public class V2Process {
         System.arraycopy( accraw, 0, acc, 0, accraw.length);
         
         //Pick P-wave and remove baseline
-        errorlog.add("Start of V2 processing for " + V0name.toString());
+        errorlog.add("Start of V2 processing for " + V0name.toString() + " and channel " + channel);
         //remove linear trend before finding event onset
-        errorlog.add(String.format("time per sample in sec %f",dtime));
-        errorlog.add(String.format("sample rate (samp/sec): %f",samplerate));
+        errorlog.add(String.format("time per sample in sec %4.3f",dtime));
+        errorlog.add(String.format("sample rate (samp/sec): %4.1f",samplerate));
+        errorlog.add(String.format("length of acceleration array: %d",accraw.length));
+        errorlog.add(String.format("earthquake magnitude: %3.2f",magnitude));
         errorlog.add("Event detection: remove linear trend, filter, event onset detection");
         
         ArrayOps.removeLinearTrend( acc, dtime);
@@ -276,17 +280,18 @@ public class V2Process {
             startIndex = aicpick.applyBuffer(ebuffer, dtime);
             errorlog.add("Event Detection algorithm: modified Akaike Information Criterion");
         }
-        errorlog.add(String.format("pick index: %d,  pick buffer: %f,  start index: %d",
-                                                pickIndex,ebuffer,startIndex));
-        errorlog.add(String.format("pick time in seconds: %f, buffered time: %f",
+        errorlog.add(String.format("pick index: %d, start index: %d",
+                                                        pickIndex,startIndex));
+        errorlog.add(String.format("pick time in seconds: %8.3f, buffered time: %8.3f",
                                           (pickIndex*dtime),(startIndex*dtime)));
-        System.out.println(String.format("pick index: %d,  pick buffer: %f,  start index: %d",
-                                                pickIndex,ebuffer,startIndex));
+        System.out.println(String.format("pick index: %d,  start index: %d",
+                                                        pickIndex,startIndex));
 
 
         if (pickIndex <= 0) {
             //No pick index detected, so skip all V2 processing
             procStatus  = V2Status.NOEVENT;
+            errorlog.add("V2process: exit staus = " + procStatus);
             System.out.println("V2process: exit staus = " + procStatus);
             return procStatus;
         }
@@ -303,23 +308,23 @@ public class V2Process {
             errorlog.add("Full array mean removed from uncorrected acceleration");
         }
 
-        if (writeArrays) {
-            elog.writeOutArray(accraw, "initialBaselineCorrection.txt");
-        } 
+//        if (writeArrays) {
+//            elog.writeOutArray(accraw, "initialBaselineCorrection.txt");
+//        } 
 
         //Integrate the acceleration to get velocity.
         velocity = ArrayOps.Integrate( accraw, dtime);
         errorlog.add("acceleration integrated to velocity (trapezoidal method)");
         int vellen = velocity.length;
-        if (writeArrays) {
-           elog.writeOutArray(velocity, "afterIntegrationToVel.txt");
-        }
+//        if (writeArrays) {
+//           elog.writeOutArray(velocity, "afterIntegrationToVel.txt");
+//        }
         //Remove any linear trend from velocity
         ArrayOps.removeLinearTrend( velocity, dtime);
         errorlog.add("linear trend removed from velocity");
-        if (writeArrays) {
-           elog.writeOutArray(velocity, "LinearTrendRemovedVel.txt");
-        }
+//        if (writeArrays) {
+//           elog.writeOutArray(velocity, "LinearTrendRemovedVel.txt");
+//        }
         //Update Butterworth filter low and high cutoff thresholds for later
         FilterCutOffThresholds threshold = new FilterCutOffThresholds( magnitude );
         lowcutadj = threshold.getLowCutOff();
@@ -347,7 +352,7 @@ public class V2Process {
         }
         if ((Math.abs(velstart) > qavelocityinit) || 
                                          (Math.abs(velend) > qavelocityend)){
-            errorlog.add("Velocity QA failed:");
+            errorlog.add("Velocity QC1 failed:");
             errorlog.add(String.format("   initial velocity: %f,  limit %f",
                                         Math.abs(velstart), qavelocityinit));
             errorlog.add(String.format("   final velocity: %f,  limit %f",
@@ -366,13 +371,29 @@ public class V2Process {
             //If unable to perform any iterations in ABC, just exit with no V2
             if (procStatus == V2Status.NOABC) {
                 System.out.println("V2process: exit staus = " + procStatus);
+                errorlog.add("V2process: exit staus = " + procStatus);
                 return procStatus;
             }
             int solution = adapt.getSolution();
             double[] parms = adapt.getSolutionParms(solution);
+            double[] baseline = adapt.getBaselineFunction();
+            ArrayList<double[]> params = adapt.getParameters();
+            double[] goodrun = params.get( solution );
+            if (writeDebug) {
+                elog.writeOutArray(baseline, (V0name.getName() + "_" + channel + "_baseline.txt"));
+            } 
+            errorlog.add("    length of ABC params: " + params.size());
+            errorlog.add("    ABC: found passing solution");
+            errorlog.add("    ABC: winning rank: " + solution);
+            errorlog.add("    ABC: poly1 order: " + goodrun[6]);
+            errorlog.add("    ABC: poly2 order: " + goodrun[7]);
+            errorlog.add("    ABC: start: " + goodrun[4] + "  stop: " + goodrun[5]);
             velstart = parms[2];
             velend = parms[3];
             disend = parms[1];
+            errorlog.add(String.format("    ABC: velstart: %f,  limit %f",goodrun[2], qavelocityinit));
+            errorlog.add(String.format("    ABC: velend: %f,  limit %f",goodrun[3], qavelocityend));
+            errorlog.add(String.format("    ABC: disend: %f,  limit %f",goodrun[1], qadisplacend));
             accel = adapt.getABCacceleration();
             velocity = adapt.getABCvelocity();
             displace = adapt.getABCdisplacement();
@@ -382,7 +403,7 @@ public class V2Process {
             filter = new ButterworthFilter();
             errorlog.add("Acausal bandpass filter:");
             errorlog.add("  earthquake magnitude is " + magnitude + " and M used is " + magtype);
-            errorlog.add(String.format("  adjusted lowcut: %f and adjusted highcut: %f Hz",
+            errorlog.add(String.format("  adjusted lowcut: %4.2f and adjusted highcut: %4.2f Hz",
                                                             lowcutadj, highcutadj));
             valid = filter.calculateCoefficients(lowcutadj, highcutadj, 
                                                 dtime, DEFAULT_NUM_POLES, true);
@@ -391,9 +412,9 @@ public class V2Process {
             } else {
                 throw new SmException("Invalid bandpass filter calculated parameters");
             }
-            if (writeArrays) {
-               elog.writeOutArray(velocity, "finalV2velocity.txt");
-            }
+//            if (writeDebug) {
+//               elog.writeOutArray(velocity, "finalV2velocity.txt");
+//            }
            //Integrate the velocity to get displacement.
             displace = ArrayOps.Integrate( velocity, dtime);
             errorlog.add("Velocity integrated to displacement (trapezoidal method)");
@@ -444,6 +465,14 @@ public class V2Process {
             elog.writeToLog(errorout);
             errorlog.clear();
             System.out.println("failed QA2");
+        }
+        if ((procStatus == V2Status.GOOD) && (writeDebug)) {
+            errorlog.add("V2 exit status = GOOD");
+            elog.writeToLog(logstart);
+            String[] errorout = new String[errorlog.size()];
+            errorout = errorlog.toArray(errorout);
+            elog.writeToLog(errorout);
+            errorlog.clear();            
         }
         //calculate final array params for headers
         ArrayStats statVel = new ArrayStats( velocity );

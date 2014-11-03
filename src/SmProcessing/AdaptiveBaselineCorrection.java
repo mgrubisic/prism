@@ -217,7 +217,6 @@ public class AdaptiveBaselineCorrection {
             return status;
         }
         //Sort the results based on cumulative rms
-        System.out.println("length of params: " + params.size());
         int count = 0;
         ABCSortPairs sorter = new ABCSortPairs();
         double[] temp;
@@ -254,15 +253,6 @@ public class AdaptiveBaselineCorrection {
                 accel = ArrayOps.Differentiate(velocity, dtime);
                 status = V2Status.GOOD;
                 solution = idx;
-                System.out.println("ABC: found passing solution");
-                System.out.println("ABC: winning rank: " + solution);
-                System.out.println("ABC: poly1 order: " + eachrun[6]);
-                System.out.println("ABC: poly2 order: " + eachrun[7]);
-                System.out.println("ABC: start: " + eachrun[4] + "  stop: " + eachrun[5]);
-                
-//                if (writeArrays) {
-//                    elog.writeOutArray(bnn, "baseline.txt");
-//                } 
                 break;
             }
         }

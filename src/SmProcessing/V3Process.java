@@ -43,9 +43,14 @@ public class V3Process {
     private double[] accel;
     private double peakVal;
     private double peakIndex;
+    private double peakTime;
     private SpectraResources spec;
     private SmErrorLogger elog;
     private boolean writeArrays;
+    private double Sa_0p2;
+    private double Sa_0p3;
+    private double Sa_1p0;
+    private double Sa_3p0;
     
     public V3Process(final V2Component v2acc, final V2Component v2vel,
                       final V2Component v2dis) throws IOException, SmException, 
@@ -56,6 +61,10 @@ public class V3Process {
         this.accel = v2acc.getDataArray();
         this.peakVal = 0.0;
         this.peakIndex = 0;
+        this.Sa_0p2 = 0.0;
+        this.Sa_0p3 = 0.0;
+        this.Sa_1p0 = 0.0;
+        this.Sa_3p0 = 0.0;
         this.V3Data = new ArrayList<>();
         this.noRealVal = v2vel.getNoRealVal();
         double delta_t = v2vel.getRealHeaderValue(DELTA_T);
@@ -176,7 +185,21 @@ public class V3Process {
                 ArrayStats stat = new ArrayStats( sa );
                 peakVal = stat.getPeakVal();
                 int index = stat.getPeakValIndex();
-                peakIndex = 1.0 / T_periods[index];
+                peakIndex = T_periods[index];
+                peakTime = 1.0 / peakIndex;
+                System.out.println(String.format("V3: sa peak val is %f at %f sec period",peakVal,peakIndex));
+                for (int idx = 0; idx < T_periods.length; idx++) {
+                    if (Math.abs(T_periods[idx] - 0.2) < EPSILON) {
+                        Sa_0p2 = sa[idx];
+                    } else if (Math.abs(T_periods[idx] - 0.3) < EPSILON) {
+                        Sa_0p3 = sa[idx];
+                    } else if (Math.abs(T_periods[idx] - 1.0) < EPSILON){
+                        Sa_1p0 = sa[idx];
+                    } else if (Math.abs(T_periods[idx] - 3.0) < EPSILON) {
+                        Sa_3p0 = sa[idx];
+                    }
+                }
+                
             }
             
             V3Data.add(sd);
@@ -195,6 +218,21 @@ public class V3Process {
     }
     public double getPeakPeriod() {
         return peakIndex;
+    }
+    public double getPeakTime() {
+        return peakTime;
+    }
+    public double getSa_0p3() {
+        return Sa_0p3;
+    }
+    public double getSa_0p2() {
+        return Sa_0p2;
+    }
+    public double getSa_1p0() {
+        return Sa_1p0;
+    }
+    public double getSa_3p0() {
+        return Sa_3p0;
     }
     public String getDataUnits() {
         return CMSQSECT;

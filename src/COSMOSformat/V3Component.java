@@ -242,6 +242,17 @@ public class V3Component extends COSMOScontentFormat {
                             .append(String.format(freqformat,inVvals.getPeakPeriod()))
                             .append(" secp, 5%damp").toString();
         
+        //Update the Response Spectrum Parameters in the headers
+        this.intHeader.setIntValue(NUM_SPECTRA_PERIODS, NUM_T_PERIODS);
+        this.intHeader.setIntValue(NUM_DAMPING_VALUES, V3_DAMPING_VALUES.length);
+        this.realHeader.setRealValue(VALUE_SA_0P2, (inVvals.getSa_0p2()/FROM_G_CONVERSION));
+        this.realHeader.setRealValue(VALUE_SA_0P3, (inVvals.getSa_0p3()/FROM_G_CONVERSION));
+        this.realHeader.setRealValue(VALUE_SA_1P0, (inVvals.getSa_1p0()/FROM_G_CONVERSION));
+        this.realHeader.setRealValue(VALUE_SA_3P0, (inVvals.getSa_3p0()/FROM_G_CONVERSION));
+        this.realHeader.setRealValue(MAX_SA_SPECTRUM, (inVvals.getPeakVal()/FROM_G_CONVERSION));
+        this.realHeader.setRealValue(PERIOD_OF_MAX, inVvals.getPeakPeriod());
+        this.realHeader.setRealValue(TIME_OF_MAX, inVvals.getPeakTime());
+        
         //Update the end-of-data line with the new data type
         this.endOfData = this.parentV2.endOfData;
         this.updateEndOfDataLine(SPECTRA, this.parentV2.getChannel());
