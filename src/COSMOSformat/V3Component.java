@@ -41,19 +41,11 @@ public class V3Component extends COSMOScontentFormat {
     private ArrayList<VRealArray> V3Data;
     private final V1Component parentV1;  //link back to the parent V1 record
     private final V2Component parentV2;
-    private String fileName;
-    private File stationDir;
-    private String rcrdId;
-    private String SCNLauth;
 
     public V3Component(String procType) {
         super(procType);
         this.parentV1 = null;
         this.parentV2 = null;
-        this.fileName = "";
-        this.stationDir = null;
-        this.rcrdId = "";
-        this.SCNLauth = "";
     }
     //Use this constructor when the V2 component is created from processing
     //done on a V1 component.  In this case, the contents of V2 are initialized
@@ -345,17 +337,5 @@ public class V3Component extends COSMOScontentFormat {
         V3DataText.clear();
         outText[totalLength-1] = this.endOfData;
         return outText;
-    }
-    public String getFileName() {
-        return fileName;
-    }
-    public void setFileName( String inName ) {
-        fileName = inName;
-    }
-    public File getStationDir() {
-        return stationDir;
-    }
-    public void setStationDir( File inDir ) {
-        stationDir = inDir;
     }
 }

@@ -19,10 +19,6 @@ import java.util.regex.Pattern;
  */
 public class V0Component extends COSMOScontentFormat {
     private VIntArray V0Data;  //raw acceleration counts
-    private String fileName;
-    private File stationDir;
-    private String rcrdId;
-    private String SCNLauth;
     /**
      * Default constructor
      * @param procType identifies the data type of raw accel., uncorrected 
@@ -31,10 +27,6 @@ public class V0Component extends COSMOScontentFormat {
      */
     public V0Component( String procType){
         super( procType );
-        this.fileName = "";
-        this.rcrdId = "";
-        this.SCNLauth = "";
-        this.stationDir = null;
     }
     /**
      * This method defines the steps for parsing a V0 data record, which contains
@@ -53,41 +45,6 @@ public class V0Component extends COSMOScontentFormat {
         V0Data = new VIntArray();
         current = V0Data.parseValues( current, infile);
         return current;
-    }
-    /**
-     * Getter for the length of the data array
-     * @return the number of values in the data array
-     */
-    public void checkForRcrdIdAndAuth() {
-        String line = this.textHeader[7];
-        String[] segments;
-        
-        //Get the record id if available
-        String matchRegex = "(RcrdId:)";
-        Pattern regField = Pattern.compile(matchRegex);
-        Matcher m = regField.matcher( line );
-        rcrdId = (m.find()) ? line.substring(m.end()) : "";
-        
-        //Look for the SCNL and Auth tags and save if found
-        String authRegex = "(<AUTH>)";
-        Pattern authfield = Pattern.compile(authRegex);
-        for (String each : this.comments) {
-            m = authfield.matcher(each);
-            if (m.find()) {
-                SCNLauth = each.substring(1);
-                break;                
-            }
-        }
-        //Get the channel code if no channel number defined
-        String scnlRegex = "(<SCNL>)(\\S+)";
-        Pattern scnlfield = Pattern.compile(scnlRegex);
-        if ((!SCNLauth.isEmpty()) && (channel.isEmpty())) {
-            m = scnlfield.matcher( SCNLauth );
-            if (m.find()) {
-                segments = m.group(2).split("\\.");
-                this.setChannel(segments[1]);
-            }
-        }
     }
     @Override
     public String[] VrecToText() {
@@ -133,23 +90,5 @@ public class V0Component extends COSMOScontentFormat {
      */
     public int[] getDataArray() {
         return V0Data.getIntArray();
-    }
-    public String getFileName() {
-        return fileName;
-    }
-    public void setFileName( String inName ) {
-        fileName = inName;
-    }
-    public File getStationDir() {
-        return stationDir;
-    }
-    public void setStationDir( File inDir ) {
-        stationDir = inDir;
-    }
-    public String getRcrdId() {
-        return rcrdId;
-    }
-    public String getSCNLauth() {
-        return SCNLauth;
     }
 }

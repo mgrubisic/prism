@@ -26,10 +26,6 @@ import java.util.regex.Pattern;
 public class V1Component extends COSMOScontentFormat {
     private VRealArray V1Data;  //raw acceleration counts
     private final V0Component parentV0;  //link back to the parent V0 record
-    private String fileName;
-    private File stationDir;
-    private String rcrdId;
-    private String SCNLauth;
 
     //Use this constructor when the V1 component is read in from a file and
     //filled in with the loadComponent method.  In this case, there is no parentV0
@@ -37,10 +33,6 @@ public class V1Component extends COSMOScontentFormat {
     public V1Component( String procType) {
         super( procType );
         this.parentV0 = null;
-        this.fileName = "";
-        this.stationDir = null;
-        this.rcrdId = "";
-        this.SCNLauth = "";
     }
     
     //Use this constructor when the V1 component is created from processing
@@ -236,23 +228,5 @@ public class V1Component extends COSMOScontentFormat {
         System.arraycopy(V1DataText, 0, outText, currentLength, V1DataText.length);
         outText[totalLength-1] = this.endOfData;
         return outText;
-    }
-    public String getFileName() {
-        return fileName;
-    }
-    public void setFileName( String inName ) {
-        fileName = inName;
-    }
-    public File getStationDir() {
-        return stationDir;
-    }
-    public void setStationDir( File inDir ) {
-        stationDir = inDir;
-    }
-    public String getRcrdId() {
-        return rcrdId;
-    }
-    public String getSCNLauth() {
-        return SCNLauth;
     }
 }

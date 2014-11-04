@@ -116,6 +116,9 @@ public final class VFileConstants {
     public static final int SURFACE_MAGNITUDE = 13;
     public static final int OTHER_MAGNITUDE = 15;
     
+    //V2 computed parameters codes
+    public static final int BRACKETED_DURATION = 79;
+    
     //V3 response spectrum parameter codes
     public static final int NUM_SPECTRA_PERIODS = 69;
     public static final int NUM_DAMPING_VALUES = 70;
@@ -135,6 +138,8 @@ public final class VFileConstants {
     //misc. constants
     public static final double MSEC_TO_SEC = 0.001; //milliseconds to seconds
     public static final double FROM_G_CONVERSION = 980.665; //cm per sq. sec per g
+    //Arias Intensity constant = (acos(0.05))/(g*(sqrt(1-(0.05)^2)))
+    public static final double ARIAS_INTENSITY_CONST = 1493.23899;
     
     public enum EventOnsetType{ AIC, DE };
     
@@ -154,7 +159,7 @@ public final class VFileConstants {
     public static final int DEFAULT_2ND_POLY_ORD_LOWER = 1;
     public static final int DEFAULT_2ND_POLY_ORD_UPPER = 2;
     
-    //QA check constants
+    //QC check constants
     public static final double DEFAULT_QA_INITIAL_VELOCITY = 0.002;
     public static final double DEFAULT_QA_RESIDUAL_VELOCITY = 0.002;
     public static final double DEFAULT_QA_RESIDUAL_DISPLACE = 0.001;

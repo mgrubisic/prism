@@ -94,7 +94,7 @@ public class V3Process {
         double uval;
         double lval;
         double scale;
-        System.out.println("V3 process");
+//        System.out.println("V3 process");
 //        System.out.println("velocity length: " + velocity.length);
         FFourierTransform fft = new FFourierTransform();
         double[] accspec = fft.calculateFFT(accel);
@@ -187,7 +187,7 @@ public class V3Process {
                 int index = stat.getPeakValIndex();
                 peakIndex = T_periods[index];
                 peakTime = 1.0 / peakIndex;
-                System.out.println(String.format("V3: sa peak val is %f at %f sec period",peakVal,peakIndex));
+//                System.out.println(String.format("V3: sa peak val is %f at %f sec period",peakVal,peakIndex));
                 for (int idx = 0; idx < T_periods.length; idx++) {
                     if (Math.abs(T_periods[idx] - 0.2) < EPSILON) {
                         Sa_0p2 = sa[idx];

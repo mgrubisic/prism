@@ -93,6 +93,8 @@ public class V2Process {
     private String[] logstart;
     private final File V0name;
     private final String channel;
+    
+    private double bracketedDuration;
         
     public V2Process(final V1Component v1rec, File inName) throws SmException {
         double epsilon = 0.0001;
@@ -117,6 +119,8 @@ public class V2Process {
         this.pickIndex = 0;
         this.startIndex = 0;
         this.procStatus = V2Status.NOEVENT;
+        
+        this.bracketedDuration = 0.0;
         
         SmTimeFormatter timer = new SmTimeFormatter();
         String logtime = timer.getGMTdateTime();
@@ -284,15 +288,15 @@ public class V2Process {
                                                         pickIndex,startIndex));
         errorlog.add(String.format("pick time in seconds: %8.3f, buffered time: %8.3f",
                                           (pickIndex*dtime),(startIndex*dtime)));
-        System.out.println(String.format("pick index: %d,  start index: %d",
-                                                        pickIndex,startIndex));
+//        System.out.println(String.format("pick index: %d,  start index: %d",
+//                                                        pickIndex,startIndex));
 
 
         if (pickIndex <= 0) {
             //No pick index detected, so skip all V2 processing
             procStatus  = V2Status.NOEVENT;
             errorlog.add("V2process: exit staus = " + procStatus);
-            System.out.println("V2process: exit staus = " + procStatus);
+//            System.out.println("V2process: exit staus = " + procStatus);
             return procStatus;
         }
         //Remove pre-event mean from acceleration record
@@ -358,7 +362,7 @@ public class V2Process {
             errorlog.add(String.format("   final velocity: %f,  limit %f",
                                              Math.abs(velend), qavelocityend));
             errorlog.add("Adapive baseline correction beginning");
-            System.out.println("failed QA1");
+//            System.out.println("failed QA1");
         ///////////////////////////////
         //
         // Adaptive Baseline Correction
@@ -370,7 +374,7 @@ public class V2Process {
             
             //If unable to perform any iterations in ABC, just exit with no V2
             if (procStatus == V2Status.NOABC) {
-                System.out.println("V2process: exit staus = " + procStatus);
+//                System.out.println("V2process: exit staus = " + procStatus);
                 errorlog.add("V2process: exit staus = " + procStatus);
                 return procStatus;
             }
@@ -464,7 +468,7 @@ public class V2Process {
             errorout = errorlog.toArray(errorout);
             elog.writeToLog(errorout);
             errorlog.clear();
-            System.out.println("failed QA2");
+//            System.out.println("failed QA2");
         }
         if ((procStatus == V2Status.GOOD) && (writeDebug)) {
             errorlog.add("V2 exit status = GOOD");
@@ -489,8 +493,14 @@ public class V2Process {
         ApeakVal = statAcc.getPeakVal();
         ApeakIndex = statAcc.getPeakValIndex();
         AavgVal = statAcc.getMean();
+        
+        //if status is GOOD, calculate computed parameters for headers
+        if (procStatus == V2Status.GOOD) {
+            bracketedDuration = ArrayOps.findBracketedDuration(accel, 
+                                                (1.0/FROM_G_CONVERSION), dtime);
+        }
 
-        System.out.println("V2process: exit staus = " + procStatus);
+//        System.out.println("V2process: exit staus = " + procStatus);
         return procStatus;
     }
     public double getPeakVal(V2DataType dType) {
@@ -570,5 +580,8 @@ public class V2Process {
     }
     public int getStartIndex() {
         return this.startIndex;
+    }
+    public double getBracketedDuration() {
+        return bracketedDuration;
     }
 }

@@ -297,4 +297,29 @@ public class ArrayOps {
         }
         return cross;
     }
+    public static double findBracketedDuration(final double[] inArray, double conversion, double dtime) {
+        double t_bracket = 0.0;
+        int t1 = 0;
+        int t2 = 0;
+        int len = inArray.length;
+        double[] subset;
+        double[] garr = convertArrayUnits(inArray, conversion);
+        for (int i = 1; i < len; i++) {
+            if (garr[i] > 0.05) {
+                t1 = i;
+                break;
+            }
+        }
+        for (int j = 1; j < len; j++) {
+            subset = new double[len-j];
+            System.arraycopy(garr, j, subset, 0, len-j);
+            ArrayStats stat = new ArrayStats(subset);
+            if (Math.abs(stat.getPeakVal()) < 0.05) {
+                t2 = j;
+                break;
+            }
+        }
+        t_bracket = (t2 - t1) * dtime;
+        return t_bracket;
+    }
 }

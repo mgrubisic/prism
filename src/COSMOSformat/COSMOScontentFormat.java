@@ -10,6 +10,7 @@ import static SmConstants.VFileConstants.*;
 
 import SmException.FormatException;
 import SmException.SmException;
+import java.io.File;
 
 import java.util.Arrays;
 import java.util.regex.Matcher;
@@ -26,6 +27,8 @@ import java.util.regex.Pattern;
 public class COSMOScontentFormat {
     protected final String procType;  //data file type flag
     protected String channel; //the channel number for this record
+    protected String rcrdId;
+    protected String SCNLauth;
     protected int noIntVal;  //NoData value for integer header array
     protected double noRealVal;  //NoData value for real header array
     protected String[] textHeader;  //Holds the text header lines
@@ -33,6 +36,8 @@ public class COSMOScontentFormat {
     protected VRealArray realHeader;  //Holds the real header array
     protected String[] comments;  //Holds the comment field
     protected String endOfData;  //Save the end-of-data line
+    protected String fileName;
+    protected File stationDir;
     /**
      * Default constructor
      * @param procType defines the data type of raw accel., uncorrected accel., 
@@ -42,6 +47,11 @@ public class COSMOScontentFormat {
         this.procType = procType;
         this.noIntVal = DEFAULT_NOINTVAL;  //default values
         this.noRealVal = DEFAULT_NOREALVAL;
+        this.channel = "";
+        this.rcrdId = "";
+        this.SCNLauth = "";
+        this.fileName = "";
+        this.stationDir = null;
     }
     /**
      * This method extracts the current component/channel from the input file. 
@@ -77,6 +87,9 @@ public class COSMOScontentFormat {
          
         //store commments
         current = parseComments ( current, infile);
+        
+        //Look for additional info in the comments
+        checkForRcrdIdAndAuth();
         
         //get data values
         current = parseDataSection ( current, infile);
@@ -248,6 +261,37 @@ public class COSMOScontentFormat {
         String[] temp = new String[0];
         System.err.println("method VrecToText must be overridden");
         return temp;
+    }
+    public void checkForRcrdIdAndAuth() {
+        String line = this.textHeader[7];
+        String[] segments;
+        
+        //Get the record id if available
+        String matchRegex = "(RcrdId:)";
+        Pattern regField = Pattern.compile(matchRegex);
+        Matcher m = regField.matcher( line );
+        rcrdId = (m.find()) ? line.substring(m.end()) : "";
+        
+        //Look for the SCNL and Auth tags and save if found
+        String authRegex = "(<AUTH>)";
+        Pattern authfield = Pattern.compile(authRegex);
+        for (String each : this.comments) {
+            m = authfield.matcher(each);
+            if (m.find()) {
+                SCNLauth = each.substring(1);
+                break;                
+            }
+        }
+        //Get the channel code if no channel number defined
+        String scnlRegex = "(<SCNL>)(\\S+)";
+        Pattern scnlfield = Pattern.compile(scnlRegex);
+        if ((!SCNLauth.isEmpty()) && (channel.isEmpty())) {
+            m = scnlfield.matcher( SCNLauth );
+            if (m.find()) {
+                segments = m.group(2).split("\\.");
+                this.setChannel(segments[1]);
+            }
+        }
     }
     public void updateEndOfDataLine(String dtype, String channel) {
         String line = this.endOfData;
@@ -451,5 +495,23 @@ public class COSMOScontentFormat {
      */
     public String getProcType() {
         return procType;
+    }
+    public String getFileName() {
+        return fileName;
+    }
+    public void setFileName( String inName ) {
+        fileName = inName;
+    }
+    public File getStationDir() {
+        return stationDir;
+    }
+    public void setStationDir( File inDir ) {
+        stationDir = inDir;
+    }
+    public String getRcrdId() {
+        return rcrdId;
+    }
+    public String getSCNLauth() {
+        return SCNLauth;
     }
 }

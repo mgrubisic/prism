@@ -29,19 +29,11 @@ public class V2Component extends COSMOScontentFormat {
     private VRealArray V2Data;
     private final V0Component parentV0;  //link back to the parent V0 record
     private final V1Component parentV1;  //link back to the parent V1 record
-    private String fileName;
-    private File stationDir;
-    private String rcrdId;
-    private String SCNLauth;
 
     public V2Component( String procType){
         super( procType );
         this.parentV0 = null;
         this.parentV1 = null;
-        this.fileName = "";
-        this.stationDir = null;
-        this.rcrdId = "";
-        this.SCNLauth = "";
     }
     //Use this constructor when the V2 component is created from processing
     //done on a V1 component.  In this case, the contents of V2 are initialized
@@ -223,30 +215,31 @@ public class V2Component extends COSMOScontentFormat {
         this.realHeader.setRealValue(LOW_FREQ_CORNER, inVvals.getLowCut());
         this.realHeader.setRealValue(HIGH_FREQ_CORNER, inVvals.getHighCut());
         this.intHeader.setIntValue(FILTER_DOMAIN_FLAG, TIME_DOMAIN);
+        this.realHeader.setRealValue(BRACKETED_DURATION, inVvals.getBracketedDuration());
         
         this.endOfData = this.parentV1.endOfData;
         if (procType == V2DataType.ACC) {
             this.intHeader.setIntValue(DATA_PHYSICAL_PARAM_CODE, ACC_PARM_CODE);
             this.realHeader.setRealValue(PEAK_VAL, inVvals.getPeakVal(V2DataType.ACC));
             this.realHeader.setRealValue(AVG_VAL, inVvals.getAvgVal(V2DataType.ACC));
-            this.updateEndOfDataLine(CORACC, this.parentV1.getChannel());
+            this.updateEndOfDataLine(CORACC, this.getChannel());
         } else if (procType == V2DataType.VEL) {
             this.intHeader.setIntValue(DATA_PHYSICAL_PARAM_CODE, VEL_PARM_CODE);
             this.realHeader.setRealValue(PEAK_VAL, inVvals.getPeakVal(V2DataType.VEL));
             this.realHeader.setRealValue(AVG_VAL, inVvals.getAvgVal(V2DataType.VEL));
-            this.updateEndOfDataLine(VELOCITY, this.parentV1.getChannel());
+            this.updateEndOfDataLine(VELOCITY, this.getChannel());
         } else {
             this.intHeader.setIntValue(DATA_PHYSICAL_PARAM_CODE, DIS_ABS_PARM_CODE);
             this.realHeader.setRealValue(PEAK_VAL, inVvals.getPeakVal(V2DataType.DIS));
             this.realHeader.setRealValue(AVG_VAL, inVvals.getAvgVal(V2DataType.DIS));            
-            this.updateEndOfDataLine(DISPLACE, this.parentV1.getChannel());
+            this.updateEndOfDataLine(DISPLACE, this.getChannel());
         }
         //Update the comments with signal pick value, but only if it passed
         // the QA test.
         if (inVvals.getQCStatus() == V2Status.GOOD) {
             ArrayList<String> lines = new ArrayList<>();
             double picktime = inVvals.getPickIndex() * dtime;
-            String lineToAdd = String.format("| <BL>event onset(sec)=%1$8s",
+            String lineToAdd = String.format("|<BL>event onset(sec)=%1$8s",
                                     String.format(realformat,picktime));
             lines.add(lineToAdd);
             this.comments = updateComments(this.comments, lines);
@@ -312,23 +305,5 @@ public class V2Component extends COSMOScontentFormat {
         lines.clear();
         text.clear();
         return comments;
-    }
-    public String getFileName() {
-        return fileName;
-    }
-    public void setFileName( String inName ) {
-        fileName = inName;
-    }
-    public File getStationDir() {
-        return stationDir;
-    }
-    public void setStationDir( File inDir ) {
-        stationDir = inDir;
-    }
-    public String getRcrdId() {
-        return rcrdId;
-    }
-    public String getSCNLauth() {
-        return SCNLauth;
     }
 }
