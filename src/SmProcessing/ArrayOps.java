@@ -297,8 +297,8 @@ public class ArrayOps {
         }
         return cross;
     }
-    public static double findBracketedDuration(final double[] inArray, double conversion, double dtime) {
-        double t_bracket = 0.0;
+    public static double[] findBracketedDuration(final double[] inArray, double conversion, double dtime) {
+        double[] results = new double[3];
         int t1 = 0;
         int t2 = 0;
         int len = inArray.length;
@@ -319,7 +319,27 @@ public class ArrayOps {
                 break;
             }
         }
-        t_bracket = (t2 - t1) * dtime;
-        return t_bracket;
+        results[0] = (t2 - t1) * dtime;
+        results[1] = t1 * dtime;
+        results[2] = t2 * dtime;
+        return results;
+    }
+    //the variable constval allows this calculation for array units of cm/sec^2 
+    //or g.  User must input the correct constant value.
+    public static double calculateAriasIntensity( final double[] inArray, 
+                                                double constval, double dtime) {
+        double intensity = 0.0;
+        int len = inArray.length;
+        double total = 0.0;
+        double[] squarr = new double[len];
+        for (int i = 0; i < len; i++) {
+            squarr[i] = Math.pow(inArray[i], 2);
+        }
+        double[] intsquarr = Integrate(squarr, dtime);
+        for (double each : intsquarr) {
+            total = total + each;
+        }
+        intensity = total * constval;
+        return intensity;
     }
 }

@@ -138,6 +138,7 @@ public final class VFileConstants {
     //misc. constants
     public static final double MSEC_TO_SEC = 0.001; //milliseconds to seconds
     public static final double FROM_G_CONVERSION = 980.665; //cm per sq. sec per g
+    public static final double TO_G_CONVERSION = 0.0010197;  //g per cm per sq. sec
     //Arias Intensity constant = (acos(0.05))/(g*(sqrt(1-(0.05)^2)))
     public static final double ARIAS_INTENSITY_CONST = 1493.23899;
     

@@ -94,7 +94,9 @@ public class V2Process {
     private final File V0name;
     private final String channel;
     
+    private double[] bracketedTimes;
     private double bracketedDuration;
+    private double AriasIntensity;
         
     public V2Process(final V1Component v1rec, File inName) throws SmException {
         double epsilon = 0.0001;
@@ -121,6 +123,7 @@ public class V2Process {
         this.procStatus = V2Status.NOEVENT;
         
         this.bracketedDuration = 0.0;
+        this.AriasIntensity = 0.0;
         
         SmTimeFormatter timer = new SmTimeFormatter();
         String logtime = timer.getGMTdateTime();
@@ -243,6 +246,7 @@ public class V2Process {
         double[] acc = new double[accraw.length];
         System.arraycopy( accraw, 0, acc, 0, accraw.length);
         
+        System.out.println("Start of V2 processing for " + V0name.toString() + " and channel " + channel);
         //Pick P-wave and remove baseline
         errorlog.add("Start of V2 processing for " + V0name.toString() + " and channel " + channel);
         //remove linear trend before finding event onset
@@ -295,8 +299,9 @@ public class V2Process {
         if (pickIndex <= 0) {
             //No pick index detected, so skip all V2 processing
             procStatus  = V2Status.NOEVENT;
-            errorlog.add("V2process: exit staus = " + procStatus);
-//            System.out.println("V2process: exit staus = " + procStatus);
+            errorlog.add("V2process: exit status = " + procStatus);
+            System.out.println("V2process: exit status = " + procStatus);
+            writeOutErrorDebug();
             return procStatus;
         }
         //Remove pre-event mean from acceleration record
@@ -319,7 +324,6 @@ public class V2Process {
         //Integrate the acceleration to get velocity.
         velocity = ArrayOps.Integrate( accraw, dtime);
         errorlog.add("acceleration integrated to velocity (trapezoidal method)");
-        int vellen = velocity.length;
 //        if (writeArrays) {
 //           elog.writeOutArray(velocity, "afterIntegrationToVel.txt");
 //        }
@@ -344,7 +348,7 @@ public class V2Process {
         //
         ///////////////////////////////
         int window = (int)(pickIndex * 0.25);
-        vellen = velocity.length;
+        int vellen = velocity.length;
         int velwindowstart = ArrayOps.findZeroCrossing(velocity, window, 1);
         int velwindowend = ArrayOps.findZeroCrossing(velocity, vellen-window, 0);
         if (startIndex > 0) {
@@ -361,8 +365,8 @@ public class V2Process {
                                         Math.abs(velstart), qavelocityinit));
             errorlog.add(String.format("   final velocity: %f,  limit %f",
                                              Math.abs(velend), qavelocityend));
-            errorlog.add("Adapive baseline correction beginning");
-//            System.out.println("failed QA1");
+            errorlog.add("Adaptive baseline correction beginning");
+            System.out.println("failed QC1");
         ///////////////////////////////
         //
         // Adaptive Baseline Correction
@@ -374,8 +378,9 @@ public class V2Process {
             
             //If unable to perform any iterations in ABC, just exit with no V2
             if (procStatus == V2Status.NOABC) {
-//                System.out.println("V2process: exit staus = " + procStatus);
-                errorlog.add("V2process: exit staus = " + procStatus);
+                System.out.println("V2process: exit status = " + procStatus);
+                errorlog.add("V2process: exit status = " + procStatus);
+                writeOutErrorDebug();
                 return procStatus;
             }
             int solution = adapt.getSolution();
@@ -456,28 +461,18 @@ public class V2Process {
             procStatus = (success) ? V2Status.GOOD : V2Status.FAILQC;
         }
         if (procStatus == V2Status.FAILQC) {
-            errorlog.add("Final QA failed - V2 processing unsuccessful:");
+            errorlog.add("Final QC failed - V2 processing unsuccessful:");
             errorlog.add(String.format("   initial velocity: %f, limit %f",
                                         Math.abs(velstart), qavelocityinit));
             errorlog.add(String.format("   final velocity: %f, limit %f",
                                   Math.abs(velend), qavelocityend));
             errorlog.add(String.format("   final displacement,: %f, limit %f",
                                   Math.abs(disend), qadisplacend));
-            elog.writeToLog(logstart);
-            String[] errorout = new String[errorlog.size()];
-            errorout = errorlog.toArray(errorout);
-            elog.writeToLog(errorout);
-            errorlog.clear();
-//            System.out.println("failed QA2");
+            System.out.println("failed QC2");
         }
-        if ((procStatus == V2Status.GOOD) && (writeDebug)) {
-            errorlog.add("V2 exit status = GOOD");
-            elog.writeToLog(logstart);
-            String[] errorout = new String[errorlog.size()];
-            errorout = errorlog.toArray(errorout);
-            elog.writeToLog(errorout);
-            errorlog.clear();            
-        }
+        System.out.println("V2process: exit status = " + procStatus);
+        errorlog.add("V2process: exit status = " + procStatus);
+        
         //calculate final array params for headers
         ArrayStats statVel = new ArrayStats( velocity );
         VpeakVal = statVel.getPeakVal();
@@ -494,15 +489,34 @@ public class V2Process {
         ApeakIndex = statAcc.getPeakValIndex();
         AavgVal = statAcc.getMean();
         
+        if ((writeDebug) || (procStatus == V2Status.FAILQC)) {
+            errorlog.add(String.format("Peak Velocity (abs): %f",Math.abs(VpeakVal)));
+            errorlog.add(String.format("Peak Velocity * 0.01: %f",(Math.abs(VpeakVal)*0.01)));
+            writeOutErrorDebug();
+        }
+        
         //if status is GOOD, calculate computed parameters for headers
         if (procStatus == V2Status.GOOD) {
-            bracketedDuration = ArrayOps.findBracketedDuration(accel, 
-                                                (1.0/FROM_G_CONVERSION), dtime);
+            bracketedTimes = ArrayOps.findBracketedDuration(accel, 
+                                                        TO_G_CONVERSION, dtime);
+            bracketedDuration = bracketedTimes[0];
+            AriasIntensity = ArrayOps.calculateAriasIntensity( accel, 
+                                                    ARIAS_INTENSITY_CONST, dtime);
+            System.out.println(String.format("bracketedDuration: %f",bracketedDuration));
+            System.out.println(String.format("AriasIntensity: %f",AriasIntensity));
         }
 
 //        System.out.println("V2process: exit staus = " + procStatus);
         return procStatus;
     }
+    public void writeOutErrorDebug() throws IOException {
+        elog.writeToLog(logstart);
+        String[] errorout = new String[errorlog.size()];
+        errorout = errorlog.toArray(errorout);
+        elog.writeToLog(errorout);
+        errorlog.clear();
+    }
+    
     public double getPeakVal(V2DataType dType) {
         if (dType == V2DataType.ACC) {
             return this.ApeakVal;

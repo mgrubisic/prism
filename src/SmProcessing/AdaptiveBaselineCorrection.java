@@ -186,7 +186,7 @@ public class AdaptiveBaselineCorrection {
                                                                         dislen);
                         onerun = new double[RESULT_PARMS];
                         onerun[0] = Math.sqrt(Math.pow(rms[0], 2) +
-                                Math.pow(rms[1],2) + Math.pow(rms[2],2));
+                                                            Math.pow(rms[2],2));
                         onerun[1] = Math.abs(disend);
                         onerun[2] = Math.abs(velstart);
                         onerun[3] = Math.abs(velend);
@@ -196,7 +196,7 @@ public class AdaptiveBaselineCorrection {
                         onerun[7] = order2;
                         onerun[8] = counter;
                         onerun[9] = rms[0];
-                        onerun[10] = rms[1];
+                        onerun[10] = rms[1]; //not used
                         onerun[11] = rms[2];
                         onerun[12] = 0;
                         onerun[13]= 0;
@@ -317,7 +317,8 @@ public class AdaptiveBaselineCorrection {
             result[i] = array[i] - bnn[i];
         }
         rms[0] = ArrayOps.rootMeanSquare(Arrays.copyOfRange(result,0,break1));
-        rms[1] = ArrayOps.rootMeanSquare(Arrays.copyOfRange(result,break1,break2));
+//        rms[1] = ArrayOps.rootMeanSquare(Arrays.copyOfRange(result,break1,break2));
+        rms[1] = 0.0;
         rms[2] = ArrayOps.rootMeanSquare(Arrays.copyOfRange(result,break2,array.length));
         
         return result;
