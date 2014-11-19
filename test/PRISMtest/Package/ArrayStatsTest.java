@@ -36,12 +36,15 @@ public class ArrayStatsTest {
     ArrayStats stata2;
     ArrayStats statmode;
     ArrayStats t1mode;
+    ArrayStats r1mode;
     double EPSILON = 0.001;
     double EPS2 = 0.1;
     int[] hista1 = {2,2,2,2,2,2,2,2,2,2};
     int[] histb1 = {2,2,2,2,2,2,2,2,2,2};
     int[] hista2 = {5,0,0,0,0,0,10,0,0,10};
+    int[] histt1 = {3,6,0,0,11};
     int[] histmode = {30,10,10,0,10,0,0,30,20,20};
+    double[] r1 = {3.24,65.2,-2.22,9.87,-4.65,1.11};
     
     double[] mode = { 3.1,3.1,3.1,3.1,3.1,3.1,3.1,3.1,3.1,3.1,
                         5.2,5.2,5.2,5.2,5.2,5.2,5.2,5.2,5.2,5.2,
@@ -81,6 +84,7 @@ public class ArrayStatsTest {
         
         statmode = new ArrayStats( mode );
         t1mode = new ArrayStats(t1);
+        r1mode = new ArrayStats(r1);
     }
     
     @Test
@@ -102,8 +106,22 @@ public class ArrayStatsTest {
         org.junit.Assert.assertEquals(5.2, stata2.getPeakVal(), EPSILON);
         org.junit.Assert.assertEquals(10, stata2.getPeakValIndex());
         org.junit.Assert.assertEquals(3.04, stata2.getMean(), EPSILON);        
+        
+        org.junit.Assert.assertEquals(1, t1mode.getMinVal(), EPSILON);
+        org.junit.Assert.assertEquals(9, t1mode.getMaxVal(), EPSILON);
+        org.junit.Assert.assertEquals(9, t1mode.getPeakVal(), EPSILON);
+        org.junit.Assert.assertEquals(9, t1mode.getPeakValIndex());
+        org.junit.Assert.assertEquals(6.2, t1mode.getMean(), EPSILON);        
+        
+        org.junit.Assert.assertEquals(-4.65, r1mode.getMinVal(), EPSILON);
+        org.junit.Assert.assertEquals(4, r1mode.getMinValIndex());
+        org.junit.Assert.assertEquals(65.2, r1mode.getMaxVal(), EPSILON);
+        org.junit.Assert.assertEquals(1, r1mode.getMaxValIndex());
+        org.junit.Assert.assertEquals(65.2, r1mode.getPeakVal(), EPSILON);
+        org.junit.Assert.assertEquals(1, r1mode.getPeakValIndex());
+        org.junit.Assert.assertEquals(12.092, r1mode.getMean(), EPSILON);        
     }
-    
+
     @Test
     public void testHistogram() {
         org.junit.Assert.assertArrayEquals(hista1, stata1.makeHistogram(10));
@@ -114,10 +132,33 @@ public class ArrayStatsTest {
         org.junit.Assert.assertEquals(0.66, stata2.getHistogramInterval(), EPSILON);
         org.junit.Assert.assertArrayEquals(histmode, statmode.makeHistogram(10));
         org.junit.Assert.assertEquals(1.74, statmode.getHistogramInterval(), EPSILON);
+        org.junit.Assert.assertArrayEquals(histt1, t1mode.makeHistogram(5));
+        org.junit.Assert.assertEquals(1.6, t1mode.getHistogramInterval(), EPSILON);
     }
     @Test
     public void testModalMinimum() {
         org.junit.Assert.assertEquals(-8.93, statmode.getModalMinimum(10), EPSILON);
         org.junit.Assert.assertEquals(4.0, t1mode.getModalMinimum(4), EPSILON);
+        org.junit.Assert.assertEquals(3.4, t1mode.getModalMinimum(5), EPSILON);
+    }
+    @Test
+    public void testErrorConditions() {
+        int[] testhist = new int[0];
+        double[] bad = new double[0];
+        ArrayStats badstats = new ArrayStats(bad);
+        org.junit.Assert.assertEquals(Double.MIN_VALUE,badstats.getMean(),EPSILON);
+        org.junit.Assert.assertArrayEquals(testhist, badstats.makeHistogram(100));
+        org.junit.Assert.assertEquals(Double.MIN_VALUE, badstats.getModalMinimum(100),EPSILON);
+        org.junit.Assert.assertEquals(-1,badstats.getMaxValIndex());
+    }
+    @Test
+    public void testErrorConditions2() {
+        int[] testhist = new int[0];
+        double[] bad = null;
+        ArrayStats badstats = new ArrayStats(bad);
+        org.junit.Assert.assertEquals(Double.MIN_VALUE,badstats.getMean(),EPSILON);
+        org.junit.Assert.assertArrayEquals(testhist, badstats.makeHistogram(100));
+        org.junit.Assert.assertEquals(Double.MIN_VALUE, badstats.getModalMinimum(100),EPSILON);
+        org.junit.Assert.assertEquals(-1,badstats.getMaxValIndex());
     }
 }

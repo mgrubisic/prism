@@ -330,7 +330,7 @@ public class V2Process {
         //Remove any linear trend from velocity
         ArrayOps.removeLinearTrend( velocity, dtime);
         errorlog.add("linear trend removed from velocity");
-//        if (writeArrays) {
+//        if (writeDebug) {
 //           elog.writeOutArray(velocity, "LinearTrendRemovedVel.txt");
 //        }
         //Update Butterworth filter low and high cutoff thresholds for later
@@ -347,13 +347,17 @@ public class V2Process {
         // First QC Test
         //
         ///////////////////////////////
-        int window = (int)(pickIndex * 0.25);
+        int window = (int)(pickIndex * 1.0);
         int vellen = velocity.length;
-        int velwindowstart = ArrayOps.findZeroCrossing(velocity, window, 1);
-        int velwindowend = ArrayOps.findZeroCrossing(velocity, vellen-window, 0);
-        if (startIndex > 0) {
-            velstart = ArrayOps.findSubsetMean(velocity, 0, velwindowstart);
-            velend = ArrayOps.findSubsetMean(velocity, velwindowend, vellen);
+        int velwindowstart;
+        int velwindowend;
+        if (window > 0) {
+            velwindowstart = ArrayOps.findZeroCrossing(velocity, window, 1);
+            velwindowend = ArrayOps.findZeroCrossing(velocity, vellen-window, 0);
+//            System.out.println("firstQC: velwindowstart = " + velwindowstart);
+//            System.out.println("firstQC: velwindowend = " + velwindowend);
+            velstart = (velwindowstart > 0) ? ArrayOps.findSubsetMean(velocity, 0, velwindowstart) : velocity[0];
+            velend = (velwindowend > 0) ? ArrayOps.findSubsetMean(velocity, velwindowend, vellen) : velocity[vellen-1];
         } else {
             velstart = velocity[0];
             velend = velocity[vellen-1];
@@ -438,13 +442,17 @@ public class V2Process {
             //needing additional processing.
 
             dislen = displace.length;
-            velwindowstart = ArrayOps.findZeroCrossing(velocity, window, 1);
-            velwindowend = ArrayOps.findZeroCrossing(velocity, vellen-window, 0);
-            int diswindowend = ArrayOps.findZeroCrossing(displace, dislen-window, 0);
-            if (startIndex > 0) {
-                velstart = ArrayOps.findSubsetMean(velocity, 0, velwindowstart);
-                velend = ArrayOps.findSubsetMean(velocity, velwindowend, vellen);
-                disend = ArrayOps.findSubsetMean(displace, diswindowend, dislen);
+            int diswindowend;
+            if (window > 0) {
+                velwindowstart = ArrayOps.findZeroCrossing(velocity, window, 1);
+                velwindowend = ArrayOps.findZeroCrossing(velocity, vellen-window, 0);
+                diswindowend = ArrayOps.findZeroCrossing(displace, dislen-window, 0);
+//                System.out.println("2ndQC: velwindowstart = " + velwindowstart);
+//                System.out.println("2ndQC: velwindowend = " + velwindowend);
+//                System.out.println("2ndQC: diswindowend = " + diswindowend);
+                velstart = (velwindowstart > 0) ? ArrayOps.findSubsetMean(velocity, 0, velwindowstart) : velocity[0];
+                velend = (velwindowend > 0) ? ArrayOps.findSubsetMean(velocity, velwindowend, vellen) : velocity[vellen-1];
+                disend = (diswindowend > 0) ? ArrayOps.findSubsetMean(displace, diswindowend, dislen) : displace[dislen-1];
             } else {
                 velstart = velocity[0];
                 velend = velocity[vellen-1];

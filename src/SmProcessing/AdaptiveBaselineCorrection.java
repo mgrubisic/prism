@@ -26,10 +26,6 @@ import SmUtilities.SmErrorLogger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
-import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
-import org.apache.commons.math3.fitting.PolynomialCurveFitter;
-import org.apache.commons.math3.fitting.WeightedObservedPoint;
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
 /**
  *
@@ -38,15 +34,6 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 public class AdaptiveBaselineCorrection {
     private final int NUM_SEGMENTS = 3;
     private final int RESULT_PARMS = 14;
-//    private final int NUM_BREAKS = 10;
-    
-//    private final double TOL_RES_DISP = 0.001;
-//    private final double TOL_INIT_VEL = 0.001;
-//    private final double TOL_RES_VEL = 0.001;
-//    private final double TOL_RMS_VEL = 0.001;
-    private final double TOL_RES_DISP = 0.001;
-    private final double TOL_INIT_VEL = 0.002;
-    private final double TOL_RES_VEL = 0.002;
     
     private int MOVING_WINDOW = 200;
     private final double EPSILON = 0.001;
@@ -63,6 +50,9 @@ public class AdaptiveBaselineCorrection {
     private final int degreeP1hi;
     private final int degreeP2lo;
     private final int degreeP2hi;
+    private final double tol_res_disp;
+    private final double tol_init_vel;
+    private final double tol_res_vel;
     private double[] bnn;
     private double[] result;
     private ArrayList<double[]> params;
@@ -90,6 +80,7 @@ public class AdaptiveBaselineCorrection {
         this.counter = 1;
         this.elog = SmErrorLogger.INSTANCE;
         writeArrays = true;
+        ConfigReader config = ConfigReader.INSTANCE;
         
         //Get the values out of the configuration file and screen for correctness.
         //Number of spline breaks
@@ -111,6 +102,15 @@ public class AdaptiveBaselineCorrection {
                                                 DEFAULT_2ND_POLY_ORD_UPPER,
                                                 degreeP2lo,
                                                 DEFAULT_2ND_POLY_ORD_UPPER);
+
+        String qainitvel = config.getConfigValue(QA_INITIAL_VELOCITY);
+        this.tol_init_vel = (qainitvel == null) ? DEFAULT_QA_INITIAL_VELOCITY : Double.parseDouble(qainitvel);
+
+        String qaendvel = config.getConfigValue(QA_RESIDUAL_VELOCITY);
+        this.tol_res_vel = (qaendvel == null) ? DEFAULT_QA_RESIDUAL_VELOCITY : Double.parseDouble(qaendvel);
+
+        String qaenddis = config.getConfigValue(QA_RESIDUAL_DISPLACE);
+        this.tol_res_disp = (qaenddis == null) ? DEFAULT_QA_RESIDUAL_DISPLACE : Double.parseDouble(qaenddis);
     }
     
     public final int validateConfigParam( String configparm, int defval, int lower,
@@ -176,14 +176,27 @@ public class AdaptiveBaselineCorrection {
                         int vellen = velocity.length;
                         int dislen = displace.length;
                         int window = (int)(estart * 0.25);
-                        int velwindowstart = ArrayOps.findZeroCrossing(velocity, window, 1);
-                        int velwindowend = ArrayOps.findZeroCrossing(velocity, vellen-window, 0);
-                        int diswindowend = ArrayOps.findZeroCrossing(displace, dislen-window, 0);
-                        double velstart = ArrayOps.findSubsetMean(velocity, 0, velwindowstart);
-                        double velend = ArrayOps.findSubsetMean(velocity, velwindowend,
-                                                                        vellen);
-                        double disend = ArrayOps.findSubsetMean(displace, diswindowend,
-                                                                        dislen);
+                        int velwindowstart;
+                        int velwindowend;
+                        int diswindowend;
+                        double velstart;
+                        double velend;
+                        double disend;
+
+                        if (window > 0) {
+                            velwindowstart = ArrayOps.findZeroCrossing(velocity, window, 1);
+                            velwindowend = ArrayOps.findZeroCrossing(velocity, vellen-window, 0);
+                            diswindowend = ArrayOps.findZeroCrossing(displace, dislen-window, 0);
+                            velstart = (velwindowstart > 0) ? ArrayOps.findSubsetMean(velocity, 0, velwindowstart) : velocity[0];
+                            velend = (velwindowend > 0) ? ArrayOps.findSubsetMean(velocity, velwindowend, vellen) : velocity[vellen-1];
+                            disend = (diswindowend > 0) ? ArrayOps.findSubsetMean(displace, diswindowend, dislen) : displace[dislen-1];
+                        } else {
+                            velstart = velocity[0];
+                            velend = velocity[vellen-1];
+                            disend = displace[dislen-1];
+                        }
+                        
+                        
                         onerun = new double[RESULT_PARMS];
                         onerun[0] = Math.sqrt(Math.pow(rms[0], 2) +
                                                             Math.pow(rms[2],2));
@@ -234,9 +247,9 @@ public class AdaptiveBaselineCorrection {
         //check each solution against the QA values and find the first that passes
         for (int idx : ranking) {
             eachrun = params.get(idx);
-            success = (eachrun[2] <= TOL_INIT_VEL) && 
-                                (eachrun[3] <= TOL_RES_VEL) && 
-                                            (eachrun[1] <= TOL_RES_DISP);
+            success = (eachrun[2] <= tol_init_vel) && 
+                                (eachrun[3] <= tol_res_vel) && 
+                                            (eachrun[1] <= tol_res_disp);
             if (success) {
                 velocity = makeCorrection(velocity,(int)eachrun[4],(int)eachrun[5],
                                         (int)eachrun[6],(int)eachrun[7]);

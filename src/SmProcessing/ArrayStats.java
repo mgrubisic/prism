@@ -51,7 +51,7 @@ public class ArrayStats {
      */
     public ArrayStats( double[] array ) {
         statArray = array;
-        length = array.length;
+        length = (array != null) ? array.length : 0;
         total = 0.0;
         maxhigh = Double.MIN_VALUE;
         maxlow = Double.MAX_VALUE;
@@ -87,7 +87,6 @@ public class ArrayStats {
     }
     /**
      * Getter for the calculated mean of the array
-     * 
      * @return the mean value
      */
     public double getMean() {
@@ -96,7 +95,6 @@ public class ArrayStats {
     /**
      * Getter for the calculated peak value, which is the largest + or - value
      * found in the array
-     * 
      * @return the peak value
      */
     public double getPeakVal() {
@@ -104,7 +102,6 @@ public class ArrayStats {
     }
     /**
      * Getter for the index of the peak value
-     * 
      * @return array index for the peak value
      */
     public int getPeakValIndex() {
@@ -112,7 +109,6 @@ public class ArrayStats {
     }
     /**
      * Getter for the minimum array value
-     * 
      * @return minimum array value
      */
     public double getMinVal() {
@@ -149,16 +145,20 @@ public class ArrayStats {
         return histstep;
     }
     /**
-     * Builds a histogram from the array that was given in the constructor call.
+     * Builds a histogram from the array that was given in the constructor call, 
+     * with the assumption that the array hasn't been modified since that
+     * constructor call (maxhigh and maxlow haven't changed)
      * 
      * @param numIntervals the number of intervals to use in the histogram
      * @return array holding the counts of values that fell within each
      * interval of the histogram
      */
     public int[] makeHistogram(int numIntervals) {
-        //THis can be made faster by smarter searching for the correct bin.
-        //create the array for the histogram and fill with 0s
         double HIST_EPSILON = 0.0001;
+        if ((numIntervals <= 0) || (length == 0)) {
+            int[] hist = new int[0];
+            return hist;
+        }
         int[] hist = new int[numIntervals];
         Arrays.fill(hist, 0);
         //determine the range of values and the width of each bin
@@ -187,22 +187,14 @@ public class ArrayStats {
                 }
             }
         }
-//        System.out.println("+++ hist maxhigh: " + maxhigh + " maxlow: " + maxlow);
-//        for (int i = 0; i < hist.length; i++) {
-//            if (hist[i] > 0) {
-//                System.out.println("+++ hist low: " + (maxlow + i*histstep) + " hist high: " + (maxlow + (i+1)*histstep));
-//                System.out.println("+++ hist: " + hist[i] + " for index: " + i);
-//            }
-//        }
         return hist;
     }
     /**
      * Find the most frequently occurring value in the lower range of array values.
      * This is done by making a histogram of the array values and, looking only
      * at the lower half of the histogram, find the bin with the highest count.
-     * This bin corresponds to a range of values in the array, and the lower end
-     * value of the range is calculated and returned as the modal minimum.  The
-     * number of bins used in the estimate is internally set at 100.
+     * This bin corresponds to a range of values in the array, and the mid point
+     * value of the range is calculated and returned as the modal minimum.
      * @param numbins the number of bins to use for the histogram
      * @return the approximate array value representing the most frequently
      * seen low range value.
@@ -216,6 +208,9 @@ public class ArrayStats {
         //Find the bin in the first half of the histogram with the highest
         //count.  This is the modal value for the minimum.
         hist = makeHistogram( numbins );
+        if (hist.length == 0) {
+            return modalMin;
+        }
         
         int startbin = 0;
         int stopbin = numbins;

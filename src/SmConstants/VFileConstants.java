@@ -140,7 +140,7 @@ public final class VFileConstants {
     public static final double FROM_G_CONVERSION = 980.665; //cm per sq. sec per g
     public static final double TO_G_CONVERSION = 0.0010197;  //g per cm per sq. sec
     //Arias Intensity constant = (acos(0.05))/(g*(sqrt(1-(0.05)^2)))
-    public static final double ARIAS_INTENSITY_CONST = 1493.23899;
+    public static final double ARIAS_INTENSITY_CONST = 0.0016;
     
     public enum EventOnsetType{ AIC, DE };
     
@@ -161,9 +161,9 @@ public final class VFileConstants {
     public static final int DEFAULT_2ND_POLY_ORD_UPPER = 2;
     
     //QC check constants
-    public static final double DEFAULT_QA_INITIAL_VELOCITY = 0.002;
-    public static final double DEFAULT_QA_RESIDUAL_VELOCITY = 0.002;
-    public static final double DEFAULT_QA_RESIDUAL_DISPLACE = 0.001;
+    public static final double DEFAULT_QA_INITIAL_VELOCITY = 0.1;
+    public static final double DEFAULT_QA_RESIDUAL_VELOCITY = 0.1;
+    public static final double DEFAULT_QA_RESIDUAL_DISPLACE = 0.1;
     
     public static final String DEBUG_TO_LOG_ON = "On";
     

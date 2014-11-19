@@ -6,7 +6,10 @@
 
 package COSMOSformat;
 
+import SmConstants.VFileConstants;
 import SmException.FormatException;
+import SmUtilities.ConfigReader;
+import static SmUtilities.SmConfigConstants.OUT_ARRAY_FORMAT;
 import java.io.File;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -79,6 +82,20 @@ public class V0Component extends COSMOScontentFormat {
         System.arraycopy(V0DataText, 0, outText, currentLength, V0DataText.length);
         outText[totalLength-1] = this.endOfData;
         return outText;
+    }
+    public void updateV0(String inname) {
+        //Get the array output format of single column per channel or packed
+        VFileConstants.SmArrayStyle packtype;
+        ConfigReader config = ConfigReader.INSTANCE;
+        String arrformat = config.getConfigValue(OUT_ARRAY_FORMAT);
+        if ((arrformat == null) || (arrformat.contentEquals("Packed"))) {
+            packtype = VFileConstants.SmArrayStyle.PACKED;
+        } else {
+            packtype = VFileConstants.SmArrayStyle.SINGLE_COLUMN;
+        }
+        this.setFileName(inname);
+        this.checkForRcrdIdAndAuth();
+        
     }
     public int getDataLength() {
         return V0Data.getNumVals();

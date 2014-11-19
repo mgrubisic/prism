@@ -159,7 +159,7 @@ public class EventOnsetDetection {
 //        System.out.println("+++ PIM index of peak: " + peak);
         //In the array subset acc[0:peak], start at the end and work back to front
         //to find the index of the first zero-crossing.  This is the start of
-        //the P-wave.  The zero-crossing is identified by 2 consecutive values
+        //the event.  The zero-crossing is identified by 2 consecutive values
         //in the array with differing signs.
         for (int k = peak; k > 0; k--) {
             if ((acc[k] * acc[k-1]) < 0.0) {
@@ -169,7 +169,7 @@ public class EventOnsetDetection {
         }
 //        System.out.println("+++ start of zero crossing: " + found);
         //Return the index into the acceleration array that marks the start of
-        //the P-wave, adjusted by the buffer amount
+        //the event, adjusted by the buffer amount
         eventStart = found;
         return eventStart;
     }

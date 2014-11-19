@@ -98,8 +98,7 @@ public class SmQueue {
         for (COSMOScontentFormat rec : smlist) {
             //declare rec as a V0 channel record
             V0Component v0rec = (V0Component)rec;
-            v0rec.setFileName(this.fileName.toString());
-            v0rec.checkForRcrdIdAndAuth();
+            v0rec.updateV0(this.fileName.toString());
             
             //create the V1 processing object and do the processing          
             V1Process v1val = new V1Process(v0rec);
