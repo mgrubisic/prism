@@ -262,6 +262,13 @@ public class COSMOScontentFormat {
         System.err.println("method VrecToText must be overridden");
         return temp;
     }
+    /**
+     * This method checks line 7 of the text header to see if it contains the 
+     * record id, and checks the comments for the Authorization tag.  If either
+     * of these are found they are saved for use in processing.  If the Auth
+     * tag is found and there is no defined channel number, the channel code
+     * from the Auth tag is saved for the channel identifier.
+     */
     public void checkForRcrdIdAndAuth() {
         String line = this.textHeader[7];
         String[] segments;
@@ -293,6 +300,14 @@ public class COSMOScontentFormat {
             }
         }
     }
+    /**
+     * This method updates the End-of-data line to match the current processing
+     * type.
+     * @param dtype the data type to update the End-of-data line with, such as
+     * UNCORACC, CORACC, VELOCITY, or DISPLACE.  If no match, then "response
+     * spectra" is used.
+     * @param channel the channel identifier
+     */
     public void updateEndOfDataLine(String dtype, String channel) {
         String line = this.endOfData;
         String end = "";
@@ -354,6 +369,10 @@ public class COSMOScontentFormat {
     public double getNoRealVal(){
         return noRealVal;
     }
+    /**
+     * Getter for the sensor location text in the text header.
+     * @return 
+     */
     public String getSensorLocation() {
         String notFound = "";
         String location = textHeader[SENSOR_LOCATION_LINE];
@@ -369,6 +388,11 @@ public class COSMOScontentFormat {
     public void setChannel(String inChannel) {
             channel = inChannel;
     }
+    /**
+     * Getter for the event date and time from the Integer header values.
+     * @return event date and time in string format, starting with UT and containing
+     * year, month, day, hour, minute, and second separated by an underscore.
+     */
     public String getEventDateTime() {
         StringBuilder sb = new StringBuilder(MAX_LINE_LENGTH);
 //        StringBuilder ab = new StringBuilder(MAX_LINE_LENGTH);
@@ -496,21 +520,45 @@ public class COSMOScontentFormat {
     public String getProcType() {
         return procType;
     }
+    /**
+     * Getter for the file name for this record
+     * @return file name
+     */
     public String getFileName() {
         return fileName;
     }
+    /**
+     * Setter for the file name for this record
+     * @param inName file name
+     */
     public void setFileName( String inName ) {
         fileName = inName;
     }
+    /**
+     * Getter for the station directory for this channel
+     * @return station directory
+     */
     public File getStationDir() {
         return stationDir;
     }
+    /**
+     * Setter for the station directory for this channel
+     * @param inDir station directory
+     */
     public void setStationDir( File inDir ) {
         stationDir = inDir;
     }
+    /**
+     * Getter for the record id for this channel
+     * @return record id
+     */
     public String getRcrdId() {
         return rcrdId;
     }
+    /**
+     * Getter for the SCNL and Authorization line from the comments
+     * @return the SCNL and Auth tags and contents as a String
+     */
     public String getSCNLauth() {
         return SCNLauth;
     }

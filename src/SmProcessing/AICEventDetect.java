@@ -41,6 +41,7 @@ public class AICEventDetect {
     private int bufferedIndex;
     private double[] array;
     private double bufferVal;
+    private final double EPSILON = 0.00001;
     
     public AICEventDetect() {
         this.index = 0;
@@ -49,15 +50,20 @@ public class AICEventDetect {
     }
     
     public int calculateIndex( double[] InArray, String pickrange ) {
+        if ((InArray == null) || (InArray.length == 0)) {
+            index = -1;
+            return index;
+        }
+        String range = ((pickrange == null) || pickrange.isEmpty() || 
+                (!pickrange.equalsIgnoreCase("Full"))) ? "to_peak" : pickrange;
         array = new double[InArray.length];
         double[] arrnew;
         ArrayStats arrstats;
-        String range = (!pickrange.equalsIgnoreCase("Full")) ? "to_peak" : "full";
         
         //Make a copy of the array for calculations
         System.arraycopy(InArray, 0, array, 0, InArray.length);
         
-        //removed the median value from the array
+        //Remove the median value from the array
         DescriptiveStatistics stats = new DescriptiveStatistics();
         for (int i = 0; i < array.length; i++) {
             stats.addValue(array[i]);
@@ -117,9 +123,13 @@ public class AICEventDetect {
         return vararray;
     }
     public int applyBuffer( double buffer, double dtime ) {
-        bufferVal = buffer;
-        bufferedIndex = index - (int)Math.round(bufferVal/dtime);
-        bufferedIndex = (bufferedIndex < 0) ? 0 : bufferedIndex;
+        if (Math.abs(dtime - 0.0) < EPSILON) {
+            bufferedIndex = -1;
+        } else {
+            bufferVal = buffer;
+            bufferedIndex = index - (int)Math.round(bufferVal/dtime);
+            bufferedIndex = (bufferedIndex < 0) ? 0 : bufferedIndex;
+        }
         return bufferedIndex;
     }
     public int getIndex() {

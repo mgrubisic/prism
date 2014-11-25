@@ -119,6 +119,25 @@ public class VIntArray extends COSMOSarrayFormat {
     public int[] getIntArray(){
         return this.intVals;
     }
+/**
+ * This method calculates the values for the valsPerLine, numberFormat, and
+ * numLines fields based on the current array size and other field values.
+ * @throws FormatException if the fieldWidth field is less than or equal to 0
+ */
+    public void buildArrayParams(SmArrayStyle packtype) throws FormatException {
+        if (this.getFieldWidth() > 0 ) {
+            if (packtype == SmArrayStyle.PACKED) {
+                this.setValsPerLine(MAX_LINE_LENGTH / this.getFieldWidth());
+            } else {
+                this.setValsPerLine(1);
+            }
+        } else {
+            throw new FormatException("Invalid field width of " + this.getFieldWidth());
+        }
+        this.setNumberFormat("(" + String.valueOf(this.getValsPerLine()) + 
+                this.displayType + String.valueOf(this.getFieldWidth()) + ")");
+        this.calculateNumLines();
+    }
     /**
      * This method takes each numeric value and converts it to its text
      * representation according to the formatting stored for the array.

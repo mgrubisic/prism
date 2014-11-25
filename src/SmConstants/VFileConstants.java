@@ -78,6 +78,8 @@ public final class VFileConstants {
     public static final int CMN = 6;
     public static final String GUNITST = "g";
     public static final int GLN = 2;
+    public static final String COUNTTEXT = "counts";
+    public static final int CNTN = 50;
     
     //filter code
     public static final int BUTTER_A_CODE = 5;
@@ -109,7 +111,7 @@ public final class VFileConstants {
     public static final int SENSOR_SENSITIVITY = 41; //in volts per g
     public static final int SCALING_FACTOR = 87;
     
-    public enum MagnitudeType { MOMENT, M_LOCAL, SURFACE, M_OTHER };
+    public enum MagnitudeType { INVALID, MOMENT, M_LOCAL, SURFACE, M_OTHER };
     
     public static final int LOCAL_MAGNITUDE = 14;
     public static final int MOMENT_MAGNITUDE = 12;

@@ -55,6 +55,7 @@ public class AdaptiveBaselineTest {
     double deltat1 = 0.005;
     double dtime2 = 0.01;
     double mag = 5.1;
+    double noval = -999.99;
     double[] time;
     double[] time2;
     static double[] hnn;
@@ -76,7 +77,8 @@ public class AdaptiveBaselineTest {
     int degreeS = 3;
     
     public AdaptiveBaselineTest() {
-        FilterCutOffThresholds threshold = new FilterCutOffThresholds( mag );
+        FilterCutOffThresholds threshold = new FilterCutOffThresholds();
+        threshold.SelectMagAndThresholds(mag, noval, noval, noval, noval);
         double lowcut = threshold.getLowCutOff();
         double highcut = threshold.getHighCutOff();
         time = ArrayOps.makeTimeArray(dtime2, hnn.length);
@@ -143,7 +145,8 @@ public class AdaptiveBaselineTest {
 //    }
     @Test
     public void adaptiveBaselineTest() throws SmException {
-        FilterCutOffThresholds threshold = new FilterCutOffThresholds( mag );
+        FilterCutOffThresholds threshold = new FilterCutOffThresholds();
+        threshold.SelectMagAndThresholds(mag, noval, noval, noval, noval);
         double lowcut = threshold.getLowCutOff();
         double highcut = threshold.getHighCutOff();
         
@@ -174,7 +177,8 @@ public class AdaptiveBaselineTest {
     }
     @Test
     public void ABC2Test() throws SmException {
-        FilterCutOffThresholds threshold = new FilterCutOffThresholds( mag );
+        FilterCutOffThresholds threshold = new FilterCutOffThresholds();
+        threshold.SelectMagAndThresholds(mag, noval, noval, noval, noval);
         double lowcut = threshold.getLowCutOff();
         double highcut = threshold.getHighCutOff();
         double[] result = adapt2.makeCorrection( hn2, breakh1, breakh2,degreeP1, degreeP2 );

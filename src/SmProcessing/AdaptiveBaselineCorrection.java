@@ -50,9 +50,6 @@ public class AdaptiveBaselineCorrection {
     private final int degreeP1hi;
     private final int degreeP2lo;
     private final int degreeP2hi;
-    private final double tol_res_disp;
-    private final double tol_init_vel;
-    private final double tol_res_vel;
     private double[] bnn;
     private double[] result;
     private ArrayList<double[]> params;
@@ -81,10 +78,6 @@ public class AdaptiveBaselineCorrection {
         this.elog = SmErrorLogger.INSTANCE;
         writeArrays = true;
         ConfigReader config = ConfigReader.INSTANCE;
-        
-        //Get the values out of the configuration file and screen for correctness.
-        //Number of spline breaks
-        //First polynomial order
         this.degreeP1lo = validateConfigParam(FIRST_POLY_ORDER_LOWER, 
                                                 DEFAULT_1ST_POLY_ORD_LOWER,
                                                 DEFAULT_1ST_POLY_ORD_LOWER,
@@ -93,7 +86,6 @@ public class AdaptiveBaselineCorrection {
                                                 DEFAULT_1ST_POLY_ORD_UPPER,
                                                 degreeP1lo,
                                                 DEFAULT_1ST_POLY_ORD_UPPER);
-        //second polynomial order
         this.degreeP2lo = validateConfigParam(SECOND_POLY_ORDER_LOWER, 
                                                 DEFAULT_2ND_POLY_ORD_LOWER,
                                                 DEFAULT_2ND_POLY_ORD_LOWER,
@@ -102,15 +94,6 @@ public class AdaptiveBaselineCorrection {
                                                 DEFAULT_2ND_POLY_ORD_UPPER,
                                                 degreeP2lo,
                                                 DEFAULT_2ND_POLY_ORD_UPPER);
-
-        String qainitvel = config.getConfigValue(QA_INITIAL_VELOCITY);
-        this.tol_init_vel = (qainitvel == null) ? DEFAULT_QA_INITIAL_VELOCITY : Double.parseDouble(qainitvel);
-
-        String qaendvel = config.getConfigValue(QA_RESIDUAL_VELOCITY);
-        this.tol_res_vel = (qaendvel == null) ? DEFAULT_QA_RESIDUAL_VELOCITY : Double.parseDouble(qaendvel);
-
-        String qaenddis = config.getConfigValue(QA_RESIDUAL_DISPLACE);
-        this.tol_res_disp = (qaenddis == null) ? DEFAULT_QA_RESIDUAL_DISPLACE : Double.parseDouble(qaenddis);
     }
     
     public final int validateConfigParam( String configparm, int defval, int lower,
@@ -148,6 +131,11 @@ public class AdaptiveBaselineCorrection {
         params = new ArrayList<>();
         double[] onerun;
         V2Status status = V2Status.NOABC;
+        QCcheck qcchecker = new QCcheck();
+        if (!qcchecker.validateQCvalues()){
+            throw new SmException("Error extracting QC values from configuration file");
+        }
+        qcchecker.findWindows(lowcut, (1.0/dtime), estart);
         
         for (int order1 = degreeP1lo; order1 <= degreeP1hi; order1++) {
             for (int order2 = degreeP2lo; order2 <= degreeP2hi; order2++) {
@@ -172,37 +160,15 @@ public class AdaptiveBaselineCorrection {
                         //for acceleration
                         displace = ArrayOps.Integrate( velocity, dtime);
                         accel = ArrayOps.Differentiate(velocity, dtime);
-                        //store the results in an array for comparison
-                        int vellen = velocity.length;
-                        int dislen = displace.length;
-                        int window = (int)(estart * 0.25);
-                        int velwindowstart;
-                        int velwindowend;
-                        int diswindowend;
-                        double velstart;
-                        double velend;
-                        double disend;
-
-                        if (window > 0) {
-                            velwindowstart = ArrayOps.findZeroCrossing(velocity, window, 1);
-                            velwindowend = ArrayOps.findZeroCrossing(velocity, vellen-window, 0);
-                            diswindowend = ArrayOps.findZeroCrossing(displace, dislen-window, 0);
-                            velstart = (velwindowstart > 0) ? ArrayOps.findSubsetMean(velocity, 0, velwindowstart) : velocity[0];
-                            velend = (velwindowend > 0) ? ArrayOps.findSubsetMean(velocity, velwindowend, vellen) : velocity[vellen-1];
-                            disend = (diswindowend > 0) ? ArrayOps.findSubsetMean(displace, diswindowend, dislen) : displace[dislen-1];
-                        } else {
-                            velstart = velocity[0];
-                            velend = velocity[vellen-1];
-                            disend = displace[dislen-1];
-                        }
-                        
-                        
+                        qcchecker.qcVelocity(velocity);
+                        qcchecker.qcDisplacement(displace);
+                        //store the results in an array for comparison  
                         onerun = new double[RESULT_PARMS];
                         onerun[0] = Math.sqrt(Math.pow(rms[0], 2) +
                                                             Math.pow(rms[2],2));
-                        onerun[1] = Math.abs(disend);
-                        onerun[2] = Math.abs(velstart);
-                        onerun[3] = Math.abs(velend);
+                        onerun[1] = Math.abs(qcchecker.getResidualDisplacement());
+                        onerun[2] = Math.abs(qcchecker.getInitialVelocity());
+                        onerun[3] = Math.abs(qcchecker.getResidualVelocity());
                         onerun[4] = t11;
                         onerun[5] = t2;
                         onerun[6] = order1;
@@ -215,7 +181,8 @@ public class AdaptiveBaselineCorrection {
                         onerun[13]= 0;
                         //Penalty for initial acceleration step
                         ArrayStats accstat = new ArrayStats(accel);
-                        if (Math.abs(Math.abs(accel[0]) - Math.abs(accstat.getPeakVal())) < EPSILON) {
+                        if (Math.abs(Math.abs(accel[0]) - 
+                                    Math.abs(accstat.getPeakVal())) < EPSILON) {
                             onerun[0] = 1000;
                         }
                         params.add(onerun);
@@ -235,23 +202,18 @@ public class AdaptiveBaselineCorrection {
         double[] temp;
         for (int i = 0; i < params.size(); i++) {
             temp = params.get(i);
-//            System.out.println("total rms: " + temp[0]);
             sorter.addPair(temp[0], count++);
         }
         ranking = sorter.getSortedVals();
-        double[] eachrun;
-//        for (int each : ranking) {
-//            System.out.println("rank: " + each);
-//        }
-        
-        //check each solution against the QA values and find the first that passes
+        double[] eachrun;        
+        //check each solution against the QC values and find the first that passes
         for (int idx : ranking) {
             eachrun = params.get(idx);
-            success = (eachrun[2] <= tol_init_vel) && 
-                                (eachrun[3] <= tol_res_vel) && 
-                                            (eachrun[1] <= tol_res_disp);
+            success = (eachrun[2] <= qcchecker.getInitVelocityQCval()) && 
+                          (eachrun[3] <= qcchecker.getResVelocityQCval()) && 
+                                (eachrun[1] <= qcchecker.getResDisplaceQCval());
             if (success) {
-                velocity = makeCorrection(velocity,(int)eachrun[4],(int)eachrun[5],
+                velocity = makeCorrection(velstart,(int)eachrun[4],(int)eachrun[5],
                                         (int)eachrun[6],(int)eachrun[7]);
                 //now filter velocity
                 filter = new ButterworthFilter();
@@ -272,7 +234,7 @@ public class AdaptiveBaselineCorrection {
         if (status != V2Status.GOOD) {
             solution = 0;
             eachrun = params.get(solution);
-            velocity = makeCorrection(velocity,(int)eachrun[4],(int)eachrun[5],
+            velocity = makeCorrection(velstart,(int)eachrun[4],(int)eachrun[5],
                                     (int)eachrun[6],(int)eachrun[7]);
             //now filter velocity
             filter = new ButterworthFilter();
@@ -329,10 +291,11 @@ public class AdaptiveBaselineCorrection {
         for (int i = 0; i < result.length; i++) {
             result[i] = array[i] - bnn[i];
         }
-        rms[0] = ArrayOps.rootMeanSquare(Arrays.copyOfRange(result,0,break1));
-//        rms[1] = ArrayOps.rootMeanSquare(Arrays.copyOfRange(result,break1,break2));
+        rms[0] = ArrayOps.rootMeanSquare( Arrays.copyOfRange(array,0,break1),
+                                            Arrays.copyOfRange(bnn,0,break1));
         rms[1] = 0.0;
-        rms[2] = ArrayOps.rootMeanSquare(Arrays.copyOfRange(result,break2,array.length));
+        rms[2] = ArrayOps.rootMeanSquare( Arrays.copyOfRange(array,break2,array.length),
+                                Arrays.copyOfRange(bnn,break2,bnn.length));
         
         return result;
     }

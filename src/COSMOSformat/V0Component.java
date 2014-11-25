@@ -7,7 +7,12 @@
 package COSMOSformat;
 
 import SmConstants.VFileConstants;
+import static SmConstants.VFileConstants.CNTN;
+import static SmConstants.VFileConstants.COUNTTEXT;
+import static SmConstants.VFileConstants.DELTA_T;
+import static SmConstants.VFileConstants.MSEC_TO_SEC;
 import SmException.FormatException;
+import SmException.SmException;
 import SmUtilities.ConfigReader;
 import static SmUtilities.SmConfigConstants.OUT_ARRAY_FORMAT;
 import java.io.File;
@@ -49,6 +54,12 @@ public class V0Component extends COSMOScontentFormat {
         current = V0Data.parseValues( current, infile);
         return current;
     }
+    /**
+     * This method converts the internal record to a text format.  Items already
+     * in text format are copied in, and numeric tables are converted according
+     * to their data type.
+     * @return an array of strings (text) of the COSMOS file in output format
+     */
     @Override
     public String[] VrecToText() {
         //add up the length of the text portions of the component, which are
@@ -83,20 +94,55 @@ public class V0Component extends COSMOScontentFormat {
         outText[totalLength-1] = this.endOfData;
         return outText;
     }
-    public void updateV0(String inname) {
+    /**
+     * Updates certain parameters for the V0 file to facilitate its rewrite out
+     * as single channel.  The array output format is checked in the configuration
+     * file and updated for the outgoing V0, the output file name is set and
+     * record id and authorization picked up to determine the output directory
+     * and file name
+     * @param inname the file name for this record
+     * @throws SmException.FormatException
+     * @throws SmException.SmException
+     */
+    public void updateV0(String inname) throws FormatException, SmException {
         //Get the array output format of single column per channel or packed
         VFileConstants.SmArrayStyle packtype;
         ConfigReader config = ConfigReader.INSTANCE;
         String arrformat = config.getConfigValue(OUT_ARRAY_FORMAT);
-        if ((arrformat == null) || (arrformat.contentEquals("Packed"))) {
-            packtype = VFileConstants.SmArrayStyle.PACKED;
-        } else {
+        if ((arrformat != null) && (!arrformat.contentEquals("Packed"))) {
             packtype = VFileConstants.SmArrayStyle.SINGLE_COLUMN;
+            V0Data.buildArrayParams( packtype );
+            this.buildNewDataFormatLine(COUNTTEXT, CNTN, "raw accel. ");
         }
         this.setFileName(inname);
         this.checkForRcrdIdAndAuth();
         
     }
+    /**
+     * This method builds a new data format line for writing out the V0 files,
+     * and is used when the data packing method has changed to Single Column.
+     * @param units output units, which will be counts for V0
+     * @param unitscode units code for counts
+     * @param dataType for V0 this will be acceleration or raw accel.
+     * @throws SmException if unable to correctly format the values
+     */
+    public void buildNewDataFormatLine(String units, int unitscode, 
+                                        String dataType) throws SmException {
+        //calculate the time by multiplying the number of data values by delta t
+        String line;
+        double deltat = this.getRealHeaderValue(DELTA_T);
+        int numvals = V0Data.getNumVals();
+        double calcTime = deltat * numvals * MSEC_TO_SEC;
+        String timeSec = Integer.toString((int)calcTime);
+        line = String.format("%1$8s %2$13s pts, approx %3$4s secs, units=%4$7s(%5$02d), Format=",
+                                     String.valueOf(numvals),dataType,
+                                                    timeSec, units, unitscode);
+        V0Data.setFormatLine(line + V0Data.getNumberFormat());
+    }
+    /**
+     * Getter for the length of the data array.
+     * @return the length of the data array.
+     */
     public int getDataLength() {
         return V0Data.getNumVals();
     }

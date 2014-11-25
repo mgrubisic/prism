@@ -311,9 +311,9 @@ public class ArrayOpsTest {
      public void testRootMeanSquare() {
          double[] test1 = null;
          double[] test2 = new double[0];
-         org.junit.Assert.assertEquals(2.0, ArrayOps.rootMeanSquare(posconstant),EPSILON);
-         org.junit.Assert.assertEquals(Double.MIN_VALUE, ArrayOps.rootMeanSquare(test1),EPSILON);
-         org.junit.Assert.assertEquals(Double.MIN_VALUE, ArrayOps.rootMeanSquare(test2),EPSILON);
+         org.junit.Assert.assertEquals(0.0, ArrayOps.rootMeanSquare(posconstant,posconstant),EPSILON);
+         org.junit.Assert.assertEquals(Double.MIN_VALUE, ArrayOps.rootMeanSquare(test1,test1),EPSILON);
+         org.junit.Assert.assertEquals(Double.MIN_VALUE, ArrayOps.rootMeanSquare(test2,test2),EPSILON);
      }
      @Test
      public void testCountsToPhysicalValues() {
@@ -358,5 +358,26 @@ public class ArrayOpsTest {
          org.junit.Assert.assertEquals(-2,ArrayOps.findZeroCrossing(test2, 80, 0));
          org.junit.Assert.assertEquals(-2,ArrayOps.findZeroCrossing(posconstant, -80, 0));
          org.junit.Assert.assertEquals(-2,ArrayOps.findZeroCrossing(posconstant, 800, 0));
+     }
+     @Test
+     public void testRemoveTrendWithBestFit() {
+         double[] test1 = null;
+         double[] test2 = new double[0];
+         double[] fit = new double[LENGTH];
+         org.junit.Assert.assertEquals(false, ArrayOps.removeTrendWithBestFit(test1, 2.0));
+         org.junit.Assert.assertEquals(false, ArrayOps.removeTrendWithBestFit(test2, 2.0));
+         org.junit.Assert.assertEquals(false, ArrayOps.removeTrendWithBestFit(linecentered, 0.0));
+         
+         System.arraycopy(linecentered, 0, fit, 0, LENGTH);
+         org.junit.Assert.assertEquals(true, ArrayOps.removeTrendWithBestFit(fit, STEP));
+         org.junit.Assert.assertArrayEquals(fit,zeroconstant,EPSILON);
+         
+         System.arraycopy(poly, 0, fit, 0, LENGTH);
+         org.junit.Assert.assertEquals(true, ArrayOps.removeTrendWithBestFit(fit, STEP));
+         org.junit.Assert.assertArrayEquals(fit,zeroconstant,EPSILON);
+     }
+     @Test
+     public void testFindLinearTrend() {
+         org.junit.Assert.assertArrayEquals(ArrayOps.findLinearTrend(polyline,STEP),linepos,EPSILON);
      }
 }

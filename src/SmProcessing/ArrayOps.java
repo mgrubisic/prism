@@ -19,6 +19,7 @@ package SmProcessing;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
 import org.apache.commons.math3.fitting.PolynomialCurveFitter;
 import org.apache.commons.math3.fitting.WeightedObservedPoint;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
@@ -89,6 +90,34 @@ public class ArrayOps {
             array [i] = array[i] - regression.predict(time[i]);
         }
         return true;
+    }
+    /**
+     * Fit a linear trend (mx + b) to the input array with the given 
+     * time step.  The linear trend is calculated internally using apache commons
+     * math simple regression class.
+     * 
+     * @param array input array to have linear trend fitted from
+     * @param timestep the sample interval of the input array
+     * @return array with linear function, or array of length 0 if input
+     * parameters are invalid.
+     */
+    public static double[] findLinearTrend( double[] array, double timestep ) {
+        if ((array == null) || (array.length == 0) ||
+                                    (Math.abs(timestep - 0.0) < OPS_EPSILON)) {
+            return new double[0];
+        }
+        int len = array.length;
+        double[] time = makeTimeArray( timestep, len);
+        SimpleRegression regression = new SimpleRegression();
+        for(int i = 0; i < len; i++) {
+            regression.addData(time[i], array[i]);
+        }
+        //Get the baseline function
+        double[] baseline = new double[len];
+        for (int i = 0; i < len; i++) {
+            baseline[i] = regression.predict(time[i]);
+        }
+        return baseline;
     }
     /**
      * Removes a linear trend from an array, where the linear trend is calculated
@@ -223,7 +252,6 @@ public class ArrayOps {
             return new double[0];
         }
         int len = array.length;
-        double value;
         double[] time = makeTimeArray( timestep, len);
         ArrayList<WeightedObservedPoint> points = new ArrayList<>();
         for (int i = 0; i < len; i++ ){
@@ -251,29 +279,71 @@ public class ArrayOps {
         int len = array.length;
         double value;
         double[] time = makeTimeArray( timestep, len);
+        PolynomialFunction poly = new PolynomialFunction( coefs );;
         for (int i = 0; i < len; i++) {
-            value = 0.0;
-            for (int k = 0; k < coefs.length; k++) {
-                value = value + coefs[k]*Math.pow(time[i],k);
-            }
-            array[i] = array[i] - value;
+            array[i] = array[i] - poly.value(time[i]);
         }
         return true;
     }
     /**
      * Calculates the root mean square (rms) value for the input array
-     * @param array array to calculate rms for
-     * @return the rms value or Double.MIN_VALUE if input array is invalid
+     * @param orig original array to calculate rms for
+     * @param est estimated array to compare with the original
+     * @return the rms value or Double.MIN_VALUE if input arrays are invalid
      */
-    public static double rootMeanSquare( double[] array ) {
-        if ((array == null) || (array.length == 0)) {
+    public static double rootMeanSquare( double[] orig, double[] est ) {
+        if ((orig == null) || (orig.length == 0) || (est == null) || 
+                             (est.length == 0) || (orig.length != est.length)) {
             return Double.MIN_VALUE;
         }
+        int len = orig.length;
         double rms = 0.0;
-        for (double each : array) {
-            rms += Math.pow(each, 2);
+        for (int i = 0; i < len; i++) {
+            rms += Math.pow((orig[i]-est[i]), 2);
         }
-        return Math.sqrt(rms / array.length);
+        return Math.sqrt(rms / len);
+    }
+    public static boolean removeTrendWithBestFit( double[] inarr, double timestep) {
+        if ((inarr == null) || (inarr.length == 0) || 
+                                    (Math.abs(timestep - 0.0) < OPS_EPSILON)) {
+            return false;
+        }
+        //find linear trend for input array and rms compare with original
+        int len = inarr.length;
+        double[] lcoefs;
+        double[] pcoefs;
+        double[] time = makeTimeArray( timestep, len);
+        PolynomialFunction poly;
+
+        //find 1st order polynomial trend for input array and commpare with original
+        lcoefs = findPolynomialTrend(inarr, 1, timestep);
+//        System.out.println("a: " + lcoefs[0] + "  b: " + lcoefs[1]);
+        poly = new PolynomialFunction( lcoefs );
+        double[] linbase = new double[len];
+        for (int i = 0; i < len; i++) {
+            linbase[i] = poly.value(time[i]);
+        }
+        double linrms = rootMeanSquare( inarr, linbase );
+        
+        //find 2nd order polynomial trend for input array and rms compare with original
+        pcoefs = findPolynomialTrend(inarr, 2, timestep);
+//        System.out.println("a: " + pcoefs[0] + "  b: " + pcoefs[1] + " c: " + pcoefs[2]);
+        poly = new PolynomialFunction( pcoefs );
+        double[] polbase = new double[len];
+        for (int i = 0; i < len; i++) {
+            polbase[i] = poly.value(time[i]);
+        }
+        double polrms = rootMeanSquare( inarr, polbase);
+        
+        //compare the rms values and remove the trend with the smallest rms
+        if (linrms <= polrms) {
+//            System.out.println("linear trend removed");
+            removePolynomialTrend(inarr, lcoefs, timestep);
+        } else {
+//            System.out.println("polynomial trend removed");
+            removePolynomialTrend(inarr, pcoefs, timestep);
+        }
+        return true;
     }
     /**
      * Converts raw trace counts to physical values by multiplying the integer

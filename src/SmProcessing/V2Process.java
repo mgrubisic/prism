@@ -21,10 +21,6 @@ import COSMOSformat.V1Component;
 import static SmConstants.VFileConstants.*;
 import SmConstants.VFileConstants.EventOnsetType;
 import SmConstants.VFileConstants.MagnitudeType;
-import static SmConstants.VFileConstants.MagnitudeType.MOMENT;
-import static SmConstants.VFileConstants.MagnitudeType.M_LOCAL;
-import static SmConstants.VFileConstants.MagnitudeType.M_OTHER;
-import static SmConstants.VFileConstants.MagnitudeType.SURFACE;
 import SmConstants.VFileConstants.V2DataType;
 import SmException.SmException;
 import SmUtilities.ConfigReader;
@@ -72,6 +68,10 @@ public class V2Process {
     private final double highcutoff;
     private double lowcutadj;
     private double highcutadj;
+    private double mmag;
+    private double lmag;
+    private double smag;
+    private double omag;
     private double magnitude;
     private MagnitudeType magtype;
     
@@ -82,10 +82,8 @@ public class V2Process {
     private final int numpoles;  // the filter order is 2*numpoles
     private double taperlength;
     
-    private final double qavelocityinit;
-    private final double qavelocityend;
-    private final double qadisplacend;
     private V2Status procStatus;
+    private QCcheck qcchecker;
     
     private ArrayList<String> errorlog;
     private boolean writeDebug;
@@ -150,30 +148,11 @@ public class V2Process {
             throw new SmException("Real header #62, delta t value, " + 
                                         delta_t + " is out of expected range");
         }
-        //Get the earthquake magnitude from the real header array.  The order of
-        //precedence for magnitude values is MOMENT, LOCAL, SURFACE, OTHER.
-        //If all values are undefined or invalid, flag as an error.
-        this.magnitude = inV1.getRealHeaderValue(MOMENT_MAGNITUDE);
-        if ((Math.abs(magnitude - noRealVal) < epsilon) || (magnitude < 0.0)){
-            this.magnitude = inV1.getRealHeaderValue(LOCAL_MAGNITUDE);
-            if ((Math.abs(magnitude - noRealVal) < epsilon) || (magnitude < 0.0)){
-                this.magnitude = inV1.getRealHeaderValue(SURFACE_MAGNITUDE);
-                if ((Math.abs(magnitude - noRealVal) < epsilon) || (magnitude < 0.0)){
-                    this.magnitude = inV1.getRealHeaderValue(OTHER_MAGNITUDE);
-                    if ((Math.abs(magnitude - noRealVal) < epsilon) || (magnitude < 0.0)){
-                        throw new SmException("All earthquake magnitude real header values are invalid.");
-                    } else {
-                        this.magtype = M_OTHER;
-                    }
-                } else {
-                    this.magtype = SURFACE;
-                }
-            } else {
-                this.magtype = M_LOCAL;
-            }
-        } else {
-            this.magtype = MOMENT;
-        }
+        //Get the earthquake magnitude from the real header array.
+        this.mmag = inV1.getRealHeaderValue(MOMENT_MAGNITUDE);
+        this.lmag = inV1.getRealHeaderValue(LOCAL_MAGNITUDE);
+        this.smag = inV1.getRealHeaderValue(SURFACE_MAGNITUDE);
+        this.omag = inV1.getRealHeaderValue(OTHER_MAGNITUDE);
         
         try {
             String unitcode = config.getConfigValue(DATA_UNITS_CODE);
@@ -204,33 +183,21 @@ public class V2Process {
             } else {
                 this.emethod = EventOnsetType.DE;
             }
-            
-            String qainitvel = config.getConfigValue(QA_INITIAL_VELOCITY);
-            this.qavelocityinit = (qainitvel == null) ? DEFAULT_QA_INITIAL_VELOCITY : Double.parseDouble(qainitvel);
-            
-            String qaendvel = config.getConfigValue(QA_RESIDUAL_VELOCITY);
-            this.qavelocityend = (qaendvel == null) ? DEFAULT_QA_RESIDUAL_VELOCITY : Double.parseDouble(qaendvel);
-            
-            String qaenddis = config.getConfigValue(QA_RESIDUAL_DISPLACE);
-            this.qadisplacend = (qaenddis == null) ? DEFAULT_QA_RESIDUAL_DISPLACE : Double.parseDouble(qaenddis);
-            
-            String debugon = config.getConfigValue(DEBUG_TO_LOG);
-            this.writeDebug = debugon.equalsIgnoreCase(DEBUG_TO_LOG_ON);
-            
         } catch (NumberFormatException err) {
             throw new SmException("Error extracting numeric values from configuration file");
         }
+        qcchecker = new QCcheck();
+        if (!qcchecker.validateQCvalues()){
+            throw new SmException("Error extracting numeric values from configuration file");
+        }
+        String debugon = config.getConfigValue(DEBUG_TO_LOG);
+        this.writeDebug = (debugon == null) ? false : debugon.equalsIgnoreCase(DEBUG_TO_LOG_ON);
+        
         this.ebuffer = (this.ebuffer < 0.0) ? DEFAULT_EVENT_ONSET_BUFFER : this.ebuffer;
-        this.taperlength = (this.taperlength < 0.0) ? DEFAULT_TAPER_LENGTH : this.taperlength;
+        this.taperlength = (this.taperlength < 0.0) ? DEFAULT_TAPER_LENGTH : this.taperlength;  
     }
     
     public V2Status processV2Data() throws SmException, IOException {  
-        int dislen;
-        double velstart;
-        double velend;
-        double disend = 999.0;
-        boolean success = false;
-        
         double[] accraw = new double[0];
         //save a copy of the original array for pre-mean removal
         double[] V1Array = inV1.getDataArray();
@@ -253,7 +220,6 @@ public class V2Process {
         errorlog.add(String.format("time per sample in sec %4.3f",dtime));
         errorlog.add(String.format("sample rate (samp/sec): %4.1f",samplerate));
         errorlog.add(String.format("length of acceleration array: %d",accraw.length));
-        errorlog.add(String.format("earthquake magnitude: %3.2f",magnitude));
         errorlog.add("Event detection: remove linear trend, filter, event onset detection");
         
         ArrayOps.removeLinearTrend( acc, dtime);
@@ -267,16 +233,7 @@ public class V2Process {
         } else {
             throw new SmException("Invalid bandpass filter input parameters");
         }
-//        System.out.println("no pick index on filter");
-        
-//        errorlog.add("   f1: " + lowcutoff + " f2: " + highcutoff + " numpoles: " + numpoles);
-//        double[] b1 = filter.getB1();
-//        double[] b2 = filter.getB2();
-//        double[] fact = filter.getFact();
-//        for (int jj = 0; jj < b1.length; jj++) {
-//            errorlog.add(String.format("   fact: %f  b1: %f  b2: %f%n", fact[jj],b1[jj],b2[jj]));
-//        }
-        //Find the start of the wave
+        //Find the start of the event
         if (emethod == EventOnsetType.DE) {
             EventOnsetDetection depick = new EventOnsetDetection( dtime );
             pickIndex = depick.findEventOnset(acc);
@@ -292,10 +249,6 @@ public class V2Process {
                                                         pickIndex,startIndex));
         errorlog.add(String.format("pick time in seconds: %8.3f, buffered time: %8.3f",
                                           (pickIndex*dtime),(startIndex*dtime)));
-//        System.out.println(String.format("pick index: %d,  start index: %d",
-//                                                        pickIndex,startIndex));
-
-
         if (pickIndex <= 0) {
             //No pick index detected, so skip all V2 processing
             procStatus  = V2Status.NOEVENT;
@@ -317,58 +270,51 @@ public class V2Process {
             errorlog.add("Full array mean removed from uncorrected acceleration");
         }
 
-//        if (writeArrays) {
-//            elog.writeOutArray(accraw, "initialBaselineCorrection.txt");
+//        if (writeDebug) {
+//            elog.writeOutArray(accraw, V0name.getName() + "_" + channel + "_initialBaselineCorrection.txt");
 //        } 
 
         //Integrate the acceleration to get velocity.
         velocity = ArrayOps.Integrate( accraw, dtime);
         errorlog.add("acceleration integrated to velocity (trapezoidal method)");
-//        if (writeArrays) {
-//           elog.writeOutArray(velocity, "afterIntegrationToVel.txt");
-//        }
-        //Remove any linear trend from velocity
-        ArrayOps.removeLinearTrend( velocity, dtime);
-        errorlog.add("linear trend removed from velocity");
 //        if (writeDebug) {
-//           elog.writeOutArray(velocity, "LinearTrendRemovedVel.txt");
+//           elog.writeOutArray(velocity, V0name.getName() + "_" + channel + "_afterIntegrationToVel.txt");
+//        }
+        //Remove any linear or 2nd order polynomial trend from velocity
+        ArrayOps.removeTrendWithBestFit( velocity, dtime);
+        errorlog.add("linear/poly trend removed from velocity");
+//        if (writeDebug) {
+//           elog.writeOutArray(velocity, V0name.getName() + "_" + channel + "_LinearTrendRemovedVel.txt");
 //        }
         //Update Butterworth filter low and high cutoff thresholds for later
-        FilterCutOffThresholds threshold = new FilterCutOffThresholds( magnitude );
+        FilterCutOffThresholds threshold = new FilterCutOffThresholds();
+        magtype = threshold.SelectMagAndThresholds(mmag, lmag, smag, omag, noRealVal);
+        if (magtype == MagnitudeType.INVALID) {
+            throw new SmException("All earthquake magnitude real header values are invalid.");
+        }
         lowcutadj = threshold.getLowCutOff();
         highcutadj = threshold.getHighCutOff();
+        magnitude = threshold.getMagnitude();
+        errorlog.add(String.format("earthquake magnitude: %3.2f",magnitude));
 
         //perform first QA check on velocity, check first and last sections of
         //velocity array - should be close to 0.0 with tolerances.  If not,
         //perform adaptive baseline correction.
-//        int window5sec = (int)(5.0 / dtime);
         ///////////////////////////////
         //
         // First QC Test
         //
         ///////////////////////////////
-        int window = (int)(pickIndex * 1.0);
-        int vellen = velocity.length;
-        int velwindowstart;
-        int velwindowend;
-        if (window > 0) {
-            velwindowstart = ArrayOps.findZeroCrossing(velocity, window, 1);
-            velwindowend = ArrayOps.findZeroCrossing(velocity, vellen-window, 0);
-//            System.out.println("firstQC: velwindowstart = " + velwindowstart);
-//            System.out.println("firstQC: velwindowend = " + velwindowend);
-            velstart = (velwindowstart > 0) ? ArrayOps.findSubsetMean(velocity, 0, velwindowstart) : velocity[0];
-            velend = (velwindowend > 0) ? ArrayOps.findSubsetMean(velocity, velwindowend, vellen) : velocity[vellen-1];
-        } else {
-            velstart = velocity[0];
-            velend = velocity[vellen-1];
-        }
-        if ((Math.abs(velstart) > qavelocityinit) || 
-                                         (Math.abs(velend) > qavelocityend)){
+        qcchecker.findWindows(lowcutadj, samplerate, pickIndex);
+        boolean passedQC = qcchecker.qcVelocity(velocity);
+        if ( !passedQC ){
             errorlog.add("Velocity QC1 failed:");
             errorlog.add(String.format("   initial velocity: %f,  limit %f",
-                                        Math.abs(velstart), qavelocityinit));
+                                        Math.abs(qcchecker.getInitialVelocity()),
+                                              qcchecker.getInitVelocityQCval()));
             errorlog.add(String.format("   final velocity: %f,  limit %f",
-                                             Math.abs(velend), qavelocityend));
+                                  Math.abs(qcchecker.getResidualVelocity()), 
+                                            qcchecker.getResVelocityQCval()));
             errorlog.add("Adaptive baseline correction beginning");
             System.out.println("failed QC1");
         ///////////////////////////////
@@ -401,12 +347,12 @@ public class V2Process {
             errorlog.add("    ABC: poly1 order: " + goodrun[6]);
             errorlog.add("    ABC: poly2 order: " + goodrun[7]);
             errorlog.add("    ABC: start: " + goodrun[4] + "  stop: " + goodrun[5]);
-            velstart = parms[2];
-            velend = parms[3];
-            disend = parms[1];
-            errorlog.add(String.format("    ABC: velstart: %f,  limit %f",goodrun[2], qavelocityinit));
-            errorlog.add(String.format("    ABC: velend: %f,  limit %f",goodrun[3], qavelocityend));
-            errorlog.add(String.format("    ABC: disend: %f,  limit %f",goodrun[1], qadisplacend));
+            errorlog.add(String.format("    ABC: velstart: %f,  limit %f", 
+                                  goodrun[2],qcchecker.getInitVelocityQCval()));
+            errorlog.add(String.format("    ABC: velend: %f,  limit %f",goodrun[3], 
+                                             qcchecker.getResVelocityQCval()));
+            errorlog.add(String.format("    ABC: disend: %f,  limit %f",goodrun[1], 
+                                                qcchecker.getResDisplaceQCval()));
             accel = adapt.getABCacceleration();
             velocity = adapt.getABCvelocity();
             displace = adapt.getABCdisplacement();
@@ -426,7 +372,7 @@ public class V2Process {
                 throw new SmException("Invalid bandpass filter calculated parameters");
             }
 //            if (writeDebug) {
-//               elog.writeOutArray(velocity, "finalV2velocity.txt");
+//               elog.writeOutArray(velocity, V0name.getName() + "_" + channel + "_velocityAfterFiltering.txt");
 //            }
            //Integrate the velocity to get displacement.
             displace = ArrayOps.Integrate( velocity, dtime);
@@ -436,46 +382,26 @@ public class V2Process {
             accel = ArrayOps.Differentiate(velocity, dtime);
             errorlog.add("Velocity differentiated to corrected acceleration");
 
-            //perform second QA check on velocity and displacement, check first and 
-            //last values of velocity array and last value of displacement array. 
-            //They should be close to 0.0 with tolerances.  If not, flag as
-            //needing additional processing.
-
-            dislen = displace.length;
-            int diswindowend;
-            if (window > 0) {
-                velwindowstart = ArrayOps.findZeroCrossing(velocity, window, 1);
-                velwindowend = ArrayOps.findZeroCrossing(velocity, vellen-window, 0);
-                diswindowend = ArrayOps.findZeroCrossing(displace, dislen-window, 0);
-//                System.out.println("2ndQC: velwindowstart = " + velwindowstart);
-//                System.out.println("2ndQC: velwindowend = " + velwindowend);
-//                System.out.println("2ndQC: diswindowend = " + diswindowend);
-                velstart = (velwindowstart > 0) ? ArrayOps.findSubsetMean(velocity, 0, velwindowstart) : velocity[0];
-                velend = (velwindowend > 0) ? ArrayOps.findSubsetMean(velocity, velwindowend, vellen) : velocity[vellen-1];
-                disend = (diswindowend > 0) ? ArrayOps.findSubsetMean(displace, diswindowend, dislen) : displace[dislen-1];
-            } else {
-                velstart = velocity[0];
-                velend = velocity[vellen-1];
-                disend = displace[dislen-1];
-            }
-        ///////////////////////////////
-        //
-        // Second QC Test (also performed in ABC)
-        //
-        ///////////////////////////////
-            success = (Math.abs(velstart) <= qavelocityinit) && 
-                                (Math.abs(velend) <= qavelocityend) && 
-                                              (Math.abs(disend) <= qadisplacend);
+            ///////////////////////////////
+            //
+            // Second QC Test (also performed in ABC)
+            //
+            ///////////////////////////////
+            boolean success = qcchecker.qcVelocity(velocity) && 
+                                            qcchecker.qcDisplacement(displace);
             procStatus = (success) ? V2Status.GOOD : V2Status.FAILQC;
         }
         if (procStatus == V2Status.FAILQC) {
             errorlog.add("Final QC failed - V2 processing unsuccessful:");
             errorlog.add(String.format("   initial velocity: %f, limit %f",
-                                        Math.abs(velstart), qavelocityinit));
+                                        Math.abs(qcchecker.getInitialVelocity()),
+                                              qcchecker.getInitVelocityQCval()));
             errorlog.add(String.format("   final velocity: %f, limit %f",
-                                  Math.abs(velend), qavelocityend));
+                                  Math.abs(qcchecker.getResidualVelocity()), 
+                                            qcchecker.getResVelocityQCval()));
             errorlog.add(String.format("   final displacement,: %f, limit %f",
-                                  Math.abs(disend), qadisplacend));
+                                  Math.abs(qcchecker.getResidualDisplacement()),
+                                            qcchecker.getResDisplaceQCval()));
             System.out.println("failed QC2");
         }
         System.out.println("V2process: exit status = " + procStatus);
@@ -500,6 +426,8 @@ public class V2Process {
         if ((writeDebug) || (procStatus == V2Status.FAILQC)) {
             errorlog.add(String.format("Peak Velocity (abs): %f",Math.abs(VpeakVal)));
             errorlog.add(String.format("Peak Velocity * 0.01: %f",(Math.abs(VpeakVal)*0.01)));
+            errorlog.add(String.format("Peak Displace (abs): %f",Math.abs(DpeakVal)));
+            errorlog.add(String.format("Peak Displace * 0.01: %f",(Math.abs(DpeakVal)*0.01)));
             writeOutErrorDebug();
         }
         

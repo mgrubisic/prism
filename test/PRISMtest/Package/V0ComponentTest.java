@@ -315,4 +315,17 @@ public class V0ComponentTest {
         v0.updateEndOfDataLine(SPECTRA, v0.getChannel());
         System.out.println("EOD: " + v0.getEndOfData());
     }
+    @Test
+    public void testSCNLandRcrdid() throws FormatException, SmException {
+        v0.loadComponent(0, infile);
+        org.junit.Assert.assertEquals("",v0.getSCNLauth());
+        org.junit.Assert.assertEquals(" 13921-L1614-14015.39",v0.getRcrdId());
+    }
+    @Test
+    public void testVrecToText() throws FormatException, SmException {
+        v0.loadComponent(0, infile);
+        String[] textout = v0.VrecToText();
+        org.junit.Assert.assertEquals(infile[0], textout[0]);
+        org.junit.Assert.assertEquals(infile[47], textout[47]);
+    }
 }

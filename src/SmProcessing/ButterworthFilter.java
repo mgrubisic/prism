@@ -139,17 +139,17 @@ public class ButterworthFilter {
         int npad = 0; int np1; int np2;
         double[] filteredS;
         double x1; double x2; double y1; double y2; double xp; double yp;
-        int taperlength = 0;
+//        int taperlength = 0;
         
-//        int taperlength= (int)(((2.0/f1) + 1.0)/dtime);
-        if (eventOnsetIndex > 0) {
-            taperlength = (int)(0.05 * arrayS.length);
-            if (taperlength > eventOnsetIndex) {
-                taperlength = (int)(0.8 * eventOnsetIndex);
-            }
-        } else {
-            taperlength = (int)(3.0 / dtime);  // set a 3 sec length for taper
-        }
+        int taperlength= (int)(((2.0/f1) + 1.0)/dtime);
+//        if (eventOnsetIndex > 0) {
+//            taperlength = (int)(0.05 * arrayS.length);
+//            if (taperlength > eventOnsetIndex) {
+//                taperlength = (int)(0.8 * eventOnsetIndex);
+//            }
+//        } else {
+//            taperlength = (int)(3.0 / dtime);  // set a 3 sec length for taper
+//        }
 //        System.out.println("taperlength: " + taperlength);
 //        System.out.println("+++ taperlength: " + taperlength);
 //        System.out.println("+++ before filter, arrayS[0] = " + arrayS[0]);
