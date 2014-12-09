@@ -135,7 +135,7 @@ public class AdaptiveBaselineCorrection {
         if (!qcchecker.validateQCvalues()){
             throw new SmException("Error extracting QC values from configuration file");
         }
-        qcchecker.findWindows(lowcut, (1.0/dtime), estart);
+        qcchecker.findWindow(lowcut, (1.0/dtime), estart);
         
         for (int order1 = degreeP1lo; order1 <= degreeP1hi; order1++) {
             for (int order2 = degreeP2lo; order2 <= degreeP2hi; order2++) {
@@ -158,7 +158,7 @@ public class AdaptiveBaselineCorrection {
                         ArrayOps.removeValue(velocity, velmean.getMean());
                         //integrate to get displacement, differentiate
                         //for acceleration
-                        displace = ArrayOps.Integrate( velocity, dtime);
+                        displace = ArrayOps.Integrate( velocity, dtime, 0.0);
                         accel = ArrayOps.Differentiate(velocity, dtime);
                         qcchecker.qcVelocity(velocity);
                         qcchecker.qcDisplacement(displace);
@@ -224,7 +224,7 @@ public class AdaptiveBaselineCorrection {
                 ArrayOps.removeValue(velocity, velmean.getMean());
                 //integrate to get displacement, differentiate
                 //for acceleration
-                displace = ArrayOps.Integrate( velocity, dtime);
+                displace = ArrayOps.Integrate( velocity, dtime, 0.0);
                 accel = ArrayOps.Differentiate(velocity, dtime);
                 status = V2Status.GOOD;
                 solution = idx;
@@ -245,7 +245,7 @@ public class AdaptiveBaselineCorrection {
             ArrayOps.removeValue(velocity, velmean.getMean());
             //integrate to get displacement, differentiate
             //for acceleration
-            displace = ArrayOps.Integrate( velocity, dtime);
+            displace = ArrayOps.Integrate( velocity, dtime, 0.0);
             accel = ArrayOps.Differentiate(velocity, dtime);
             status = V2Status.FAILQC;
         }

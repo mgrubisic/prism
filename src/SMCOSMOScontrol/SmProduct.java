@@ -41,6 +41,7 @@ public class SmProduct {
     private final Charset ENCODING = StandardCharsets.UTF_8;
     private File stationDir;
     private File eventDir;
+    private File finalDir;
     private File logDir;
     private ArrayList<String> loglist;
     
@@ -54,6 +55,7 @@ public class SmProduct {
         this.V3List = new ArrayList<>();
         this.outFolder = newFolder;
         this.stationDir = new File( newFolder );
+        this.finalDir = new File( newFolder );
         this.eventDir = new File( newFolder );
         this.logDir = new File( newFolder );
         this.loglist = new ArrayList<>();        
@@ -91,15 +93,11 @@ public class SmProduct {
         } else {
             event = "Orphan";
         }
-        if (V2result == V2Status.GOOD) {
-            if (event.equals("Orphan")) {
-                station = eventMarker;
-            } else {
-                sb = new StringBuilder(MAX_LINE_LENGTH);
-                station = sb.append(sections[2]).append(".").append(sections[3]).toString();
-            }
+        if (event.equals("Orphan")) {
+            station = eventMarker;
         } else {
-               station = "Trouble";         
+            sb = new StringBuilder(MAX_LINE_LENGTH);
+            station = sb.append(sections[2]).append(".").append(sections[3]).toString();
         }
         
         File logId = Paths.get(this.outFolder, "Logs").toFile();
@@ -117,6 +115,13 @@ public class SmProduct {
         File stationId = Paths.get(eventId.toString(), station).toFile();
         if (!stationId.isDirectory()) {
             stationId.mkdir();
+        }
+        
+        if (V2result == V2Status.FAILQC) {
+            stationId = Paths.get(eventId.toString(), station, "Trouble").toFile();
+            if (!stationId.isDirectory()) {
+                stationId.mkdir();
+            }
         }
         this.stationDir = stationId;
         
@@ -141,7 +146,7 @@ public class SmProduct {
                 V3Id.mkdir();
             }        
         }
-//        System.out.println("success: " + passedQA);
+//        System.out.println("success: " + V2result);
 //        System.out.println("eventdir: " + this.eventDir.toString());
 //        System.out.println("stationdir: " + this.stationDir.toString());
         
@@ -151,13 +156,15 @@ public class SmProduct {
         Iterator iter;
         Path outName = null;
         String[] contents;
+        String chanvalue;
 //        System.out.println("productlist length: " + this.V1List.size());
         iter = this.V0List.iterator();
         while (iter.hasNext()) {
             V0Component rec0 = (V0Component)iter.next();
             contents = rec0.VrecToText();
+            chanvalue = (V0List.size() > 1) ? rec0.getChannel() : "";
             outName = buildFilename(rec0.getStationDir(), rec0.getFileName(),"V0",
-                                                         rec0.getChannel(), "");
+                                                         chanvalue, "");
             textout = new TextFileWriter(outName, contents);
             textout.writeOutToFile();
             this.loglist.add(outName.toString());

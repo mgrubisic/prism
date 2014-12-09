@@ -17,10 +17,14 @@
 
 package PRISMtest.Package;
 
+import static PRISMtest.Package.FFTtest.picktest;
 import SmProcessing.ArrayOps;
 import SmProcessing.ArrayStats;
+import SmUtilities.TextFileReader;
 import SmUtilities.TextFileWriter;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import static org.junit.Assert.*;
 import org.junit.Before;
@@ -50,8 +54,15 @@ public class ArrayOpsTest {
     double BIG_EPSILON = 1.0;
     double STEP = 1.0;
     double[] smooth;
+    double[] accel;
+    double[] vel;
+    double[] disp;
+    String[] filecontents;
     
     String dirname = "D:\\PRISM\\test\\arrayops";
+    String accelfile = "D:\\PRISM\\test\\arrayops\\acceleration.txt";
+    String velfile = "D:\\PRISM\\test\\arrayops\\velocity.txt";
+    String dispfile = "D:\\PRISM\\test\\arrayops\\displacement.txt";
     
     ArrayStats centerstat;
     ArrayStats posstat;
@@ -74,6 +85,7 @@ public class ArrayOpsTest {
         time = new double[LENGTH];
         counter = new int[LENGTH];
         smooth = new double[LENGTH];
+        filecontents = new String[36199];
         
         Arrays.fill(posconstant, 2.0);
         Arrays.fill(zeroconstant, 0.0);
@@ -98,12 +110,39 @@ public class ArrayOpsTest {
     }
     
     @Before
-    public void setUp() {
+    public void setUp() throws IOException {
         centerstat = new ArrayStats( linecentered );
         posstat = new ArrayStats( linepos );
         negstat = new ArrayStats( lineneg );
         polystat = new ArrayStats( polypos );
-    }
+
+        int next = 0;
+        Path name = Paths.get( accelfile );
+        TextFileReader infile = new TextFileReader( name.toFile() );
+        filecontents = infile.readInTextFile();
+        accel = new double[filecontents.length];
+        for (String num : filecontents) {
+            accel[next++] = Double.parseDouble(num);
+        }
+
+        next = 0;
+        name = Paths.get( velfile );
+        infile = new TextFileReader( name.toFile() );
+        filecontents = infile.readInTextFile();
+        vel = new double[filecontents.length];
+        for (String num : filecontents) {
+            vel[next++] = Double.parseDouble(num);
+        }
+
+        next = 0;
+        name = Paths.get( dispfile );
+        infile = new TextFileReader( name.toFile() );
+        filecontents = infile.readInTextFile();
+        disp = new double[filecontents.length];
+        for (String num : filecontents) {
+            disp[next++] = Double.parseDouble(num);
+        }
+}
     
      @Test
      public void testRemoveValue() throws IOException {
@@ -227,11 +266,11 @@ public class ArrayOpsTest {
          org.junit.Assert.assertArrayEquals(test, ArrayOps.Differentiate(lineinte, 0.0), EPSILON);
          org.junit.Assert.assertArrayEquals(test1, ArrayOps.Differentiate(test, STEP), EPSILON);
          org.junit.Assert.assertArrayEquals(test1, ArrayOps.Differentiate(test2, STEP), EPSILON);
-         org.junit.Assert.assertArrayEquals(poly, ArrayOps.Integrate(lineinte, STEP), EPSILON);
-         org.junit.Assert.assertArrayEquals(lineinte, ArrayOps.Integrate(posconstant, STEP), EPSILON);
-         org.junit.Assert.assertArrayEquals(test, ArrayOps.Integrate(lineinte, 0.0), EPSILON);
-         org.junit.Assert.assertArrayEquals(test1, ArrayOps.Integrate(test, STEP), EPSILON);
-         org.junit.Assert.assertArrayEquals(test1, ArrayOps.Integrate(test2, STEP), EPSILON);
+         org.junit.Assert.assertArrayEquals(poly, ArrayOps.Integrate(lineinte, STEP,0.0), EPSILON);
+         org.junit.Assert.assertArrayEquals(lineinte, ArrayOps.Integrate(posconstant, STEP,0.0), EPSILON);
+         org.junit.Assert.assertArrayEquals(test, ArrayOps.Integrate(lineinte, 0.0,0.0), EPSILON);
+         org.junit.Assert.assertArrayEquals(test1, ArrayOps.Integrate(test, STEP,0.0), EPSILON);
+         org.junit.Assert.assertArrayEquals(test1, ArrayOps.Integrate(test2, STEP,0.0), EPSILON);
      }
      @Test
      public void testMakeTimeArray() {
@@ -380,4 +419,9 @@ public class ArrayOpsTest {
      public void testFindLinearTrend() {
          org.junit.Assert.assertArrayEquals(ArrayOps.findLinearTrend(polyline,STEP),linepos,EPSILON);
      }
+//     @Test
+//     public void testCompatibility() {
+//         org.junit.Assert.assertArrayEquals(ArrayOps.Integrate(accel,0.005),vel,EPSILON);
+//         org.junit.Assert.assertArrayEquals(ArrayOps.Integrate(vel,0.005),disp,EPSILON);
+//     }
 }

@@ -26,6 +26,8 @@ public class VIntArrayTest {
     VIntArray di;
     String[] headerbits;
     String badFormat;
+    String noFormat;
+    String badNumbers;
     String[] badData;
     
     public VIntArrayTest() {
@@ -34,6 +36,8 @@ public class VIntArrayTest {
         this.headerbits = new String[20];
         this.badData = new String[2];
         this.badFormat = "";
+        this.noFormat = "";
+        this.badNumbers = "";
     }
     
     @Before
@@ -50,6 +54,9 @@ public class VIntArrayTest {
         badFormat = "      30 acceleration pts, approx  56 secs, units=counts (50),Format=(I8)";
         badData[0] = "      10 acceleration pts, approx  56 secs, units=counts (50),Format=(10I8)";
         badData[1] = "    3284    3334    3296    3284    abcd    3242    3236    3324    3322    3262";
+        
+        noFormat = "      30 acceleration pts, approx  56 secs, units=counts (50),Format=";
+        badNumbers = "      10 acceleration pts, approx  56 secs, units=counts (50),Format=(a5I8)";
         
         headerbits[0] = "       0";
         headerbits[1] = "       1";
@@ -168,6 +175,14 @@ public class VIntArrayTest {
     @Test(expected=FormatException.class)
     public void testBadFormatLine() throws FormatException {
         di.parseNumberFormatLine(badFormat);
+    }
+    @Test(expected=FormatException.class)
+    public void testNoFormatLine() throws FormatException {
+        di.parseNumberFormatLine(noFormat);
+    }
+    @Test(expected=FormatException.class)
+    public void testBadNumbersLine() throws FormatException {
+        di.parseNumberFormatLine(badNumbers);
     }
     @Test(expected=FormatException.class)
     public void testBadDataValue() throws FormatException {

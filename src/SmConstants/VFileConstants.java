@@ -55,6 +55,7 @@ public final class VFileConstants {
     public static final int FILTER_DOMAIN_FLAG = 63;
     public static final int INITIAL_VELOCITY_VAL = 67;
     public static final int INITIAL_DISPLACE_VAL = 68;
+    public static final int FILTER_OPERATOR_LENGTH = 59;
     
     //data product names
     public static final String RAWACC =   "Raw acceleration counts  ";

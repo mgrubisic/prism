@@ -215,6 +215,8 @@ public class V2Component extends COSMOScontentFormat {
         this.realHeader.setRealValue(LOW_FREQ_CORNER, inVvals.getLowCut());
         this.realHeader.setRealValue(HIGH_FREQ_CORNER, inVvals.getHighCut());
         this.intHeader.setIntValue(FILTER_DOMAIN_FLAG, TIME_DOMAIN);
+        this.realHeader.setRealValue(INITIAL_VELOCITY_VAL, inVvals.getInitialVelocity());
+        this.realHeader.setRealValue(INITIAL_DISPLACE_VAL, inVvals.getInitialDisplace());
         this.realHeader.setRealValue(BRACKETED_DURATION, inVvals.getBracketedDuration());
         
         this.endOfData = this.parentV1.endOfData;

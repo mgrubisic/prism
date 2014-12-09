@@ -119,11 +119,11 @@ public class VIntArray extends COSMOSarrayFormat {
     public int[] getIntArray(){
         return this.intVals;
     }
-/**
- * This method calculates the values for the valsPerLine, numberFormat, and
- * numLines fields based on the current array size and other field values.
- * @throws FormatException if the fieldWidth field is less than or equal to 0
- */
+    /**
+     * This method calculates the values for the valsPerLine, numberFormat, and
+     * numLines fields based on the current array size and other field values.
+     * @throws FormatException if the fieldWidth field is less than or equal to 0
+     */
     public void buildArrayParams(SmArrayStyle packtype) throws FormatException {
         if (this.getFieldWidth() > 0 ) {
             if (packtype == SmArrayStyle.PACKED) {

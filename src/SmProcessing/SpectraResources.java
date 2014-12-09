@@ -51,7 +51,12 @@ public class SpectraResources {
                                                 "spectra/CoefTable_200_0.02.txt",
                                                 "spectra/CoefTable_200_0.05.txt",
                                                 "spectra/CoefTable_200_0.1.txt",
-                                                "spectra/CoefTable_200_0.2.txt" };
+                                                "spectra/CoefTable_200_0.2.txt",
+                                                "spectra/CoefTable_500_0.txt",
+                                                "spectra/CoefTable_500_0.02.txt",
+                                                "spectra/CoefTable_500_0.05.txt",
+                                                "spectra/CoefTable_500_0.1.txt",
+                                                "spectra/CoefTable_500_0.2.txt" };
     private String[] T_periods;
     private String[][] coefs;
     

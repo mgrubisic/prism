@@ -197,19 +197,32 @@ public class ArrayOps {
      * @return new array containing the approximate integral of the input points,
      * or an array of 0 length if input parameters are invalid
      */
-    public static double[] Integrate( double[] array, double dt ) {
+    public static double[] Integrate( double[] array, double dt, double init ) {
         if ((array == null) || (array.length == 0) || (Math.abs(dt - 0.0) < OPS_EPSILON)) {
             return new double[0];
         }
         int len = array.length;
         double[] calc = new double[len];
         double dt2 = dt / 2.0;
-        calc[0] = 0.0;
+        calc[0] = init;
         for (int i = 1; i < len; i++) {
             calc[i] = calc[i-1] + (array[i-1] + array[i])*dt2;
         }
         return calc;
-    }/**
+    }
+    public static double SquareIntegrateAndSum( double[] array, double dt, double init ) {
+        double[] sqarr = new double[array.length];
+        for (int i = 0; i < array.length; i++) {
+            sqarr[i] = Math.pow(array[i],2);
+        }
+        double[] result = Integrate(sqarr, dt, init);
+        double total = 0.0;
+        for (double each : result) {
+            total = total + each;
+        }
+        return total;
+    }
+    /**
      * Calculates the approximate derivative of the input array.
      * 
      * @param array array to be differentiated
@@ -303,6 +316,15 @@ public class ArrayOps {
         }
         return Math.sqrt(rms / len);
     }
+    /**
+     * Tests the input array to see if a first or second order polynomial makes
+     * a better fit for the data, and then removes the trend with the best fit.
+     * Best fit is determined by calculating the root mean square error between
+     * the input data and the baseline trend.
+     * @param inarr array to have best fit trend removed, this array is modified
+     * @param timestep sample interval
+     * @return true if input parameters are valid, false if not
+     */
     public static boolean removeTrendWithBestFit( double[] inarr, double timestep) {
         if ((inarr == null) || (inarr.length == 0) || 
                                     (Math.abs(timestep - 0.0) < OPS_EPSILON)) {
@@ -336,7 +358,7 @@ public class ArrayOps {
         double polrms = rootMeanSquare( inarr, polbase);
         
         //compare the rms values and remove the trend with the smallest rms
-        if (linrms <= polrms) {
+        if ((linrms < polrms)|| (Math.abs(linrms - polrms) < OPS_EPSILON)) {
 //            System.out.println("linear trend removed");
             removePolynomialTrend(inarr, lcoefs, timestep);
         } else {
@@ -455,13 +477,18 @@ public class ArrayOps {
         int t2 = 0;
         int len = inArray.length;
         double[] subset;
-        double[] garr = convertArrayUnits(inArray, conversion);
-        for (int i = 1; i < len; i++) {
+//        double[] garr = convertArrayUnits(inArray, conversion);
+        double[] garr = convertArrayUnits(inArray, 1.0);
+        for (int i = 0; i < len; i++) {
             if (garr[i] > 0.05) {
                 t1 = i;
                 break;
             }
         }
+        System.out.println("t1: " + t1);
+        ArrayStats test = new ArrayStats(garr);
+        System.out.println("peak garr: " + Math.abs(test.getPeakVal()));
+        
         for (int j = 1; j < len; j++) {
             subset = new double[len-j];
             System.arraycopy(garr, j, subset, 0, len-j);
@@ -471,27 +498,94 @@ public class ArrayOps {
                 break;
             }
         }
+        System.out.println("t2: " + t2);
         results[0] = (t2 - t1) * dtime;
         results[1] = t1 * dtime;
         results[2] = t2 * dtime;
         return results;
     }
+    public static double calculateDurationInterval( final double[] inArray, double units_conv,
+                                                    double constval, double dtime) {
+        double interval = 0.0;
+        double total = calculateAriasIntensity(inArray, units_conv, constval, dtime);
+        double[] segment;
+        double segtotal;
+        int j1 = 0;
+        int j2 = 0;
+        for (int j = 3; j < inArray.length; j++) {
+            segment = new double[j+1];
+            System.arraycopy(inArray, 0, segment, 0, j+1);
+            segtotal = SquareIntegrateAndSum(segment, dtime, 0.0);
+            if (Math.abs(segtotal - 0.05 * total) <= (0.01 * 0.05 * total)) {
+                j1 = j;
+                break;
+            } else if (segtotal > 0.05 * total) {
+                j1 = j;
+                break;
+            }
+        }
+        for (int j = 3; j < inArray.length; j++) {
+            segment = new double[j+1];
+            System.arraycopy(inArray, 0, segment, 0, j+1);
+            segtotal = SquareIntegrateAndSum(segment, dtime, 0.0);
+            if (Math.abs(segtotal - 0.75 * total) <= (0.01 * 0.75 * total)) {
+                j2 = j;
+                break;
+            } else if (segtotal > 0.75 * total) {
+                j2 = j;
+                break;
+            }
+        }
+        interval = (j2 - j1) * dtime;
+        return interval;
+    }
     //the variable constval allows this calculation for array units of cm/sec^2 
     //or g.  User must input the correct constant value.
-    public static double calculateAriasIntensity( final double[] inArray, 
+    public static double calculateAriasIntensity( final double[] inArray, double units_conv,
                                                 double constval, double dtime) {
         double intensity = 0.0;
         int len = inArray.length;
         double total = 0.0;
         double[] squarr = new double[len];
         for (int i = 0; i < len; i++) {
-            squarr[i] = Math.pow(inArray[i], 2);
+            squarr[i] = Math.pow((inArray[i]), 2);
         }
-        double[] intsquarr = Integrate(squarr, dtime);
+        double[] intsquarr = Integrate(squarr, dtime, 0.0);
         for (double each : intsquarr) {
             total = total + each;
         }
         intensity = total * constval;
         return intensity;
+    }
+    public static double calculateHousnerIntensity( final double[] inArray, 
+                                                double constval, double dtime,
+                                                double t1_start, double t2_end) {
+        double intensity = 0.0;
+        int t1 = (int)(t1_start / dtime);
+        int t2 = (int)(t2_end / dtime);
+        int len = 1+ t2 - t1;
+        double total = 0.0;
+        double[] squarr = new double[len];
+        for (int i = t1; i < t2+1; i++) {
+            squarr[i - t1] = Math.pow(inArray[i], 2);
+        }
+        double[] intsquarr = Integrate(squarr, dtime, 0.0);
+        for (double each : intsquarr) {
+            total = total + each;
+        }
+        intensity = total * (1.0/(t2_end - t1_start));
+        return intensity;
+    }
+    public static double calculateCAV( final double[] inArray, double dtime) {
+        double CAV = 0.0;
+        int len = inArray.length;
+        int kk = (int)(Math.round(1.0/dtime));
+        int jj = -kk;
+        
+//        for (int i = 0; i < len-kk-2; i++) {
+//            if 
+//        }
+        
+        return CAV;
     }
 }

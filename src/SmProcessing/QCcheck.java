@@ -32,13 +32,11 @@ import static SmUtilities.SmConfigConstants.QA_RESIDUAL_VELOCITY;
 public class QCcheck {
     private double lowcut;
     private int eindex;
-    private double samplerate;
     private double qcvelinit;
     private double qcvelres;
     private double qcdisres;
     
-    private int windowstart;
-    private int windowend;
+    private int window;
     private double velstart;
     private double velend;
     private double disend;
@@ -64,35 +62,30 @@ public class QCcheck {
         }
         return true;
     }
-    public int findWindows(double lowcutoff, double samprate, int eventIndex) {
+    public int findWindow(double lowcutoff, double samprate, int eventIndex) {
         this.lowcut = lowcutoff;
-        this.samplerate = samprate;
         this.eindex = eventIndex;
-        this.windowstart = eindex;
         
         int lclength = (int)(Math.round(1.0 / lowcut) * samprate);
-        windowend = Math.max(eindex, lclength);
-        return windowend;
+        window = Math.max(eindex, lclength);
+        return window;
     }
     public boolean qcVelocity(double[] velocity) {
         boolean pass = false;
         int vellen = velocity.length;
         int velwindowstart;
         int velwindowend;
-        if (windowstart > 0) {
-            velwindowstart = ArrayOps.findZeroCrossing(velocity, windowstart, 1);
+        if (window > 0) {
+            velwindowstart = ArrayOps.findZeroCrossing(velocity, window, 1);
             velstart = (velwindowstart > 0) ? 
                     ArrayOps.findSubsetMean(velocity, 0, velwindowstart) : 
                                                                     velocity[0];
-        } else {
-            velstart = velocity[0];
-        }
-        if (windowend > 0) {
-            velwindowend = ArrayOps.findZeroCrossing(velocity, vellen-windowend, 0);
+            velwindowend = ArrayOps.findZeroCrossing(velocity, vellen-window, 0);
             velend = (velwindowend > 0) ? 
                     ArrayOps.findSubsetMean(velocity, velwindowend, vellen) : 
                                                              velocity[vellen-1];
         } else {
+            velstart = velocity[0];
             velend = velocity[vellen-1];
         }
         if ((Math.abs(velstart) <= qcvelinit) && (Math.abs(velend) <= qcvelres)){
@@ -104,8 +97,8 @@ public class QCcheck {
         boolean pass = false;
         int dislen = displace.length;
         int diswindowend;
-        if (windowend > 0) {
-            diswindowend = ArrayOps.findZeroCrossing(displace, dislen-windowend, 0);
+        if (window > 0) {
+            diswindowend = ArrayOps.findZeroCrossing(displace, dislen-window, 0);
             disend = (diswindowend > 0) ? 
                     ArrayOps.findSubsetMean(displace, diswindowend, dislen) : 
                                                             displace[dislen-1];
@@ -135,10 +128,7 @@ public class QCcheck {
     public double getResDisplaceQCval() {
         return qcdisres;
     }
-    public int getQCstartWindow() {
-        return windowstart;
-    }
-    public int getQCendWindow() {
-        return windowend;
+    public int getQCWindow() {
+        return window;
     }
 }

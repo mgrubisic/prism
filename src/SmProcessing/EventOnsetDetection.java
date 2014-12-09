@@ -110,7 +110,7 @@ public class EventOnsetDetection {
             Edi[i] = const_C * Math.pow(veloc[i], 2);
         }
         //Viscous damping energy over mass (m^2/sec^2)
-        double[] Edoverm = ArrayOps.Integrate(Edi, dtime);
+        double[] Edoverm = ArrayOps.Integrate(Edi, dtime, 0.0);
         
         //Spectral viscous damping energy over mass (m^2/sec^2)
         //find largest absolute value in array

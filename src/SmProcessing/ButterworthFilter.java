@@ -71,6 +71,7 @@ public class ButterworthFilter {
     private double[] fact;
     private double[] b1;
     private double[] b2;
+    private int npad;
     
     //Constructor
     public ButterworthFilter() {
@@ -88,6 +89,7 @@ public class ButterworthFilter {
         fact = new double[2*MAXPOLES];
         b1 = new double[2*MAXPOLES];
         b2 = new double[2*MAXPOLES];
+        this.npad = 0;
         
         double pre; double pim; double argre; double argim; double rho; double theta;
         double sjre; double sjim; double bj; double cj; double con;
@@ -136,12 +138,13 @@ public class ButterworthFilter {
     
     public double[] applyFilter( double[] arrayS, int eventOnsetIndex ) {
         
-        int npad = 0; int np1; int np2;
+        int np2;
         double[] filteredS;
         double x1; double x2; double y1; double y2; double xp; double yp;
 //        int taperlength = 0;
-        
-        int taperlength= (int)(((2.0/f1) + 1.0)/dtime);
+
+        int taperlength = (int)(2.0 / dtime); // 2 seconds worth of samples
+//        int taperlength= (int)(((2.0/f1) + 1.0)/dtime);
 //        if (eventOnsetIndex > 0) {
 //            taperlength = (int)(0.05 * arrayS.length);
 //            if (taperlength > eventOnsetIndex) {
@@ -179,8 +182,8 @@ public class ButterworthFilter {
             filteredS = new double[np2];
             System.arraycopy(arrayS, 0, filteredS, 0, np2);
         }
-//        SmErrorLogger elog = SmErrorLogger.INSTANCE;
-//        elog.writeOutArray(filteredS, "filteredS.txt");
+        SmErrorLogger elog = SmErrorLogger.INSTANCE;
+        elog.writeOutArray(filteredS, "filteredS.txt");
         //filter the array
         for (int k = 0; k < 2*nroll; k++) {
             x1 = 0.0;
@@ -258,5 +261,8 @@ public class ButterworthFilter {
     }
     public double[] getB2() {
         return b2;
+    }
+    public int getPadLength() {
+        return npad;
     }
 }

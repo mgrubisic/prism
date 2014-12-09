@@ -59,6 +59,10 @@ public class V2Process {
     private final int dis_unit_code;
     private final String dis_units;
     
+    private double initialVel;
+    private double initialDis;
+    private double filterOp;
+    
     private final V1Component inV1;
     private final int data_unit_code;
     private final double dtime;
@@ -95,6 +99,9 @@ public class V2Process {
     private double[] bracketedTimes;
     private double bracketedDuration;
     private double AriasIntensity;
+    private double HousnerIntensity;
+    private double channelRMS;
+    private double durationInterval;
         
     public V2Process(final V1Component v1rec, File inName) throws SmException {
         double epsilon = 0.0001;
@@ -122,6 +129,12 @@ public class V2Process {
         
         this.bracketedDuration = 0.0;
         this.AriasIntensity = 0.0;
+        this.HousnerIntensity = 0.0;
+        this.channelRMS = 0.0;
+        this.durationInterval = 0.0;
+        this.initialVel = 0.0;
+        this.initialDis = 0.0;
+        this.filterOp = 0.0;
         
         SmTimeFormatter timer = new SmTimeFormatter();
         String logtime = timer.getGMTdateTime();
@@ -275,7 +288,7 @@ public class V2Process {
 //        } 
 
         //Integrate the acceleration to get velocity.
-        velocity = ArrayOps.Integrate( accraw, dtime);
+        velocity = ArrayOps.Integrate( accraw, dtime, 0.0);
         errorlog.add("acceleration integrated to velocity (trapezoidal method)");
 //        if (writeDebug) {
 //           elog.writeOutArray(velocity, V0name.getName() + "_" + channel + "_afterIntegrationToVel.txt");
@@ -283,9 +296,9 @@ public class V2Process {
         //Remove any linear or 2nd order polynomial trend from velocity
         ArrayOps.removeTrendWithBestFit( velocity, dtime);
         errorlog.add("linear/poly trend removed from velocity");
-//        if (writeDebug) {
-//           elog.writeOutArray(velocity, V0name.getName() + "_" + channel + "_LinearTrendRemovedVel.txt");
-//        }
+        if (writeDebug) {
+           elog.writeOutArray(velocity, V0name.getName() + "_" + channel + "_LinearTrendRemovedVel.txt");
+        }
         //Update Butterworth filter low and high cutoff thresholds for later
         FilterCutOffThresholds threshold = new FilterCutOffThresholds();
         magtype = threshold.SelectMagAndThresholds(mmag, lmag, smag, omag, noRealVal);
@@ -305,7 +318,7 @@ public class V2Process {
         // First QC Test
         //
         ///////////////////////////////
-        qcchecker.findWindows(lowcutadj, samplerate, pickIndex);
+        qcchecker.findWindow(lowcutadj, samplerate, pickIndex);
         boolean passedQC = qcchecker.qcVelocity(velocity);
         if ( !passedQC ){
             errorlog.add("Velocity QC1 failed:");
@@ -317,11 +330,11 @@ public class V2Process {
                                             qcchecker.getResVelocityQCval()));
             errorlog.add("Adaptive baseline correction beginning");
             System.out.println("failed QC1");
-        ///////////////////////////////
-        //
-        // Adaptive Baseline Correction
-        //
-        ///////////////////////////////
+            ///////////////////////////////
+            //
+            // Adaptive Baseline Correction
+            //
+            ///////////////////////////////
             AdaptiveBaselineCorrection adapt = new AdaptiveBaselineCorrection(
                         dtime,velocity,lowcutadj,highcutadj,numpoles,pickIndex);
             procStatus = adapt.startIterations();
@@ -334,7 +347,6 @@ public class V2Process {
                 return procStatus;
             }
             int solution = adapt.getSolution();
-            double[] parms = adapt.getSolutionParms(solution);
             double[] baseline = adapt.getBaselineFunction();
             ArrayList<double[]> params = adapt.getParameters();
             double[] goodrun = params.get( solution );
@@ -359,6 +371,7 @@ public class V2Process {
             adapt.clearParamsArray();
         } else {
             //determine new filter coefs based on earthquake magnitude
+            double[] paddedvelocity;
             filter = new ButterworthFilter();
             errorlog.add("Acausal bandpass filter:");
             errorlog.add("  earthquake magnitude is " + magnitude + " and M used is " + magtype);
@@ -367,15 +380,28 @@ public class V2Process {
             valid = filter.calculateCoefficients(lowcutadj, highcutadj, 
                                                 dtime, DEFAULT_NUM_POLES, true);
             if (valid) {
-                filter.applyFilter(velocity, pickIndex);
+                paddedvelocity = filter.applyFilter(velocity, pickIndex);
             } else {
                 throw new SmException("Invalid bandpass filter calculated parameters");
             }
-//            if (writeDebug) {
-//               elog.writeOutArray(velocity, V0name.getName() + "_" + channel + "_velocityAfterFiltering.txt");
-//            }
+            if (writeDebug) {
+               elog.writeOutArray(velocity, V0name.getName() + "_" + channel + "_velocityAfterFiltering.txt");
+            }
            //Integrate the velocity to get displacement.
-            displace = ArrayOps.Integrate( velocity, dtime);
+//            displace = ArrayOps.Integrate( velocity, dtime);
+            //The velocity array was updated with the filtered values in the 
+            //apply filter call
+            initialVel = velocity[0];
+            double[] paddeddisplace;
+            displace = new double[velocity.length];
+            paddeddisplace = ArrayOps.Integrate( paddedvelocity, dtime, 0.0);
+            System.arraycopy(paddeddisplace, filter.getPadLength(), displace, 0, displace.length);
+            initialDis = displace[0];
+            filterOp = paddedvelocity.length * dtime;
+            System.out.println("initial Velocity: " + initialVel);
+            System.out.println("initial Displace: " + initialDis);
+            System.out.println("filer operator: " + filterOp);
+            System.out.println("pad length: " + filter.getPadLength());
             errorlog.add("Velocity integrated to displacement (trapezoidal method)");
 
             //Differentiate velocity for final acceleration
@@ -432,15 +458,23 @@ public class V2Process {
         }
         
         //if status is GOOD, calculate computed parameters for headers
-        if (procStatus == V2Status.GOOD) {
-            bracketedTimes = ArrayOps.findBracketedDuration(accel, 
-                                                        TO_G_CONVERSION, dtime);
-            bracketedDuration = bracketedTimes[0];
-            AriasIntensity = ArrayOps.calculateAriasIntensity( accel, 
-                                                    ARIAS_INTENSITY_CONST, dtime);
-            System.out.println(String.format("bracketedDuration: %f",bracketedDuration));
-            System.out.println(String.format("AriasIntensity: %f",AriasIntensity));
-        }
+//        if (procStatus == V2Status.GOOD) {
+//            bracketedTimes = ArrayOps.findBracketedDuration(accel, 
+//                                                        TO_G_CONVERSION, dtime);
+//            bracketedDuration = bracketedTimes[0];
+//            durationInterval = ArrayOps.calculateDurationInterval(accel,dtime);
+//            HousnerIntensity = ArrayOps.calculateHousnerIntensity( accel, 
+//                                                TO_G_CONVERSION, dtime,
+//                                                bracketedTimes[1], bracketedTimes[2]);
+//            AriasIntensity = ArrayOps.calculateAriasIntensity( accel, TO_G_CONVERSION,
+//                                                    ARIAS_INTENSITY_CONST, dtime);
+//            channelRMS = Math.sqrt(HousnerIntensity);
+//            System.out.println(String.format("bracketedDuration: %f",bracketedDuration));
+//            System.out.println(String.format("durationInterval: %f",durationInterval));
+//            System.out.println(String.format("AriasIntensity: %f",AriasIntensity));
+//            System.out.println(String.format("HousnerIntensity: %f",HousnerIntensity));
+//            System.out.println(String.format("channelRMS: %f",channelRMS));
+//        }
 
 //        System.out.println("V2process: exit staus = " + procStatus);
         return procStatus;
@@ -533,5 +567,14 @@ public class V2Process {
     }
     public double getBracketedDuration() {
         return bracketedDuration;
+    }
+    public double getInitialVelocity() {
+        return initialVel;
+    }
+    public double getInitialDisplace() {
+        return initialDis;
+    }
+    public double getFilterOperator() {
+        return filterOp;
     }
 }
