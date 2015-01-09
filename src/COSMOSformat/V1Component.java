@@ -15,31 +15,35 @@ import static SmUtilities.SmConfigConstants.OUT_ARRAY_FORMAT;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_ABBREV;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_CODE;
 import SmUtilities.SmTimeFormatter;
-import java.io.File;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
- *
+ * This class extends the COSMOScontentFormat base class to define a V1 record.
+ * It defines methods to parse the V1 data array, build a new V1 component
+ * from V1 processing results, and convert the V1 component into text for writing
+ * out to file.
  * @author jmjones
  */
 public class V1Component extends COSMOScontentFormat {
     private VRealArray V1Data;  //raw acceleration counts
     private final V0Component parentV0;  //link back to the parent V0 record
 
-    //Use this constructor when the V1 component is read in from a file and
-    //filled in with the loadComponent method.  In this case, there is no parentV0
-    //associated with this V1
+    /** 
+     * Use this constructor when the V1 component is read in from a file and
+     * filled in with the loadComponent method.  In this case, there is no parentV0
+     *associated with this V1
+     */
     public V1Component( String procType) {
         super( procType );
         this.parentV0 = null;
     }
-    
-    //Use this constructor when the V1 component is created from processing
-    //done on a V0 component.  In this case, the contents of V1 are initialized
-    //to the V0 values and updated during the processing.
-    public V1Component( String procType, V0Component pV0) throws FormatException, 
-                                                                SmException {
+    /**
+     * Use this constructor when the V1 component is created from processing
+     * done on a V0 component.  In this case, the contents of V1 are initialized
+     * to the V0 values and updated during the processing.
+     * @param procType process level indicator (i.e. "V1")
+     * @param pV0 reference to the parent V0Component
+     */
+    public V1Component( String procType, V0Component pV0) {
         super( procType );
         this.parentV0 = pV0;
         //Load the text header with parent V0 values.  Leave the update to the V1
@@ -65,6 +69,15 @@ public class V1Component extends COSMOScontentFormat {
         this.endOfData = pV0.endOfData;
         this.updateEndOfDataLine(UNCORACC, pV0.getChannel());
     }
+    /**
+     * This method defines the steps for parsing a V1 data record, which contains
+     * a floating point data array.
+     * @param startLine line number for the start of the data section
+     * @param infile contents of the input file, one string per line
+     * @return updated line number now pointing to first line after data section
+     * @throws FormatException if unable to extract format information or
+     * to convert text values to numeric
+     */
     @Override
     public int parseDataSection (int startLine, String[] infile) throws 
                                                              FormatException {
@@ -74,6 +87,10 @@ public class V1Component extends COSMOScontentFormat {
         current = V1Data.parseValues( current, infile);
         return current;
     }
+    /**
+     * Getter for the parent V0 object
+     * @return reference to the parent V0Component
+     */
     public V0Component getParent() {
         return this.parentV0;
     }
@@ -92,9 +109,15 @@ public class V1Component extends COSMOScontentFormat {
     public double[] getDataArray() {
         return V1Data.getRealArray();
     }
-
-    //Once in this method, the V1Process object is no longer needed and its array
-    //is transferred to the V1component object
+    /**
+     * This method builds the V1 component from the V1 process object, picking
+     * up the data array and updating header parameters and format lines.  Once
+     * in this method, the V1Process object is no longer needed and its array
+     * is transferred to the V1Component object.
+     * @param inVvals the V1Process object
+     * @throws SmException if unable to access the header values
+     * @throws FormatException if unable to format the numeric values to text
+     */
     public void buildV1 (V1Process inVvals) throws 
                                                 SmException, FormatException {
         Double epsilon = 0.001;
@@ -172,7 +195,7 @@ public class V1Component extends COSMOScontentFormat {
      * and gets the physical units from the configuration file.
      * @param units the numeric code for the type of units, COSMOS table 2
      * @param unitsCode code containing the type of units (cm, cm/sec, etc.)
-     * @throws SmException from setFormatLine
+     * @throws SmException if unable to access values in the headers
      */
     public void buildNewDataFormatLine(String units, int unitsCode) throws SmException {
         //calculate the time by multiplying the number of data values by delta t
@@ -187,6 +210,10 @@ public class V1Component extends COSMOScontentFormat {
                                                     timeSec, units, unitsCode);
         V1Data.setFormatLine(line + V1Data.getNumberFormat());
     }
+    /**
+     * Getter for the data format line
+     * @return the data format line
+     */
     public String getDataFormatLine() {
         return V1Data.getFormatLine();
     }

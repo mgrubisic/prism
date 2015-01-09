@@ -436,32 +436,33 @@ public class ArrayOps {
      * sign is negative.  This indicates where in the array the values shift
      * from positive to negative or negative to positive.  This method stops when
      * it finds the first crossing within the specified window and returns the
-     * index of the first value in the pair being tested.  If the flag is zero,
-     * the method starts at the window and stops at the end of
-     * the array.  If the flag is 1, the method starts at the window and works
-     * backwards to the beginning of the array.
+     * index of the first value in the pair being tested.  If the start value is
+     * smaller than the stop value, the search will begin at start and move forward
+     * to the stop index.  If start is greater than stop, search will begin at
+     * start and move backwards through the array to the stop index.
      * @param inArray the input array to find the zero crossing
-     * @param window index in the array to start the search
-     * @param flag direction of search, either forwards (0) or backwards (1)
+     * @param start index in the array to start the search
+     * @param stop index in the array to stop the search
      * @return the index of the zero crossing, or -1 if no crossing found, -2 if 
      * input parameters are invalid
      */
-    public static int findZeroCrossing(final double[] inArray, int window, int flag) {
+    public static int findZeroCrossing(final double[] inArray, int start, int stop) {
         int cross = -1;
-        if ((inArray == null) || (inArray.length == 0) || (window < 0) || 
-                                                    (window > inArray.length)) {
+        if ((inArray == null) || (inArray.length == 0) || (start < 0) || 
+            (start > inArray.length) || (stop < 0) || (stop > inArray.length)
+                                                            || (start == stop)) {
             return -2;
         }
-        if (flag == 0) {  //work from start of subsection to the end of the array
-            for (int k = window; k < inArray.length; k++) {
+        if (start < stop) {  //work from start of subsection to the end
+            for (int k = start+1; k <= stop; k++) {
                 if ((inArray[k] * inArray[k-1]) < 0.0) {
                     cross = k-1;
                     break;
                 }
                 cross = -1;
             }
-        } else { //work from the end of the subsection to the start of the array
-            for (int k = window; k > 0; k--) {
+        } else { //work from the end of the subsection to the start
+            for (int k = start; k > stop; k--) {
                 if ((inArray[k] * inArray[k-1]) < 0.0) {
                     cross = k-1;
                     break;
@@ -470,122 +471,5 @@ public class ArrayOps {
            }
         }
         return cross;
-    }
-    public static double[] findBracketedDuration(final double[] inArray, double conversion, double dtime) {
-        double[] results = new double[3];
-        int t1 = 0;
-        int t2 = 0;
-        int len = inArray.length;
-        double[] subset;
-//        double[] garr = convertArrayUnits(inArray, conversion);
-        double[] garr = convertArrayUnits(inArray, 1.0);
-        for (int i = 0; i < len; i++) {
-            if (garr[i] > 0.05) {
-                t1 = i;
-                break;
-            }
-        }
-        System.out.println("t1: " + t1);
-        ArrayStats test = new ArrayStats(garr);
-        System.out.println("peak garr: " + Math.abs(test.getPeakVal()));
-        
-        for (int j = 1; j < len; j++) {
-            subset = new double[len-j];
-            System.arraycopy(garr, j, subset, 0, len-j);
-            ArrayStats stat = new ArrayStats(subset);
-            if (Math.abs(stat.getPeakVal()) < 0.05) {
-                t2 = j;
-                break;
-            }
-        }
-        System.out.println("t2: " + t2);
-        results[0] = (t2 - t1) * dtime;
-        results[1] = t1 * dtime;
-        results[2] = t2 * dtime;
-        return results;
-    }
-    public static double calculateDurationInterval( final double[] inArray, double units_conv,
-                                                    double constval, double dtime) {
-        double interval = 0.0;
-        double total = calculateAriasIntensity(inArray, units_conv, constval, dtime);
-        double[] segment;
-        double segtotal;
-        int j1 = 0;
-        int j2 = 0;
-        for (int j = 3; j < inArray.length; j++) {
-            segment = new double[j+1];
-            System.arraycopy(inArray, 0, segment, 0, j+1);
-            segtotal = SquareIntegrateAndSum(segment, dtime, 0.0);
-            if (Math.abs(segtotal - 0.05 * total) <= (0.01 * 0.05 * total)) {
-                j1 = j;
-                break;
-            } else if (segtotal > 0.05 * total) {
-                j1 = j;
-                break;
-            }
-        }
-        for (int j = 3; j < inArray.length; j++) {
-            segment = new double[j+1];
-            System.arraycopy(inArray, 0, segment, 0, j+1);
-            segtotal = SquareIntegrateAndSum(segment, dtime, 0.0);
-            if (Math.abs(segtotal - 0.75 * total) <= (0.01 * 0.75 * total)) {
-                j2 = j;
-                break;
-            } else if (segtotal > 0.75 * total) {
-                j2 = j;
-                break;
-            }
-        }
-        interval = (j2 - j1) * dtime;
-        return interval;
-    }
-    //the variable constval allows this calculation for array units of cm/sec^2 
-    //or g.  User must input the correct constant value.
-    public static double calculateAriasIntensity( final double[] inArray, double units_conv,
-                                                double constval, double dtime) {
-        double intensity = 0.0;
-        int len = inArray.length;
-        double total = 0.0;
-        double[] squarr = new double[len];
-        for (int i = 0; i < len; i++) {
-            squarr[i] = Math.pow((inArray[i]), 2);
-        }
-        double[] intsquarr = Integrate(squarr, dtime, 0.0);
-        for (double each : intsquarr) {
-            total = total + each;
-        }
-        intensity = total * constval;
-        return intensity;
-    }
-    public static double calculateHousnerIntensity( final double[] inArray, 
-                                                double constval, double dtime,
-                                                double t1_start, double t2_end) {
-        double intensity = 0.0;
-        int t1 = (int)(t1_start / dtime);
-        int t2 = (int)(t2_end / dtime);
-        int len = 1+ t2 - t1;
-        double total = 0.0;
-        double[] squarr = new double[len];
-        for (int i = t1; i < t2+1; i++) {
-            squarr[i - t1] = Math.pow(inArray[i], 2);
-        }
-        double[] intsquarr = Integrate(squarr, dtime, 0.0);
-        for (double each : intsquarr) {
-            total = total + each;
-        }
-        intensity = total * (1.0/(t2_end - t1_start));
-        return intensity;
-    }
-    public static double calculateCAV( final double[] inArray, double dtime) {
-        double CAV = 0.0;
-        int len = inArray.length;
-        int kk = (int)(Math.round(1.0/dtime));
-        int jj = -kk;
-        
-//        for (int i = 0; i < len-kk-2; i++) {
-//            if 
-//        }
-        
-        return CAV;
     }
 }

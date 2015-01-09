@@ -42,6 +42,7 @@ public class AdaptiveBaselineCorrection {
     private double highcut;
     private int numpoles;
     private int estart;
+    private double taplength;
     private double[] velocity;
     private double[] velstart;
     private double[] displace;
@@ -64,9 +65,10 @@ public class AdaptiveBaselineCorrection {
     
     public AdaptiveBaselineCorrection(double delttime, double[] invel, 
                                       double lowcut,double highcut,int numpoles,
-                                      int ppick) {
+                                      int ppick, double taplengthtime) {
         this.dtime = delttime;
         this.estart = ppick;
+        this.taplength = taplengthtime;
         this.velstart = invel;
         this.lowcut = lowcut;
         this.highcut = highcut;
@@ -130,6 +132,8 @@ public class AdaptiveBaselineCorrection {
         ButterworthFilter filter;
         params = new ArrayList<>();
         double[] onerun;
+        double[] paddedvelocity;
+        double[] paddeddisplace;
         V2Status status = V2Status.NOABC;
         QCcheck qcchecker = new QCcheck();
         if (!qcchecker.validateQCvalues()){
@@ -148,17 +152,20 @@ public class AdaptiveBaselineCorrection {
                         boolean valid = filter.calculateCoefficients(lowcut, 
                                          highcut,dtime, numpoles, true);
                         if (valid) {
-                            filter.applyFilter(velocity, estart);
+                            paddedvelocity = filter.applyFilter(velocity, taplength, estart);
                         } else {
                             throw new SmException("ABC: Invalid bandpass "
                                              + "filter input parameters");
                         }
                         //remove any mean value
-                        ArrayStats velmean = new ArrayStats( velocity );
-                        ArrayOps.removeValue(velocity, velmean.getMean());
+                        ArrayStats velmean = new ArrayStats( paddedvelocity );
+                        ArrayOps.removeValue(paddedvelocity, velmean.getMean());
                         //integrate to get displacement, differentiate
                         //for acceleration
-                        displace = ArrayOps.Integrate( velocity, dtime, 0.0);
+                        paddeddisplace = ArrayOps.Integrate( paddedvelocity, dtime, 0.0);
+                        displace = new double[velocity.length];
+                        System.arraycopy(paddedvelocity, filter.getPadLength(), velocity, 0, velocity.length);
+                        System.arraycopy(paddeddisplace, filter.getPadLength(), displace, 0, displace.length);
                         accel = ArrayOps.Differentiate(velocity, dtime);
                         qcchecker.qcVelocity(velocity);
                         qcchecker.qcDisplacement(displace);
@@ -177,8 +184,8 @@ public class AdaptiveBaselineCorrection {
                         onerun[9] = rms[0];
                         onerun[10] = rms[1]; //not used
                         onerun[11] = rms[2];
-                        onerun[12] = 0;
-                        onerun[13]= 0;
+                        onerun[12] = velocity[0];
+                        onerun[13]= displace[0];
                         //Penalty for initial acceleration step
                         ArrayStats accstat = new ArrayStats(accel);
                         if (Math.abs(Math.abs(accel[0]) - 
@@ -218,13 +225,16 @@ public class AdaptiveBaselineCorrection {
                 //now filter velocity
                 filter = new ButterworthFilter();
                 filter.calculateCoefficients(lowcut,highcut,dtime,numpoles,true);
-                filter.applyFilter(velocity, estart);
+                paddedvelocity = filter.applyFilter(velocity, taplength, estart);
                 //remove any mean value
-                ArrayStats velmean = new ArrayStats( velocity );
-                ArrayOps.removeValue(velocity, velmean.getMean());
+                ArrayStats velmean = new ArrayStats( paddedvelocity );
+                ArrayOps.removeValue(paddedvelocity, velmean.getMean());
                 //integrate to get displacement, differentiate
                 //for acceleration
-                displace = ArrayOps.Integrate( velocity, dtime, 0.0);
+                paddeddisplace = ArrayOps.Integrate( paddedvelocity, dtime, 0.0);
+                displace = new double[velocity.length];
+                System.arraycopy(paddedvelocity, filter.getPadLength(), velocity, 0, velocity.length);
+                System.arraycopy(paddeddisplace, filter.getPadLength(), displace, 0, displace.length);
                 accel = ArrayOps.Differentiate(velocity, dtime);
                 status = V2Status.GOOD;
                 solution = idx;
@@ -232,20 +242,23 @@ public class AdaptiveBaselineCorrection {
             }
         }
         if (status != V2Status.GOOD) {
-            solution = 0;
+            solution = ranking[0];
             eachrun = params.get(solution);
             velocity = makeCorrection(velstart,(int)eachrun[4],(int)eachrun[5],
                                     (int)eachrun[6],(int)eachrun[7]);
             //now filter velocity
             filter = new ButterworthFilter();
             filter.calculateCoefficients(lowcut,highcut,dtime,numpoles,true);
-            filter.applyFilter(velocity, estart);
+            paddedvelocity = filter.applyFilter(velocity, taplength, estart);
             //remove any mean value
-            ArrayStats velmean = new ArrayStats( velocity );
-            ArrayOps.removeValue(velocity, velmean.getMean());
+            ArrayStats velmean = new ArrayStats( paddedvelocity );
+            ArrayOps.removeValue(paddedvelocity, velmean.getMean());
             //integrate to get displacement, differentiate
             //for acceleration
-            displace = ArrayOps.Integrate( velocity, dtime, 0.0);
+            paddeddisplace = ArrayOps.Integrate( paddedvelocity, dtime, 0.0);
+            displace = new double[velocity.length];
+            System.arraycopy(paddedvelocity, filter.getPadLength(), velocity, 0, velocity.length);
+            System.arraycopy(paddeddisplace, filter.getPadLength(), displace, 0, displace.length);
             accel = ArrayOps.Differentiate(velocity, dtime);
             status = V2Status.FAILQC;
         }
@@ -400,5 +413,13 @@ public class AdaptiveBaselineCorrection {
     }
     public void clearParamsArray() {
         params.clear();
+    }
+    public double getInitialVelocity() {
+        double[] temp = params.get(solution);
+        return temp[12];
+    }
+    public double getInitialDisplace() {
+        double[] temp = params.get(solution);
+        return temp[13];
     }
 }

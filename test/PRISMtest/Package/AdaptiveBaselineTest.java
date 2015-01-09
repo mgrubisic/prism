@@ -84,9 +84,9 @@ public class AdaptiveBaselineTest {
         time = ArrayOps.makeTimeArray(dtime2, hnn.length);
         time2 = ArrayOps.makeTimeArray(dtime2, hn2.length);
         adapt = new AdaptiveBaselineCorrection(dtime2, hnn, lowcut, highcut,2, 
-                                                                    2023 );
+                                                                    2023, 2.0 );
         adapt2 = new AdaptiveBaselineCorrection(dtime2, hn2, lowcut, highcut,2, 
-                                                                    1227 );
+                                                                    1227, 2.0 );
     }
     
     @BeforeClass
@@ -156,7 +156,7 @@ public class AdaptiveBaselineTest {
         
         ButterworthFilter filter = new ButterworthFilter();
         filter.calculateCoefficients(lowcut,highcut,dtime2,2,true);
-        filter.applyFilter(result, break1);
+        filter.applyFilter(result, 2.0, break1);
         //remove any mean value
         ArrayStats velmean = new ArrayStats( result );
         ArrayOps.removeValue(result, velmean.getMean());
@@ -187,7 +187,7 @@ public class AdaptiveBaselineTest {
         
         ButterworthFilter filter = new ButterworthFilter();
         filter.calculateCoefficients(lowcut,highcut,dtime2,2,true);
-        filter.applyFilter(result, breakh1);
+        filter.applyFilter(result, 2.0, breakh1);
         //remove any mean value
         ArrayStats velmean = new ArrayStats( result );
         ArrayOps.removeValue(result, velmean.getMean());

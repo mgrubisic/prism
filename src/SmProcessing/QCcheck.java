@@ -76,11 +76,11 @@ public class QCcheck {
         int velwindowstart;
         int velwindowend;
         if (window > 0) {
-            velwindowstart = ArrayOps.findZeroCrossing(velocity, window, 1);
+            velwindowstart = ArrayOps.findZeroCrossing(velocity, window, 0);
             velstart = (velwindowstart > 0) ? 
                     ArrayOps.findSubsetMean(velocity, 0, velwindowstart) : 
                                                                     velocity[0];
-            velwindowend = ArrayOps.findZeroCrossing(velocity, vellen-window, 0);
+            velwindowend = ArrayOps.findZeroCrossing(velocity, vellen-window-1, vellen-1);
             velend = (velwindowend > 0) ? 
                     ArrayOps.findSubsetMean(velocity, velwindowend, vellen) : 
                                                              velocity[vellen-1];
@@ -98,7 +98,7 @@ public class QCcheck {
         int dislen = displace.length;
         int diswindowend;
         if (window > 0) {
-            diswindowend = ArrayOps.findZeroCrossing(displace, dislen-window, 0);
+            diswindowend = ArrayOps.findZeroCrossing(displace, dislen-window-1, dislen-1);
             disend = (diswindowend > 0) ? 
                     ArrayOps.findSubsetMean(displace, diswindowend, dislen) : 
                                                             displace[dislen-1];

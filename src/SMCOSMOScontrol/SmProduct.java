@@ -175,8 +175,9 @@ public class SmProduct {
         while (iter.hasNext()) {
             V1Component rec1 = (V1Component)iter.next();
             contents = rec1.VrecToText();
+            chanvalue = (V1List.size() > 1) ? rec1.getChannel() : "";
             outName = buildFilename(rec1.getStationDir(), rec1.getFileName(),"V1",
-                                                         rec1.getChannel(), "");
+                                                         chanvalue, "");
             textout = new TextFileWriter(outName, contents);
             textout.writeOutToFile();
             this.loglist.add(outName.toString());
@@ -187,8 +188,9 @@ public class SmProduct {
         while (iter.hasNext()) {
             V2Component rec2 = (V2Component)iter.next();
             contents = rec2.VrecToText();
+            chanvalue = (V2List.size() > 3) ? rec2.getChannel() : "";
             outName = buildFilename(rec2.getStationDir(), rec2.getFileName(),"V2",
-                                                         rec2.getChannel(), "acc");
+                                                         chanvalue, "acc");
             textout = new TextFileWriter(outName, contents);
             textout.writeOutToFile();
             this.loglist.add(outName.toString());
@@ -197,7 +199,7 @@ public class SmProduct {
             if (iter.hasNext()) {
                 rec2 = (V2Component)iter.next();
                 outName = buildFilename(rec2.getStationDir(), rec2.getFileName(),"V2",
-                                                         rec2.getChannel(), "vel");
+                                                         chanvalue, "vel");
                 contents = rec2.VrecToText();
                 textout = new TextFileWriter(outName, contents);
                 textout.writeOutToFile();
@@ -207,7 +209,7 @@ public class SmProduct {
             if (iter.hasNext()) {
                 rec2 = (V2Component)iter.next();
                 outName = buildFilename(rec2.getStationDir(), rec2.getFileName(),"V2",
-                                                         rec2.getChannel(), "dis");
+                                                         chanvalue, "dis");
                 contents = rec2.VrecToText();
                 textout = new TextFileWriter(outName, contents);
                 textout.writeOutToFile();
@@ -219,8 +221,9 @@ public class SmProduct {
         iter = this.V3List.iterator();
         while (iter.hasNext()) {
             V3Component rec3 = (V3Component)iter.next();
+            chanvalue = (V3List.size() > 1) ? rec3.getChannel() : "";
             outName = buildFilename(rec3.getStationDir(), rec3.getFileName(),"V3",
-                                                         rec3.getChannel(), "");
+                                                         chanvalue, "");
             contents = rec3.VrecToText();
             textout = new TextFileWriter(outName, contents);
             textout.writeOutToFile();

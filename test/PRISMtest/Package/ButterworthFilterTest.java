@@ -94,7 +94,7 @@ public class ButterworthFilterTest {
         boolean valid = filter005.calculateCoefficients(0.1, 30.0, d005, nroll, true);
         double[] hold = Arrays.copyOf(sin20, length);
         int npad = (int)Math.floor(3.0 * (nroll / (flo * d005)));
-        double[] padded = filter005.applyFilter(sin20, 0);
+        double[] padded = filter005.applyFilter(sin20, 2.0, 0);
         double[] section = Arrays.copyOfRange(padded, npad-100, npad+length+100);
         writeOutArray( sin20, outdir, "sin20after.txt");
         writeOutArray( section, outdir, "sin20paddedafter.txt");

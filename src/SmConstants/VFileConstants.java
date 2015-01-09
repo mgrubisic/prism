@@ -142,8 +142,8 @@ public final class VFileConstants {
     public static final double MSEC_TO_SEC = 0.001; //milliseconds to seconds
     public static final double FROM_G_CONVERSION = 980.665; //cm per sq. sec per g
     public static final double TO_G_CONVERSION = 0.0010197;  //g per cm per sq. sec
-    //Arias Intensity constant = (acos(0.05))/(g*(sqrt(1-(0.05)^2)))
-    public static final double ARIAS_INTENSITY_CONST = 0.0016;
+    //Arias Intensity constant = (pi/2)
+    public static final double ARIAS_INTENSITY_CONST = 1.570796;
     
     public enum EventOnsetType{ AIC, DE };
     
@@ -155,7 +155,7 @@ public final class VFileConstants {
     public static final int DEFAULT_NUM_POLES = 2;
     public static final double DEFAULT_HIGHCUT = 0.5;
     public static final double DEFAULT_LOWCUT = 30.0;
-    public static final double DEFAULT_TAPER_LENGTH = 3.0;
+    public static final double DEFAULT_TAPER_LENGTH = 2.0;
     
     //adaptive baseline correction constants
     public static final int DEFAULT_1ST_POLY_ORD_LOWER = 1;
@@ -172,7 +172,7 @@ public final class VFileConstants {
     
     //V3 processing
     public static final int NUM_COEF_VALS = 6;
-    public static final double[] V3_DAMPING_VALUES = {0.00,0.02,0.05,0.10,0.20};
+    public static final double[] V3_DAMPING_VALUES = {0.00, 0.02, 0.05, 0.10, 0.20};
     public static final double[] V3_SAMPLING_RATES = {50.0, 100.0, 200.0, 500.0};
     public static final int NUM_T_PERIODS = 91;
     //1 array for periods, 1 for fft, 3 for each of 5 damping values = 17

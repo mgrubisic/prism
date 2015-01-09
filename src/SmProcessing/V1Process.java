@@ -44,7 +44,7 @@ public class V1Process {
      * the configuration file if available.  If these values are not defined,
      * default values are used instead.
      * @param v0rec the reference to the parent V0 record
-     * @throws SmException if unable to acquire needed real header or config
+     * @throws SmException if unable to acquire needed real header or configuration
      * parameters
      */
     public V1Process(final V0Component v0rec) throws SmException {
@@ -96,8 +96,7 @@ public class V1Process {
         } else {
             conv = RawTraceConversion.countToG(lsb, sensitivity);
         }
-//        System.out.println("+++ V1 conversion: " + conv);
-        
+
         //convert counts to physical values
         accel = ArrayOps.countsToPhysicalValues(inV0.getDataArray(), conv);
         

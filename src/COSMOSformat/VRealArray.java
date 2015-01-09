@@ -129,11 +129,11 @@ public class VRealArray extends COSMOSarrayFormat {
     public void setRealArray(double[] inArray){
         this.realVals = inArray;
     }
-/**
- * This method calculates the values for the valsPerLine, numberFormat, and
- * numLines fields based on the current array size and other field values.
- * @throws FormatException if the fieldWidth field is less than or equal to 0
- */
+    /**
+     * This method calculates the values for the valsPerLine, numberFormat, and
+     * numLines fields based on the current array size and other field values.
+     * @throws FormatException if the fieldWidth field is less than or equal to 0
+     */
     public void buildArrayParams(SmArrayStyle packtype) throws FormatException {
         if (this.getFieldWidth() > 0 ) {
             if (packtype == SmArrayStyle.PACKED) {
@@ -169,12 +169,16 @@ public class VRealArray extends COSMOSarrayFormat {
         return textVals;
     }
     /**
-     * Getter for the displayType field,i.e. "I", for type integer
+     * Getter for the displayType field,i.e. "F", for floating point
      * @return the display type
      */
     public String getDisplayType() {
         return this.displayType;
     }
+    /**
+     * Setter for the displayType field
+     * @param dtype type to set display type to, i.e. "F" or "E"
+     */
     public void setDisplayType(String dtype) {
         this.displayType = dtype;
     }

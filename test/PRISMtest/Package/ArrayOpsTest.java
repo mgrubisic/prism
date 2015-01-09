@@ -388,8 +388,8 @@ public class ArrayOpsTest {
      public void testFindZeroCrossing() {
          double[] test1 = null;
          double[] test2 = new double[0];
-         org.junit.Assert.assertEquals(9,ArrayOps.findZeroCrossing(polysin, 12, 1));
-         org.junit.Assert.assertEquals(84,ArrayOps.findZeroCrossing(polysin, 83, 0));
+         org.junit.Assert.assertEquals(9,ArrayOps.findZeroCrossing(polysin, 12, 0));
+         org.junit.Assert.assertEquals(84,ArrayOps.findZeroCrossing(polysin, 84, 99));
          org.junit.Assert.assertEquals(-1,ArrayOps.findZeroCrossing(posconstant, 80, 0));
          org.junit.Assert.assertEquals(-1,ArrayOps.findZeroCrossing(posconstant, 20, 1));
          

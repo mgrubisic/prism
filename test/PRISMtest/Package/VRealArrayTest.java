@@ -71,7 +71,7 @@ public class VRealArrayTest {
     public void testConstructor()  {
         org.junit.Assert.assertEquals(15, hi.getFieldWidth());
         org.junit.Assert.assertEquals(6, hi.getPrecision());
-        org.junit.Assert.assertEquals("E", hi.getDisplayType());
+        org.junit.Assert.assertEquals("F", hi.getDisplayType());
         hi.setDisplayType("F");
     }
     

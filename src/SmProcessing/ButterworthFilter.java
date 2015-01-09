@@ -136,27 +136,19 @@ public class ButterworthFilter {
         return true;
     }
     
-    public double[] applyFilter( double[] arrayS, int eventOnsetIndex ) {
+    public double[] applyFilter( double[] arrayS, double taplengthtime, int eventOnsetIndex ) {
         
         int np2;
         double[] filteredS;
         double x1; double x2; double y1; double y2; double xp; double yp;
-//        int taperlength = 0;
 
-        int taperlength = (int)(2.0 / dtime); // 2 seconds worth of samples
+//        int taperlength = (int)(2.0 / dtime); // 2 seconds worth of samples
 //        int taperlength= (int)(((2.0/f1) + 1.0)/dtime);
-//        if (eventOnsetIndex > 0) {
-//            taperlength = (int)(0.05 * arrayS.length);
-//            if (taperlength > eventOnsetIndex) {
-//                taperlength = (int)(0.8 * eventOnsetIndex);
-//            }
-//        } else {
-//            taperlength = (int)(3.0 / dtime);  // set a 3 sec length for taper
-//        }
-//        System.out.println("taperlength: " + taperlength);
+        int taperlength = ArrayOps.findZeroCrossing(arrayS, eventOnsetIndex, 0);
+        if ((taperlength <= 0) || ((taperlength*dtime) <= taplengthtime)) {
+            taperlength = (int)(taplengthtime / dtime);
+        }
 //        System.out.println("+++ taperlength: " + taperlength);
-//        System.out.println("+++ before filter, arrayS[0] = " + arrayS[0]);
-//        System.out.println("+++ before filter, arrayS[end] = " + arrayS[arrayS.length-1]);
         
         //Copy the input array into a return array.  If the filter was configured
         //as acausal, then pad the length of the array by the value calculated below.
@@ -182,8 +174,8 @@ public class ButterworthFilter {
             filteredS = new double[np2];
             System.arraycopy(arrayS, 0, filteredS, 0, np2);
         }
-        SmErrorLogger elog = SmErrorLogger.INSTANCE;
-        elog.writeOutArray(filteredS, "filteredS.txt");
+//        SmErrorLogger elog = SmErrorLogger.INSTANCE;
+//        elog.writeOutArray(filteredS, "after_taper_with_pads.txt");
         //filter the array
         for (int k = 0; k < 2*nroll; k++) {
             x1 = 0.0;

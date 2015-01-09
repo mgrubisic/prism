@@ -296,7 +296,7 @@ public class COSMOScontentFormat {
             m = scnlfield.matcher( SCNLauth );
             if (m.find()) {
                 segments = m.group(2).split("\\.");
-                this.setChannel(segments[1]);
+                this.setChannel(segments[1] + "." + segments[3]);
             }
         }
     }
