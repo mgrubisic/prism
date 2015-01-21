@@ -1,8 +1,10 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+/*******************************************************************************
+ * Name: Java class VIntArray.java
+ * Project: PRISM strong motion record processing using COSMOS data format
+ * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
+ * 
+ * Date: first release date Feb. 2015
+ ******************************************************************************/
 
 package COSMOSformat;
 
@@ -122,6 +124,7 @@ public class VIntArray extends COSMOSarrayFormat {
     /**
      * This method calculates the values for the valsPerLine, numberFormat, and
      * numLines fields based on the current array size and other field values.
+     * @param packtype single-column or packed for output of array
      * @throws FormatException if the fieldWidth field is less than or equal to 0
      */
     public void buildArrayParams(SmArrayStyle packtype) throws FormatException {
@@ -144,6 +147,7 @@ public class VIntArray extends COSMOSarrayFormat {
      * Each text representation of a number is stored in an arrayList
      * @return arrayList of text-formatted numbers
      */
+    @Override
     public ArrayList<String> arrayToText() {
         String formatting = "%" + String.valueOf(this.getFieldWidth()) + "d";
         ArrayList <String> textVals = new ArrayList<>();

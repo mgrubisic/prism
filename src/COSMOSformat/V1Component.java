@@ -1,8 +1,10 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+/*******************************************************************************
+ * Name: Java class V1Component.java
+ * Project: PRISM strong motion record processing using COSMOS data format
+ * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
+ * 
+ * Date: first release date Feb. 2015
+ ******************************************************************************/
 
 package COSMOSformat;
 
@@ -30,7 +32,7 @@ public class V1Component extends COSMOScontentFormat {
     /** 
      * Use this constructor when the V1 component is read in from a file and
      * filled in with the loadComponent method.  In this case, there is no parentV0
-     *associated with this V1
+     * associated with this V1
      */
     public V1Component( String procType) {
         super( procType );

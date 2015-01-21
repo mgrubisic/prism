@@ -19,11 +19,8 @@ package PRISMtest.Package;
 
 import COSMOSformat.V0Component;
 import COSMOSformat.V1Component;
-import COSMOSformat.VRealArray;
-import static SmConstants.VFileConstants.FROM_G_CONVERSION;
 import static SmConstants.VFileConstants.PROCESSING_STAGE_INDEX;
 import static SmConstants.VFileConstants.RAWACC;
-import static SmConstants.VFileConstants.SCALING_FACTOR;
 import static SmConstants.VFileConstants.UNCORACC;
 import static SmConstants.VFileConstants.V1_STAGE;
 import SmException.FormatException;
@@ -31,8 +28,6 @@ import SmException.SmException;
 import SmProcessing.V1Process;
 import SmUtilities.PrismXMLReader;
 import java.io.IOException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import javax.xml.parsers.ParserConfigurationException;
 import static org.junit.Assert.*;
 import org.junit.Before;
@@ -207,7 +202,7 @@ public class V1ComponentTest {
         V1Component v1rec = new V1Component( UNCORACC, v0);
         v1rec.buildV1(v1val);        
         String[] text = v1rec.VrecToText();
-        org.junit.Assert.assertEquals(48+5, text.length); //for double formatting change
+        org.junit.Assert.assertEquals(48+3+17, text.length); //for double formatting change
         org.junit.Assert.assertEquals(v0file[17],text[17]);
         org.junit.Assert.assertEquals(true, text[0].startsWith(UNCORACC));
         org.junit.Assert.assertEquals(v0file[v0file.length-1],text[text.length-1]);

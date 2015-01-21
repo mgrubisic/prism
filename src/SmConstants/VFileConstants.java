@@ -1,8 +1,10 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+/*******************************************************************************
+ * Name: Java class VFileConstants.java
+ * Project: PRISM strong motion record processing using COSMOS data format
+ * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
+ * 
+ * Date: first release date Feb. 2015
+ ******************************************************************************/
 
 package SmConstants;
 
@@ -121,6 +123,11 @@ public final class VFileConstants {
     
     //V2 computed parameters codes
     public static final int BRACKETED_DURATION = 79;
+    public static final int DURATION_INTERVAL = 80;
+    public static final int CHANNEL_RMS = 81;
+    public static final int CUMULATIVE_ABS_VEL = 82;
+    public static final int HOUSNER_INTENSITY = 83;
+    public static final int ARIAS_INTENSITY = 84;
     
     //V3 response spectrum parameter codes
     public static final int NUM_SPECTRA_PERIODS = 69;
@@ -142,8 +149,6 @@ public final class VFileConstants {
     public static final double MSEC_TO_SEC = 0.001; //milliseconds to seconds
     public static final double FROM_G_CONVERSION = 980.665; //cm per sq. sec per g
     public static final double TO_G_CONVERSION = 0.0010197;  //g per cm per sq. sec
-    //Arias Intensity constant = (pi/2)
-    public static final double ARIAS_INTENSITY_CONST = 1.570796;
     
     public enum EventOnsetType{ AIC, DE };
     

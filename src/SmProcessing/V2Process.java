@@ -100,6 +100,7 @@ public class V2Process {
     private double HousnerIntensity;
     private double channelRMS;
     private double durationInterval;
+    private double cumulativeAbsVelocity;
         
     public V2Process(final V1Component v1rec, File inName) throws SmException {
         double epsilon = 0.0001;
@@ -130,6 +131,7 @@ public class V2Process {
         this.HousnerIntensity = 0.0;
         this.channelRMS = 0.0;
         this.durationInterval = 0.0;
+        this.cumulativeAbsVelocity = 0.0;
         this.initialVel = 0.0;
         this.initialDis = 0.0;
         
@@ -275,12 +277,6 @@ public class V2Process {
             ArrayOps.removeValue(accraw, accsub.getMean());
             errorlog.add("Pre-event mean removed from uncorrected acceleration");
         }
-        else {
-            ArrayStats accmean = new ArrayStats( accraw );
-            ArrayOps.removeValue(accraw, accmean.getMean());
-            errorlog.add("Full array mean removed from uncorrected acceleration");
-        }
-
 //        if (writeDebug) {
 //            elog.writeOutArray(accraw, V0name.getName() + "_" + channel + "_initialBaselineCorrection.txt");
 //        } 
@@ -460,10 +456,6 @@ public class V2Process {
         
         //if status is GOOD, calculate computed parameters for headers
         if (procStatus == V2Status.GOOD) {
-//            if (writeDebug) {
-//               elog.writeOutArray(ArrayOps.convertArrayUnits(accel, TO_G_CONVERSION), 
-//                       V0name.getName() + "_" + channel + "_accel_to_g.txt");
-//            }
             ComputedParams cp = new ComputedParams(accel, dtime);
             boolean strongMotion = cp.calculateComputedParameters();
             if (strongMotion) {
@@ -472,12 +464,16 @@ public class V2Process {
                 HousnerIntensity = cp.getHousnerIntensity();
                 channelRMS = cp.getChannelRMS();
                 durationInterval = cp.getDurationInterval();
+                cumulativeAbsVelocity = cp.getCumulativeAbsVelocity();
             }
-            System.out.println(String.format("bracketedDuration: %f",bracketedDuration));
-            System.out.println(String.format("durationInterval: %f",durationInterval));
-            System.out.println(String.format("AriasIntensity: %f",AriasIntensity));
-            System.out.println(String.format("HousnerIntensity: %f",HousnerIntensity));
-            System.out.println(String.format("channelRMS: %f",channelRMS));
+//            if (strongMotion) {
+//                System.out.println(String.format("bracketedDuration: %f",bracketedDuration));
+//                System.out.println(String.format("durationInterval: %f",durationInterval));
+//                System.out.println(String.format("AriasIntensity: %f",AriasIntensity));
+//                System.out.println(String.format("HousnerIntensity: %f",HousnerIntensity));
+//                System.out.println(String.format("channelRMS: %f",channelRMS));
+//                System.out.println(String.format("CAV: %f",cumulativeAbsVelocity));
+//            }
         }
         return procStatus;
     }
@@ -569,6 +565,21 @@ public class V2Process {
     }
     public double getBracketedDuration() {
         return bracketedDuration;
+    }
+    public double getAriasIntensity() {
+        return AriasIntensity;
+    }
+    public double getHousnerIntensity() {
+        return HousnerIntensity;
+    }
+    public double getChannelRMS() {
+        return channelRMS;
+    }
+    public double getDurationInterval() {
+        return durationInterval;
+    }
+    public double getCumulativeAbsVelocity() {
+        return cumulativeAbsVelocity;
     }
     public double getInitialVelocity() {
         return initialVel;

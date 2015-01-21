@@ -1,8 +1,10 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+/*******************************************************************************
+ * Name: Java class V2Component.java
+ * Project: PRISM strong motion record processing using COSMOS data format
+ * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
+ * 
+ * Date: first release date Feb. 2015
+ ******************************************************************************/
 
 package COSMOSformat;
 
@@ -17,11 +19,14 @@ import static SmUtilities.SmConfigConstants.OUT_ARRAY_FORMAT;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_ABBREV;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_CODE;
 import SmUtilities.SmTimeFormatter;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
+ * This class extends the COSMOScontentFormat base class to define a V2 record.
+ * It defines methods to parse the V2 data array, build a new V2 component
+ * from V2 processing results, and convert the V2 component into text for writing
+ * out to file.
  *
  * @author jmjones
  */
@@ -30,16 +35,24 @@ public class V2Component extends COSMOScontentFormat {
     private final V0Component parentV0;  //link back to the parent V0 record
     private final V1Component parentV1;  //link back to the parent V1 record
 
+    /** 
+     * Use this constructor when the V2 component is read in from a file and
+     * filled in with the loadComponent method.  In this case, there is no parentV1
+     *associated with this V2
+     */
     public V2Component( String procType){
         super( procType );
         this.parentV0 = null;
         this.parentV1 = null;
     }
-    //Use this constructor when the V2 component is created from processing
-    //done on a V1 component.  In this case, the contents of V2 are initialized
-    //to the V1 values and updated during the processing.
-    public V2Component( String procType, V1Component pV1) throws FormatException, 
-                                                                SmException {
+    /**
+     * Use this constructor when the V2 component is created from processing
+     * done on a V1 component.  In this case, the contents of V2 are initialized
+     * to the V1 values and updated during the processing.
+     * @param procType process level indicator (i.e. "V2")
+     * @param pV1 reference to the parent V1Component
+     */
+    public V2Component( String procType, V1Component pV1) {
         super( procType );
         this.parentV1 = pV1;
         this.parentV0 = pV1.getParent();
@@ -65,6 +78,15 @@ public class V2Component extends COSMOScontentFormat {
         this.comments = pV1.getComments(); //leave update for processing, if any
         this.endOfData = pV1.endOfData; //leave update for buildV2
     }
+    /**
+     * This method defines the steps for parsing a V2 data record, which contains
+     * a floating point data array.
+     * @param startLine line number for the start of the data section
+     * @param infile contents of the input file, one string per line
+     * @return updated line number now pointing to first line after data section
+     * @throws FormatException if unable to extract format information or
+     * to convert text values to numeric
+     */
     @Override
     public int parseDataSection (int startLine, String[] infile) throws 
                                                             FormatException {
@@ -74,6 +96,10 @@ public class V2Component extends COSMOScontentFormat {
         current = V2Data.parseValues( current, infile);
         return current;
     }
+    /**
+     * Getter for the parent V1 object
+     * @return reference to the parent V1Component
+     */
     public V1Component getParent() {
         return this.parentV1;
     }
@@ -92,6 +118,15 @@ public class V2Component extends COSMOScontentFormat {
     public double[] getDataArray() {
         return V2Data.getRealArray();
     }
+    /**
+     * This method builds the V2 component from the V2 process object, picking
+     * up the data array and updating header parameters and format lines.  Once
+     * in this method, the V2Process object is no longer needed and its array
+     * is transferred to the V2Component object.
+     * @param inVvals the V2Process object
+     * @throws SmException if unable to access the header values
+     * @throws FormatException if unable to format the numeric values to text
+     */
     public void buildV2( V2DataType procType, V2Process inVvals) 
                                             throws SmException, FormatException {
         Double epsilon = 0.001;
@@ -112,7 +147,8 @@ public class V2Component extends COSMOScontentFormat {
         if ((Math.abs(delta_t - this.noRealVal) < epsilon) || (delta_t < 0.0)){
             throw new SmException("Real header #62, delta t, is invalid: " + 
                                                                         delta_t);
-        }  
+        } 
+        //Get the time that the peak value occurred for the given data type
         double dtime = MSEC_TO_SEC * delta_t;
         if (procType == V2DataType.ACC) {
             time = (inVvals.getPeakIndex(V2DataType.ACC)) * dtime;
@@ -218,6 +254,11 @@ public class V2Component extends COSMOScontentFormat {
         this.realHeader.setRealValue(INITIAL_VELOCITY_VAL, inVvals.getInitialVelocity());
         this.realHeader.setRealValue(INITIAL_DISPLACE_VAL, inVvals.getInitialDisplace());
         this.realHeader.setRealValue(BRACKETED_DURATION, inVvals.getBracketedDuration());
+        this.realHeader.setRealValue(DURATION_INTERVAL, inVvals.getDurationInterval());
+        this.realHeader.setRealValue(CHANNEL_RMS, inVvals.getChannelRMS());
+        this.realHeader.setRealValue(CUMULATIVE_ABS_VEL, inVvals.getCumulativeAbsVelocity());
+        this.realHeader.setRealValue(HOUSNER_INTENSITY, inVvals.getHousnerIntensity());
+        this.realHeader.setRealValue(ARIAS_INTENSITY, inVvals.getAriasIntensity());
         
         this.endOfData = this.parentV1.endOfData;
         if (procType == V2DataType.ACC) {
@@ -247,6 +288,14 @@ public class V2Component extends COSMOScontentFormat {
             this.comments = updateComments(this.comments, lines);
         }
     }
+    /**
+     * This method creates a new data format line for the V2 component data array.
+     * It calculates the time based on the number of data values and delta t
+     * and gets the physical units from the configuration file.
+     * @param units the numeric code for the type of units, COSMOS table 2
+     * @param unitsCode code containing the type of units (cm, cm/sec, etc.)
+     * @throws SmException if unable to access values in the headers
+     */
     public void buildNewDataFormatLine(String units, int unitscode, 
                                         String dataType) throws SmException {
         //calculate the time by multiplying the number of data values by delta t
@@ -260,6 +309,11 @@ public class V2Component extends COSMOScontentFormat {
                                                     timeSec, units, unitscode);
         V2Data.setFormatLine(line + V2Data.getNumberFormat());
     }
+    /**
+     * This method converts the V2 component stored in memory into its text
+     * format for writing to a file.
+     * @return a text array with the V2 component in COSMOS format for a file
+     */
     @Override
     public String[] VrecToText() {
         //add up the length of the text portions of the component, which are
@@ -294,6 +348,13 @@ public class V2Component extends COSMOScontentFormat {
         outText[totalLength-1] = this.endOfData;
         return outText;
     }
+    /**
+     * Takes the current list of comments and appends additional comments created
+     * during V2 processing.
+     * @param comments the set of comments received from the V0 file
+     * @param lines a list of additional comments to append to the current comments
+     * @return the updated comment list
+     */
     public String[] updateComments(String[] comments, ArrayList<String> lines) {
         ArrayList<String> text = new ArrayList<>(Arrays.asList(comments));
         text.addAll(lines);

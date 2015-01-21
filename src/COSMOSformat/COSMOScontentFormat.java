@@ -1,8 +1,10 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+/*******************************************************************************
+ * Name: Java class COSMOSContentFormat.java
+ * Project: PRISM strong motion record processing using COSMOS data format
+ * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
+ * 
+ * Date: first release date Feb. 2015
+ ******************************************************************************/
 
 package COSMOSformat;
 
@@ -173,7 +175,6 @@ public class COSMOScontentFormat {
      * @param infile array containing each line of the input file
      * @return the updated line number, after the comment section
      * @throws FormatException if unable to locate expected parameters
-     * @throws NumberFormatException if unable to convert text to numeric
      */
     private int parseComments(int startLine, String[] infile) 
                                                         throws FormatException {
@@ -314,7 +315,6 @@ public class COSMOScontentFormat {
         String group = "";
         String result = "";
         StringBuilder sb = new StringBuilder();
-        String[] segments = line.split(" ");
         String endOfDataRegex1 = "^(?i)(\\s*End-of-data\\s+for\\s+Chan\\s+\\S+)";
         String endOfDataRegex2 = "^(?i)(\\s*End-of-data\\s+for\\s+\\S+)";
         

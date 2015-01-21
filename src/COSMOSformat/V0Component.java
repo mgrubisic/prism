@@ -1,8 +1,10 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+/*******************************************************************************
+ * Name: Java class V0Component.java
+ * Project: PRISM strong motion record processing using COSMOS data format
+ * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
+ * 
+ * Date: first release date Feb. 2015
+ ******************************************************************************/
 
 package COSMOSformat;
 
@@ -15,9 +17,6 @@ import SmException.FormatException;
 import SmException.SmException;
 import SmUtilities.ConfigReader;
 import static SmUtilities.SmConfigConstants.OUT_ARRAY_FORMAT;
-import java.io.File;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * This class extends the COSMOScontentFormat base class to define a V0 record.
@@ -64,7 +63,7 @@ public class V0Component extends COSMOScontentFormat {
     public String[] VrecToText() {
         //add up the length of the text portions of the component, which are
         //the text header, the comments, and the end-of-data line.
-        int totalLength = 0;
+        int totalLength;
         int currentLength = 0;
         int textLength = this.textHeader.length + this.comments.length + 1;
         
@@ -101,8 +100,8 @@ public class V0Component extends COSMOScontentFormat {
      * record id and authorization picked up to determine the output directory
      * and file name
      * @param inname the file name for this record
-     * @throws SmException.FormatException
-     * @throws SmException.SmException
+     * @throws FormatException if field width is invalid
+     * @throws SmException if unable to build the new format line
      */
     public void updateV0(String inname) throws FormatException, SmException {
         //Get the array output format of single column per channel or packed

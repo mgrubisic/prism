@@ -1,19 +1,10 @@
-/*
- * Copyright (C) 2014 jmjones
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+/*******************************************************************************
+ * Name: Java class V3Component.java
+ * Project: PRISM strong motion record processing using COSMOS data format
+ * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
+ * 
+ * Date: first release date Feb. 2015
+ ******************************************************************************/
 
 package COSMOSformat;
 
@@ -29,11 +20,13 @@ import static SmUtilities.SmConfigConstants.OUT_ARRAY_FORMAT;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_ABBREV;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_CODE;
 import SmUtilities.SmTimeFormatter;
-import java.io.File;
 import java.util.ArrayList;
 
 /**
- *
+ * This class extends the COSMOScontentFormat base class to define a V3 record.
+ * It defines methods to parse the V3 data arrays, build a new V3 component
+ * from V3 processing results, and convert the V3 component into text for writing
+ * out to file.
  * @author jmjones
  */
 public class V3Component extends COSMOScontentFormat {
@@ -41,17 +34,25 @@ public class V3Component extends COSMOScontentFormat {
     private ArrayList<VRealArray> V3Data;
     private final V1Component parentV1;  //link back to the parent V1 record
     private final V2Component parentV2;
-
+    /** 
+     * Use this constructor when the V3 component is read in from a file and
+     * filled in with the loadComponent method.  In this case, there is no parentV2
+     * associated with this V3.
+     * @param procType process level indicator (i.e. "V3")
+     */
     public V3Component(String procType) {
         super(procType);
         this.parentV1 = null;
         this.parentV2 = null;
     }
-    //Use this constructor when the V2 component is created from processing
-    //done on a V1 component.  In this case, the contents of V2 are initialized
-    //to the V1 values and updated during the processing.
-    public V3Component( String procType, V2Component pV2) throws FormatException, 
-                                                                SmException {
+    /**
+     * Use this constructor when the V3 component is created from processing
+     * done on a V2 component.  In this case, the contents of V3 are initialized
+     * to the V2 values and updated during the processing.
+     * @param procType process level indicator (i.e. "V3")
+     * @param pV2 reference to the parent V2Component
+     */
+    public V3Component( String procType, V2Component pV2) {
         super( procType );
         this.parentV1 = pV2.getParent();
         this.parentV2 = pV2;
@@ -76,6 +77,15 @@ public class V3Component extends COSMOScontentFormat {
         this.comments = pV2.getComments(); //leave update for processing, if any
         this.endOfData = pV2.endOfData; //leave update for buildV3
     }
+    /**
+     * This method defines the steps for parsing a V3 data record, which contains
+     * multiple floating point data arrays.
+     * @param startLine line number for the start of the data section
+     * @param infile contents of the input file, one string per line
+     * @return updated line number now pointing to first line after data section
+     * @throws FormatException if unable to extract format information or
+     * to convert text values to numeric
+     */
     @Override
     public int parseDataSection (int startLine, String[] infile) throws 
                                                             FormatException {
@@ -113,6 +123,15 @@ public class V3Component extends COSMOScontentFormat {
         varray = V3Data.get(arrnum);
         return varray.getRealArray();
     }
+    /**
+     * This method builds the V3 component from the V3 process object, picking
+     * up the data arrays and updating header parameters and format lines.  Once
+     * in this method, the V3Process object is no longer needed and its array list
+     * is transferred to the V3Component object.
+     * @param inVvals the V3Process object
+     * @throws SmException if unable to access the header values
+     * @throws FormatException if unable to format the numeric values to text
+     */
     public void buildV3(V3Process inVvals) throws SmException, FormatException {
         StringBuilder sb = new StringBuilder(MAX_LINE_LENGTH);
         StringBuilder eod = new StringBuilder(MAX_LINE_LENGTH);
@@ -235,6 +254,9 @@ public class V3Component extends COSMOScontentFormat {
                             .append(" secp, 5%damp").toString();
         
         //Update the Response Spectrum Parameters in the headers
+        this.intHeader.setIntValue(PROCESSING_STAGE_INDEX, V3_STAGE);
+        this.intHeader.setIntValue(V_UNITS_INDEX, DEFAULT_NOINTVAL);
+        this.intHeader.setIntValue(DATA_PHYSICAL_PARAM_CODE, DEFAULT_NOINTVAL);
         this.intHeader.setIntValue(NUM_SPECTRA_PERIODS, NUM_T_PERIODS);
         this.intHeader.setIntValue(NUM_DAMPING_VALUES, V3_DAMPING_VALUES.length);
         this.realHeader.setRealValue(VALUE_SA_0P2, (inVvals.getSa_0p2()/FROM_G_CONVERSION));
@@ -251,14 +273,15 @@ public class V3Component extends COSMOScontentFormat {
     }
     /**
      * This method creates a new data format line for the V3 component data arrays.
-     * It calculates the time based on the number of data values and delta t
-     * and gets the physical units from the configuration file.
      * @param units the numeric code for the type of units, COSMOS table 2
      * @param unitsCode code containing the type of units (cm, cm/sec, etc.)
-     * @throws SmException from setFormatLine
+     * @param atype array type of "periods", "fft", or "spectra"
+     * @param stype spectra type of "Sa", "Sv", or "Sd"
+     * @param damp damping value
+     * @return the formatted data format line
      */
     public String buildNewDataFormatLine(String units, int unitsCode, String atype,
-                                 String stype, double damp) throws SmException {
+                                 String stype, double damp) {
         StringBuilder line = new StringBuilder();
         String datType;
         String outline;
@@ -287,9 +310,11 @@ public class V3Component extends COSMOScontentFormat {
         }
         return outline;
     }
-//    public String getDataFormatLine() {
-//        return V3Data.getFormatLine();
-//    }
+    /**
+     * This method converts the V3 component stored in memory into its text
+     * format for writing to a file.
+     * @return a text array with the V3 component in COSMOS format for a file
+     */
     @Override
     public String[] VrecToText() {
         //add up the length of the text portions of the component, which are

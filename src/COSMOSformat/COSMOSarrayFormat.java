@@ -1,8 +1,10 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+/*******************************************************************************
+ * Name: Java class COSMOSarrayFormat.java
+ * Project: PRISM strong motion record processing using COSMOS data format
+ * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
+ * 
+ * Date: first release date Feb. 2015
+ ******************************************************************************/
 
 package COSMOSformat;
 
@@ -50,8 +52,6 @@ abstract class COSMOSarrayFormat {
      * @param infile The input text file, one line per string
      * @return The text file line number updated to the line after the array info.
      * @throws FormatException if unable to extract the formatting values
-     * @throws NumberFormatException if unable to convert text to numeric format
-     * or to convert text to numeric values
      */
     public abstract int parseValues( int startLine, String[] infile) 
                                 throws FormatException;

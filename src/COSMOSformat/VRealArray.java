@@ -1,8 +1,10 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+/*******************************************************************************
+ * Name: Java class VRealArray.java
+ * Project: PRISM strong motion record processing using COSMOS data format
+ * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
+ * 
+ * Date: first release date Feb. 2015
+ ******************************************************************************/
 
 package COSMOSformat;
 
@@ -132,6 +134,7 @@ public class VRealArray extends COSMOSarrayFormat {
     /**
      * This method calculates the values for the valsPerLine, numberFormat, and
      * numLines fields based on the current array size and other field values.
+     * @param packtype single-column or packed for array output format
      * @throws FormatException if the fieldWidth field is less than or equal to 0
      */
     public void buildArrayParams(SmArrayStyle packtype) throws FormatException {
