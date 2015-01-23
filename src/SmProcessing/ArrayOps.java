@@ -1,19 +1,10 @@
-/*
- * Copyright (C) 2014 jmjones
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+/*******************************************************************************
+ * Name: Java class ArrayOps.java
+ * Project: PRISM strong motion record processing using COSMOS data format
+ * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
+ * 
+ * Date: first release date Feb. 2015
+ ******************************************************************************/
 
 package SmProcessing;
 
@@ -190,10 +181,12 @@ public class ArrayOps {
     }
     /**
      * Calculates the approximate integral of the input array using the trapezoidal 
-     * method.  The spacing between each point is dt
+     * method.  The spacing between each point is dt.  The value in the init
+     * input variable is used as the first value in the integration calculations.
      * 
      * @param array array to be integrated
      * @param dt the time step in seconds
+     * @param init initial value to use in the integration
      * @return new array containing the approximate integral of the input points,
      * or an array of 0 length if input parameters are invalid
      */
@@ -209,18 +202,6 @@ public class ArrayOps {
             calc[i] = calc[i-1] + (array[i-1] + array[i])*dt2;
         }
         return calc;
-    }
-    public static double SquareIntegrateAndSum( double[] array, double dt, double init ) {
-        double[] sqarr = new double[array.length];
-        for (int i = 0; i < array.length; i++) {
-            sqarr[i] = Math.pow(array[i],2);
-        }
-        double[] result = Integrate(sqarr, dt, init);
-        double total = 0.0;
-        for (double each : result) {
-            total = total + each;
-        }
-        return total;
     }
     /**
      * Calculates the approximate derivative of the input array.
@@ -292,7 +273,7 @@ public class ArrayOps {
         int len = array.length;
         double value;
         double[] time = makeTimeArray( timestep, len);
-        PolynomialFunction poly = new PolynomialFunction( coefs );;
+        PolynomialFunction poly = new PolynomialFunction( coefs );
         for (int i = 0; i < len; i++) {
             array[i] = array[i] - poly.value(time[i]);
         }
@@ -323,12 +304,12 @@ public class ArrayOps {
      * the input data and the baseline trend.
      * @param inarr array to have best fit trend removed, this array is modified
      * @param timestep sample interval
-     * @return true if input parameters are valid, false if not
+     * @return order of best fit polynomial, or -1 if input parameters are invalid
      */
-    public static boolean removeTrendWithBestFit( double[] inarr, double timestep) {
+    public static int removeTrendWithBestFit( double[] inarr, double timestep) {
         if ((inarr == null) || (inarr.length == 0) || 
                                     (Math.abs(timestep - 0.0) < OPS_EPSILON)) {
-            return false;
+            return -1;
         }
         //find linear trend for input array and rms compare with original
         int len = inarr.length;
@@ -336,6 +317,7 @@ public class ArrayOps {
         double[] pcoefs;
         double[] time = makeTimeArray( timestep, len);
         PolynomialFunction poly;
+        int numOrder;
 
         //find 1st order polynomial trend for input array and commpare with original
         lcoefs = findPolynomialTrend(inarr, 1, timestep);
@@ -358,14 +340,16 @@ public class ArrayOps {
         double polrms = rootMeanSquare( inarr, polbase);
         
         //compare the rms values and remove the trend with the smallest rms
-        if ((linrms < polrms)|| (Math.abs(linrms - polrms) < OPS_EPSILON)) {
+        if ((linrms < polrms)|| (Math.abs(linrms - polrms) < 5*Math.ulp(polrms))) {
 //            System.out.println("linear trend removed");
+            numOrder = 1;
             removePolynomialTrend(inarr, lcoefs, timestep);
         } else {
 //            System.out.println("polynomial trend removed");
+            numOrder = 2;
             removePolynomialTrend(inarr, pcoefs, timestep);
         }
-        return true;
+        return numOrder;
     }
     /**
      * Converts raw trace counts to physical values by multiplying the integer

@@ -1,19 +1,10 @@
-/*
- * Copyright (C) 2014 jmjones
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+/*******************************************************************************
+ * Name: Java class ArrayStats.java
+ * Project: PRISM strong motion record processing using COSMOS data format
+ * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
+ * 
+ * Date: first release date Feb. 2015
+ ******************************************************************************/
 
 package SmProcessing;
 
@@ -154,7 +145,6 @@ public class ArrayStats {
      * interval of the histogram
      */
     public int[] makeHistogram(int numIntervals) {
-        double HIST_EPSILON = 0.0001;
         if ((numIntervals <= 0) || (length == 0)) {
             int[] hist = new int[0];
             return hist;
@@ -173,13 +163,13 @@ public class ArrayStats {
             for (int i = 0; i < numIntervals; i++ ) {
                 //Catch the highest value since the upper test for a value in
                 //a bin is exclusive while the lower test is inclusive.
-                if (Math.abs(maxhigh - val) < HIST_EPSILON) {
+                if (Math.abs(maxhigh - val) < 5*Math.ulp(maxhigh)) {
                     hist[numIntervals-1] += 1;
                     break;
                 }
                 lowvalue = maxlow + i * histstep;
                 highvalue = maxlow + (i + 1) * histstep;
-                if ((val > lowvalue) || (Math.abs(val - lowvalue) < HIST_EPSILON)) {
+                if ((val > lowvalue) || (Math.abs(val - lowvalue) < 5*Math.ulp(lowvalue))) {
                     if (val < highvalue) {
                         hist[i] += 1;
                         break;

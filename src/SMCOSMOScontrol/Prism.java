@@ -1,8 +1,10 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+/*******************************************************************************
+ * Name: Java class Prism.java (program main)
+ * Project: PRISM strong motion record processing using COSMOS data format
+ * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
+ * 
+ * Date: first release date Feb. 2015
+ ******************************************************************************/
 
 package SMCOSMOScontrol;
 
@@ -34,7 +36,7 @@ import org.xml.sax.SAXException;
  * reads in *.V0 files in the folder and then processes each file in turn.
  * Processing involves reading in the file and parsing into record(s), running
  * the waveform processing algorithms to create the other data products, and then
- * writing out the data in the different formats, either individually or bundled.
+ * writing out the data in the different formats.
  * @author jmjones
  */
 public class Prism {

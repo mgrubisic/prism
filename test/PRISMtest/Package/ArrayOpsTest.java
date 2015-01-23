@@ -403,16 +403,16 @@ public class ArrayOpsTest {
          double[] test1 = null;
          double[] test2 = new double[0];
          double[] fit = new double[LENGTH];
-         org.junit.Assert.assertEquals(false, ArrayOps.removeTrendWithBestFit(test1, 2.0));
-         org.junit.Assert.assertEquals(false, ArrayOps.removeTrendWithBestFit(test2, 2.0));
-         org.junit.Assert.assertEquals(false, ArrayOps.removeTrendWithBestFit(linecentered, 0.0));
+         org.junit.Assert.assertEquals(-1, ArrayOps.removeTrendWithBestFit(test1, 2.0));
+         org.junit.Assert.assertEquals(-1, ArrayOps.removeTrendWithBestFit(test2, 2.0));
+         org.junit.Assert.assertEquals(-1, ArrayOps.removeTrendWithBestFit(linecentered, 0.0));
          
          System.arraycopy(linecentered, 0, fit, 0, LENGTH);
-         org.junit.Assert.assertEquals(true, ArrayOps.removeTrendWithBestFit(fit, STEP));
+         org.junit.Assert.assertEquals(1, ArrayOps.removeTrendWithBestFit(fit, STEP));
          org.junit.Assert.assertArrayEquals(fit,zeroconstant,EPSILON);
          
          System.arraycopy(poly, 0, fit, 0, LENGTH);
-         org.junit.Assert.assertEquals(true, ArrayOps.removeTrendWithBestFit(fit, STEP));
+         org.junit.Assert.assertEquals(2, ArrayOps.removeTrendWithBestFit(fit, STEP));
          org.junit.Assert.assertArrayEquals(fit,zeroconstant,EPSILON);
      }
      @Test

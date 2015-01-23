@@ -11,6 +11,7 @@ package COSMOSformat;
 import SmConstants.VFileConstants;
 import static SmConstants.VFileConstants.CNTN;
 import static SmConstants.VFileConstants.COUNTTEXT;
+import static SmConstants.VFileConstants.DEFAULT_ARRAY_STYLE;
 import static SmConstants.VFileConstants.DELTA_T;
 import static SmConstants.VFileConstants.MSEC_TO_SEC;
 import SmException.FormatException;
@@ -107,12 +108,14 @@ public class V0Component extends COSMOScontentFormat {
         //Get the array output format of single column per channel or packed
         VFileConstants.SmArrayStyle packtype;
         ConfigReader config = ConfigReader.INSTANCE;
+        
         String arrformat = config.getConfigValue(OUT_ARRAY_FORMAT);
-        if ((arrformat != null) && (!arrformat.contentEquals("Packed"))) {
-            packtype = VFileConstants.SmArrayStyle.SINGLE_COLUMN;
-            V0Data.buildArrayParams( packtype );
-            this.buildNewDataFormatLine(COUNTTEXT, CNTN, "raw accel. ");
-        }
+        arrformat = (arrformat == null) ? DEFAULT_ARRAY_STYLE : arrformat;
+        packtype = (arrformat.equalsIgnoreCase("singleColumn")) ? 
+                            VFileConstants.SmArrayStyle.SINGLE_COLUMN : 
+                                            VFileConstants.SmArrayStyle.PACKED;
+        V0Data.buildArrayParams( packtype );
+        this.buildNewDataFormatLine(COUNTTEXT, CNTN, "raw accel. ");
         this.setFileName(inname);
         this.checkForRcrdIdAndAuth();
         

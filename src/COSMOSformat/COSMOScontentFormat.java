@@ -371,7 +371,7 @@ public class COSMOScontentFormat {
     }
     /**
      * Getter for the sensor location text in the text header.
-     * @return 
+     * @return the sensor location text
      */
     public String getSensorLocation() {
         String notFound = "";

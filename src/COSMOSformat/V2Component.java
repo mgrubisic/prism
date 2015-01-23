@@ -39,6 +39,7 @@ public class V2Component extends COSMOScontentFormat {
      * Use this constructor when the V2 component is read in from a file and
      * filled in with the loadComponent method.  In this case, there is no parentV1
      *associated with this V2
+     * @param procType process level indicator (i.e. "V2")
      */
     public V2Component( String procType){
         super( procType );
@@ -123,6 +124,7 @@ public class V2Component extends COSMOScontentFormat {
      * up the data array and updating header parameters and format lines.  Once
      * in this method, the V2Process object is no longer needed and its array
      * is transferred to the V2Component object.
+     * @param procType ACC, VEL, or DIS for the V2 data type
      * @param inVvals the V2Process object
      * @throws SmException if unable to access the header values
      * @throws FormatException if unable to format the numeric values to text
@@ -137,7 +139,6 @@ public class V2Component extends COSMOScontentFormat {
         double time;
         String unitsname;
         int unitscode;
-        SmArrayStyle packtype;
 
         SmTimeFormatter proctime = new SmTimeFormatter();
         ConfigReader config = ConfigReader.INSTANCE;
@@ -173,11 +174,9 @@ public class V2Component extends COSMOScontentFormat {
         
         //Get the array output format of single column per channel or packed
         String arrformat = config.getConfigValue(OUT_ARRAY_FORMAT);
-        if ((arrformat == null) || (arrformat.contentEquals("Packed"))) {
-            packtype = SmArrayStyle.PACKED;
-        } else {
-            packtype = SmArrayStyle.SINGLE_COLUMN;
-        }
+        arrformat = (arrformat == null) ? DEFAULT_ARRAY_STYLE : arrformat;
+        SmArrayStyle packtype = (arrformat.equalsIgnoreCase("singleColumn")) ? 
+                              SmArrayStyle.SINGLE_COLUMN : SmArrayStyle.PACKED;
         
         //Get the current processing time
         String val = proctime.getGMTdateTime();
@@ -293,7 +292,8 @@ public class V2Component extends COSMOScontentFormat {
      * It calculates the time based on the number of data values and delta t
      * and gets the physical units from the configuration file.
      * @param units the numeric code for the type of units, COSMOS table 2
-     * @param unitsCode code containing the type of units (cm, cm/sec, etc.)
+     * @param unitscode code containing the type of units (cm, cm/sec, etc.)
+     * @param dataType "acceleration", "velocity", or "displacement"
      * @throws SmException if unable to access values in the headers
      */
     public void buildNewDataFormatLine(String units, int unitscode, 

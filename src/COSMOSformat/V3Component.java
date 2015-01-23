@@ -140,7 +140,6 @@ public class V3Component extends COSMOScontentFormat {
         int unitscode;
         String eodname;
         String line;
-        SmArrayStyle packtype;
         String freqformat = "%4.2f";
 
         SmTimeFormatter proctime = new SmTimeFormatter();
@@ -152,7 +151,7 @@ public class V3Component extends COSMOScontentFormat {
         
         //Get the processing agency info from the config. data
         String agabbrev = config.getConfigValue(PROC_AGENCY_ABBREV);
-        agabbrev = (agabbrev == null) ? agabbrev = "Unknown" : agabbrev;
+        agabbrev = (agabbrev == null) ? "Unknown" : agabbrev;
         
         String agcode = config.getConfigValue(PROC_AGENCY_CODE);
         int agency_code = (agcode == null) ? 0 : Integer.parseInt(agcode);
@@ -163,11 +162,10 @@ public class V3Component extends COSMOScontentFormat {
         double delta_t = this.realHeader.getRealValue(DELTA_T);
         //Get the array output format of single column per channel or packed
         String arrformat = config.getConfigValue(OUT_ARRAY_FORMAT);
-        if ((arrformat == null) || (arrformat.contentEquals("Packed"))) {
-            packtype = SmArrayStyle.PACKED;
-        } else {
-            packtype = SmArrayStyle.SINGLE_COLUMN;
-        }
+        arrformat = (arrformat == null) ? DEFAULT_ARRAY_STYLE : arrformat;
+        SmArrayStyle packtype = (arrformat.equalsIgnoreCase("singleColumn")) ? 
+                              SmArrayStyle.SINGLE_COLUMN : SmArrayStyle.PACKED;
+        
         //Make the V3 damping values line
         V3DampingValues = sb.append(String.format("%1$4s", String.valueOf(V3_DAMPING_VALUES.length)))
                 .append(" damping values for which spectra are computed:")

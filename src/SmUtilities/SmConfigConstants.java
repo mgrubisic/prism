@@ -32,9 +32,9 @@ public class SmConfigConstants {
     public static final String DATA_UNITS_CODE = "PRISM/DataUnitsForCountConversion/DataUnitCodes/DataUnitCode";
     public static final String DATA_UNITS_NAME = "PRISM/DataUnitsForCountConversion/DataUnitCodes/DataUnitName";
     
-    public static final String QA_INITIAL_VELOCITY = "QAparameters/InitialVelocity";
-    public static final String QA_RESIDUAL_VELOCITY = "QAparameters/ResidualVelocity";
-    public static final String QA_RESIDUAL_DISPLACE = "QAparameters/ResidualDisplacement";
+    public static final String QC_INITIAL_VELOCITY = "QCparameters/InitialVelocity";
+    public static final String QC_RESIDUAL_VELOCITY = "QCparameters/ResidualVelocity";
+    public static final String QC_RESIDUAL_DISPLACE = "QCparameters/ResidualDisplacement";
     
     public static final String STATION_FILTER_TABLE = "PRISM/StationFilterTable";
     
@@ -47,6 +47,7 @@ public class SmConfigConstants {
     public static final String EVENT_ONSET_METHOD = "PRISM/EventDetectionMethod";
     
     public static final String DEBUG_TO_LOG = "PRISM/DebugToLog";
+    public static final String WRITE_BASELINE_FUNCTION = "PRISM/WriteBaselineFunction";
     
     public static final String FIRST_POLY_ORDER_LOWER  = "PRISM/AdaptiveBaselineCorrection/FirstPolyOrder/LowerLimit";
     public static final String FIRST_POLY_ORDER_UPPER  = "PRISM/AdaptiveBaselineCorrection/FirstPolyOrder/UpperLimit";

@@ -90,7 +90,7 @@ public final class VFileConstants {
     
     public enum SmArrayStyle { SINGLE_COLUMN, PACKED };
     
-    public static final String DEFAULT_ARRAY_STYLE = "packed";
+    public static final String DEFAULT_ARRAY_STYLE = "singleColumn";
     
     //table 1 data physical parameter codes
     public static final int ACC_PARM_CODE = 1;
@@ -174,6 +174,7 @@ public final class VFileConstants {
     public static final double DEFAULT_QA_RESIDUAL_DISPLACE = 0.1;
     
     public static final String DEBUG_TO_LOG_ON = "On";
+    public static final String BASELINE_WRITE_ON = "On";
     
     //V3 processing
     public static final int NUM_COEF_VALS = 6;

@@ -18,8 +18,6 @@
 package SmProcessing;
 
 import static SmConstants.VFileConstants.TO_G_CONVERSION;
-import static SmProcessing.ArrayOps.Integrate;
-import static SmProcessing.ArrayOps.SquareIntegrateAndSum;
 import static SmProcessing.ArrayOps.convertArrayUnits;
 import java.util.Arrays;
 
@@ -93,7 +91,7 @@ public class ComputedParams {
     /**
      * This method performs the calculations for the computed parameters.  It 
      * returns true if the bracketed duration calculation found at least one
-     * value > 5%g, which indicates that the calculations were performed.  If
+     * value greater than 5%g, which indicates that the calculations were performed.  If
      * the return is false, all computed parameters are set at 0.
      * @return true if calculations performed, false if no strong motion detected
      */
@@ -124,10 +122,11 @@ public class ComputedParams {
     /**
      * Calculates the number of seconds that the acceleration is greater than
      * 5% g.  Determines the difference in time between the first moment that 
-     * acceleration is > 5%g and the last moment that acc. is > 5%g.  If no values
-     * in the array are > 5%g, return is set to false and no computed parameters
-     * are calculated.
-     * @return true if at least 1 value is > 5%g, false if no values > 5%g
+     * acceleration is greater than 5%g and the last moment that acc. is greater than 5%g.  
+     * If no values
+     * in the array are greater than 5%g, return is set to false and no computed 
+     * parameters are calculated.
+     * @return true if at least 1 value is greater than 5%g, false if no values greater than 5%g
      */
     private boolean calculateBracketedDuration() {
         //Check if any value is greater than 0.05.  If not, no need to compute

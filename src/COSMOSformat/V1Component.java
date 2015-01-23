@@ -33,6 +33,7 @@ public class V1Component extends COSMOScontentFormat {
      * Use this constructor when the V1 component is read in from a file and
      * filled in with the loadComponent method.  In this case, there is no parentV0
      * associated with this V1
+     * @param procType process level indicator (i.e. "V1")
      */
     public V1Component( String procType) {
         super( procType );
@@ -151,10 +152,7 @@ public class V1Component extends COSMOScontentFormat {
         
         //Get the array output format of single column per channel or packed
         String arrformat = config.getConfigValue(OUT_ARRAY_FORMAT);
-        if (!(arrformat.equalsIgnoreCase("packed")) && 
-                                !(arrformat.equalsIgnoreCase("singleColumn"))) {
-            arrformat = DEFAULT_ARRAY_STYLE;
-        }
+        arrformat = (arrformat == null) ? DEFAULT_ARRAY_STYLE : arrformat;
         SmArrayStyle packtype = (arrformat.equalsIgnoreCase("singleColumn")) ? 
                               SmArrayStyle.SINGLE_COLUMN : SmArrayStyle.PACKED;
 

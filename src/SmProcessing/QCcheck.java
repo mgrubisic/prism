@@ -21,9 +21,9 @@ import static SmConstants.VFileConstants.DEFAULT_QA_INITIAL_VELOCITY;
 import static SmConstants.VFileConstants.DEFAULT_QA_RESIDUAL_DISPLACE;
 import static SmConstants.VFileConstants.DEFAULT_QA_RESIDUAL_VELOCITY;
 import SmUtilities.ConfigReader;
-import static SmUtilities.SmConfigConstants.QA_INITIAL_VELOCITY;
-import static SmUtilities.SmConfigConstants.QA_RESIDUAL_DISPLACE;
-import static SmUtilities.SmConfigConstants.QA_RESIDUAL_VELOCITY;
+import static SmUtilities.SmConfigConstants.QC_INITIAL_VELOCITY;
+import static SmUtilities.SmConfigConstants.QC_RESIDUAL_DISPLACE;
+import static SmUtilities.SmConfigConstants.QC_RESIDUAL_VELOCITY;
 
 /**
  *
@@ -46,15 +46,15 @@ public class QCcheck {
     public boolean validateQCvalues() {
         ConfigReader config = ConfigReader.INSTANCE;
         try {
-            String qainitvel = config.getConfigValue(QA_INITIAL_VELOCITY);
+            String qainitvel = config.getConfigValue(QC_INITIAL_VELOCITY);
             this.qcvelinit = (qainitvel == null) ? DEFAULT_QA_INITIAL_VELOCITY : 
                                                     Double.parseDouble(qainitvel);
 
-            String qaendvel = config.getConfigValue(QA_RESIDUAL_VELOCITY);
+            String qaendvel = config.getConfigValue(QC_RESIDUAL_VELOCITY);
             this.qcvelres = (qaendvel == null) ? DEFAULT_QA_RESIDUAL_VELOCITY : 
                                                     Double.parseDouble(qaendvel);
 
-            String qaenddis = config.getConfigValue(QA_RESIDUAL_DISPLACE);
+            String qaenddis = config.getConfigValue(QC_RESIDUAL_DISPLACE);
             this.qcdisres = (qaenddis == null) ? DEFAULT_QA_RESIDUAL_DISPLACE : 
                                                     Double.parseDouble(qaenddis);
         } catch (NumberFormatException err) {
