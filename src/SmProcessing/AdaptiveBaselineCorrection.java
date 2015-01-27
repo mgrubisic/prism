@@ -62,6 +62,7 @@ public class AdaptiveBaselineCorrection {
     private int counter;
     private SmErrorLogger elog;
     private boolean writeArrays;
+    private int taplength_calculated;
     
     public AdaptiveBaselineCorrection(double delttime, double[] invel, 
                                       double lowcut,double highcut,int numpoles,
@@ -78,7 +79,7 @@ public class AdaptiveBaselineCorrection {
         this.solution = 0;
         this.counter = 1;
         this.elog = SmErrorLogger.INSTANCE;
-        writeArrays = true;
+        this.taplength_calculated = 0;
         ConfigReader config = ConfigReader.INSTANCE;
         this.degreeP1lo = validateConfigParam(FIRST_POLY_ORDER_LOWER, 
                                                 DEFAULT_1ST_POLY_ORD_LOWER,
@@ -226,6 +227,7 @@ public class AdaptiveBaselineCorrection {
                 filter = new ButterworthFilter();
                 filter.calculateCoefficients(lowcut,highcut,dtime,numpoles,true);
                 paddedvelocity = filter.applyFilter(velocity, taplength, estart);
+                taplength_calculated = filter.getTaperlength();
                 //remove any mean value
                 ArrayStats velmean = new ArrayStats( paddedvelocity );
                 ArrayOps.removeValue(paddedvelocity, velmean.getMean());
@@ -250,6 +252,7 @@ public class AdaptiveBaselineCorrection {
             filter = new ButterworthFilter();
             filter.calculateCoefficients(lowcut,highcut,dtime,numpoles,true);
             paddedvelocity = filter.applyFilter(velocity, taplength, estart);
+            taplength_calculated = filter.getTaperlength();
             //remove any mean value
             ArrayStats velmean = new ArrayStats( paddedvelocity );
             ArrayOps.removeValue(paddedvelocity, velmean.getMean());
@@ -421,5 +424,8 @@ public class AdaptiveBaselineCorrection {
     public double getInitialDisplace() {
         double[] temp = params.get(solution);
         return temp[13];
+    }
+    public int getCalculatedTaperLength() {
+        return this.taplength_calculated;
     }
 }

@@ -73,6 +73,8 @@ public class ButterworthFilter {
     private double[] b2;
     private int npad;
     
+    private int taperlength;
+    
     //Constructor
     public ButterworthFilter() {
     }
@@ -90,6 +92,7 @@ public class ButterworthFilter {
         b1 = new double[2*MAXPOLES];
         b2 = new double[2*MAXPOLES];
         this.npad = 0;
+        this.taperlength = 0;
         
         double pre; double pim; double argre; double argim; double rho; double theta;
         double sjre; double sjim; double bj; double cj; double con;
@@ -144,12 +147,12 @@ public class ButterworthFilter {
 
 //        int taperlength = (int)(2.0 / dtime); // 2 seconds worth of samples
 //        int taperlength= (int)(((2.0/f1) + 1.0)/dtime);
-        int taperlength = ArrayOps.findZeroCrossing(arrayS, eventOnsetIndex, 0);
+        taperlength = ArrayOps.findZeroCrossing(arrayS, eventOnsetIndex, 0);
         if ((taperlength <= 0) || ((taperlength*dtime) <= taplengthtime)) {
             taperlength = (int)(taplengthtime / dtime);
         }
 //        System.out.println("+++ taperlength: " + taperlength);
-        
+//        System.out.println("+++ eventOnsetIndex: " + eventOnsetIndex);
         //Copy the input array into a return array.  If the filter was configured
         //as acausal, then pad the length of the array by the value calculated below.
         //Before padding, apply a cosine taper to the front and back of the 
@@ -256,5 +259,12 @@ public class ButterworthFilter {
     }
     public int getPadLength() {
         return npad;
+    }
+    /**
+     *
+     * @return
+     */
+    public int getTaperlength() {
+        return taperlength;
     }
 }

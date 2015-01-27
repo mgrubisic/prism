@@ -183,11 +183,14 @@ public class V2Process {
             this.numpoles = (filorder == null) ? DEFAULT_NUM_POLES : Integer.parseInt(filorder)/2;
 
             //The Butterworth filter taper length for the half cosine taper
+            //this taperlength is the value in seconds from the configuration file
             String taplen = config.getConfigValue(BP_TAPER_LENGTH);
             this.taperlength = (taplen == null) ? DEFAULT_TAPER_LENGTH : Double.parseDouble(taplen);
+            this.taperlength = (this.taperlength < 0.0) ? DEFAULT_TAPER_LENGTH : this.taperlength;  
             
             String pbuf = config.getConfigValue(EVENT_ONSET_BUFFER);
             this.ebuffer = (pbuf == null) ? DEFAULT_EVENT_ONSET_BUFFER : Double.parseDouble(pbuf);
+            this.ebuffer = (this.ebuffer < 0.0) ? DEFAULT_EVENT_ONSET_BUFFER : this.ebuffer;
             
             String eventmethod = config.getConfigValue(EVENT_ONSET_METHOD);
             if (eventmethod == null) {
@@ -211,9 +214,6 @@ public class V2Process {
         String baselineon = config.getConfigValue(WRITE_BASELINE_FUNCTION);
         this.writeBaseline = (baselineon == null) ? false : 
                                     baselineon.equalsIgnoreCase(BASELINE_WRITE_ON);
-        
-        this.ebuffer = (this.ebuffer < 0.0) ? DEFAULT_EVENT_ONSET_BUFFER : this.ebuffer;
-        this.taperlength = (this.taperlength < 0.0) ? DEFAULT_TAPER_LENGTH : this.taperlength;  
     }
     
     public V2Status processV2Data() throws SmException, IOException {  
@@ -258,6 +258,10 @@ public class V2Process {
             filter.applyFilter(acc, taperlength, calcSec);  //filtered values are returned in acc
         } else {
             throw new SmException("Invalid bandpass filter input parameters");
+        }
+        if (writeDebug) {
+            errorlog.add(String.format("filtering before event onset detection, taperlength: %d", 
+                                                        filter.getTaperlength()));
         }
         ///////////////////////////////
         //
@@ -335,9 +339,9 @@ public class V2Process {
         if (writeDebug) {
             errorlog.add(String.format("Best fit trend of order %d removed from velocity", numOrder));
         }
-        if (writeDebug) {
-           elog.writeOutArray(velocity, V0name.getName() + "_" + channel + "_BestFitTrendRemovedVel.txt");
-        }
+//        if (writeDebug) {
+//           elog.writeOutArray(velocity, V0name.getName() + "_" + channel + "_BestFitTrendRemovedVel.txt");
+//        }
         //Update Butterworth filter low and high cutoff thresholds for later
         FilterCutOffThresholds threshold = new FilterCutOffThresholds();
         magtype = threshold.SelectMagAndThresholds(mmag, lmag, smag, omag, noRealVal);
@@ -406,6 +410,8 @@ public class V2Process {
                                             qcchecker.getResVelocityQCval()));
                 errorlog.add(String.format("    ABC: disend: %f,  limit %f",goodrun[1], 
                                                 qcchecker.getResDisplaceQCval()));
+                errorlog.add(String.format("    ABC: calc. taperlength: %d", 
+                                                adapt.getCalculatedTaperLength()));
             }
             accel = adapt.getABCacceleration();
             velocity = adapt.getABCvelocity();
@@ -435,6 +441,10 @@ public class V2Process {
                 paddedvelocity = filter.applyFilter(velocity, taperlength, pickIndex);
             } else {
                 throw new SmException("Invalid bandpass filter calculated parameters");
+            }
+            if (writeDebug) {
+                errorlog.add(String.format("filtering after 1st QC, taperlength: %d", 
+                                                            filter.getTaperlength()));
             }
 //            if (writeDebug) {
 //               elog.writeOutArray(velocity, V0name.getName() + "_" + channel + "_velocityAfterFiltering.txt");
@@ -514,7 +524,10 @@ public class V2Process {
         ApeakVal = statAcc.getPeakVal();
         ApeakIndex = statAcc.getPeakValIndex();
         AavgVal = statAcc.getMean();
-        
+
+        if (writeDebug) {
+            errorlog.add(String.format("Peak Velocity: %f",VpeakVal));
+        }
         //if status is GOOD, calculate computed parameters for headers
         if (procStatus == V2Status.GOOD) {
             ComputedParams cp = new ComputedParams(accel, dtime);
@@ -528,7 +541,9 @@ public class V2Process {
                 cumulativeAbsVelocity = cp.getCumulativeAbsVelocity();
             }
         }
-        writeOutErrorDebug();
+        if ((writeDebug) || (procStatus != V2Status.GOOD)) {
+            writeOutErrorDebug();
+        }
         return procStatus;
     }
     public void writeOutErrorDebug() throws IOException {
