@@ -31,6 +31,7 @@ public class COSMOScontentFormat {
     protected String channel; //the channel number for this record
     protected String rcrdId;
     protected String SCNLauth;
+    protected String eventID;
     protected int noIntVal;  //NoData value for integer header array
     protected double noRealVal;  //NoData value for real header array
     protected String[] textHeader;  //Holds the text header lines
@@ -52,6 +53,7 @@ public class COSMOScontentFormat {
         this.channel = "";
         this.rcrdId = "";
         this.SCNLauth = "";
+        this.eventID = "";
         this.fileName = "";
         this.stationDir = null;
     }
@@ -266,9 +268,9 @@ public class COSMOScontentFormat {
     /**
      * This method checks line 7 of the text header to see if it contains the 
      * record id, and checks the comments for the Authorization tag.  If either
-     * of these are found they are saved for use in processing.  If the Auth
+     * of these are found they are saved for use in processing.  If the SCNL
      * tag is found and there is no defined channel number, the channel code
-     * from the Auth tag is saved for the channel identifier.
+     * from the SCNL tag is saved for the channel identifier.
      */
     public void checkForRcrdIdAndAuth() {
         String line = this.textHeader[7];
@@ -280,6 +282,22 @@ public class COSMOScontentFormat {
         Matcher m = regField.matcher( line );
         rcrdId = (m.find()) ? line.substring(m.end()) : "";
         
+        String findRegex = "(?i)(comment)";
+        Pattern findField = Pattern.compile(findRegex);
+        Matcher f = findField.matcher( rcrdId );
+        if (f.find()) {
+            for (String each : this.comments) {
+                m = regField.matcher( each);
+                if (m.find()) {
+                    rcrdId = each.substring(m.end()).trim();
+                    break;
+                }
+            }
+        }
+        if (!rcrdId.isEmpty()) {
+            segments = rcrdId.split("\\.");
+            eventID = (segments.length > 3 ) ? segments[1] : "";
+        }
         //Look for the SCNL and Auth tags and save if found
         String authRegex = "(<AUTH>)";
         Pattern authfield = Pattern.compile(authRegex);
@@ -561,5 +579,12 @@ public class COSMOScontentFormat {
      */
     public String getSCNLauth() {
         return SCNLauth;
+    }
+    /**
+     * Getter for the event ID from either the text header or the comments
+     * @return the event ID
+     */
+    public String getEventID() {
+        return eventID;
     }
 }

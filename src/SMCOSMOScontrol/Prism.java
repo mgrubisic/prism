@@ -18,7 +18,7 @@ import SmException.SmException;
 import SmUtilities.ConfigReader;
 import SmUtilities.PrismLogger;
 import SmUtilities.PrismXMLReader;
-import SmUtilities.SmErrorLogger;
+import SmUtilities.SmDebugLogger;
 import SmUtilities.SmTimeFormatter;
 import java.io.*;
 import java.nio.file.DirectoryStream;
@@ -84,15 +84,17 @@ public class Prism {
             
             SmTimeFormatter timer = new SmTimeFormatter();
             PrismLogger log = PrismLogger.INSTANCE;
-            SmErrorLogger errlog = SmErrorLogger.INSTANCE;
-            errlog.initializeLogger(smc.outFolder);
+            SmDebugLogger errlog = SmDebugLogger.INSTANCE;
             String logtime = timer.getGMTdateTime();
             String[] startLog = new String[2];
             startLog[0] = "\n";
             startLog[1] = "Prism Log Entry: " + logtime;
             try {
-                log.initializeLogger(smc.outFolder);
+                log.initializeLogger(smc.outFolder, logtime);
                 log.writeToLog(startLog);
+                errlog.initializeLogger(smc.outFolder, logtime);
+                startLog[1] = "Prism Debug Log Entry: " + logtime;
+                errlog.writeToLog(startLog);
             } 
             catch (IOException err) {
                 throw new SmException("Unable to open the log files: " + err.getMessage());

@@ -40,6 +40,9 @@ public class TextFileWriter {
     }
     
     public void writeOutToFile() throws IOException {
+        //try-with-resources automatically closes the resource upon completion.
+        //At the end of the try, the file is closed, for both regular completion 
+        //and exception.
         try (BufferedWriter writer = Files.newBufferedWriter(outName, ENCODING)) {
             for (String line : contents) {
                 writer.write(line);
@@ -51,6 +54,9 @@ public class TextFileWriter {
         if (Files.notExists(outName)) {
             Files.createFile(outName);
         }
+        //try-with-resources automatically closes the resource upon completion.
+        //At the end of the try, the file is closed, for both regular completion 
+        //and exception.
         try (BufferedWriter writer = Files.newBufferedWriter(outName, ENCODING, 
                                                     StandardOpenOption.APPEND)) {
             for (String line : contents) {

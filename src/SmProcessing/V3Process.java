@@ -25,7 +25,7 @@ import static SmConstants.VFileConstants.NUM_T_PERIODS;
 import static SmConstants.VFileConstants.V3_DAMPING_VALUES;
 import SmException.FormatException;
 import SmException.SmException;
-import SmUtilities.SmErrorLogger;
+import SmUtilities.SmDebugLogger;
 import java.io.IOException;
 import java.util.ArrayList;
 /**
@@ -45,7 +45,7 @@ public class V3Process {
     private double peakIndex;
     private double peakTime;
     private SpectraResources spec;
-    private SmErrorLogger elog;
+    private SmDebugLogger elog;
     private boolean writeArrays;
     private double Sa_0p2;
     private double Sa_0p3;
@@ -56,7 +56,7 @@ public class V3Process {
                       final V2Component v2dis) throws IOException, SmException, 
                                                                 FormatException {
 
-        this.elog = SmErrorLogger.INSTANCE;
+        this.elog = SmDebugLogger.INSTANCE;
         writeArrays = false;
         this.accel = v2acc.getDataArray();
         this.peakVal = 0.0;

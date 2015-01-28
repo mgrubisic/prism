@@ -117,7 +117,7 @@ public class V0Component extends COSMOScontentFormat {
         V0Data.buildArrayParams( packtype );
         this.buildNewDataFormatLine(COUNTTEXT, CNTN, "raw accel. ");
         this.setFileName(inname);
-        this.checkForRcrdIdAndAuth();
+//        this.checkForRcrdIdAndAuth();
         
     }
     /**

@@ -25,7 +25,7 @@ import SmConstants.VFileConstants.V2DataType;
 import SmException.SmException;
 import SmUtilities.ConfigReader;
 import static SmUtilities.SmConfigConstants.*;
-import SmUtilities.SmErrorLogger;
+import SmUtilities.SmDebugLogger;
 import SmUtilities.SmTimeFormatter;
 import java.io.File;
 import java.io.IOException;
@@ -82,8 +82,10 @@ public class V2Process {
     private int startIndex;
     private double ebuffer;
     private EventOnsetType emethod;
-    private final int numpoles;  // the filter order is 2*numpoles
+    private final int numpoles;  // the filter order is numpoles
     private double taperlength;
+    private double preEventMean;
+    private int trendRemovalOrder;
     
     private V2Status procStatus;
     private QCcheck qcchecker;
@@ -91,10 +93,11 @@ public class V2Process {
     private ArrayList<String> errorlog;
     private boolean writeDebug;
     private boolean writeBaseline;
-    private SmErrorLogger elog;
+    private SmDebugLogger elog;
     private String[] logstart;
     private final File V0name;
     private final String channel;
+    private String eventID;
     
     private double bracketedDuration;
     private double AriasIntensity;
@@ -109,12 +112,13 @@ public class V2Process {
         this.lowcutadj = 0.0;
         this.highcutadj = 0.0;
         errorlog = new ArrayList<>();
-        elog = SmErrorLogger.INSTANCE;
+        elog = SmDebugLogger.INSTANCE;
         ConfigReader config = ConfigReader.INSTANCE;
         writeDebug = false;
         writeBaseline = false;
         this.V0name = inName;
         this.channel = inV1.getChannel();
+        this.eventID = inV1.getEventID();
         
         //Get config values to cm/sec2 (acc), cm/sec (vel), cm (dis)
         this.acc_unit_code = CMSQSECN;
@@ -136,6 +140,8 @@ public class V2Process {
         this.cumulativeAbsVelocity = 0.0;
         this.initialVel = 0.0;
         this.initialDis = 0.0;
+        this.preEventMean = 0.0;
+        this.trendRemovalOrder = 0;
         
         SmTimeFormatter timer = new SmTimeFormatter();
         String logtime = timer.getGMTdateTime();
@@ -236,7 +242,7 @@ public class V2Process {
         //Pick P-wave and remove baseline
         if (writeDebug) {
             errorlog.add("Start of V2 processing for " + V0name.toString() + " and channel " + channel);
-            //remove linear trend before finding event onset
+            errorlog.add(String.format("EventID: %s",eventID));
             errorlog.add(String.format("time per sample in sec %4.3f",dtime));
             errorlog.add(String.format("sample rate (samp/sec): %4.1f",samplerate));
             errorlog.add(String.format("length of acceleration array: %d",accraw.length));
@@ -307,9 +313,10 @@ public class V2Process {
         if (startIndex > 0) {
             double[] subset = Arrays.copyOfRange( accraw, 0, startIndex );
             ArrayStats accsub = new ArrayStats( subset );
-            ArrayOps.removeValue(accraw, accsub.getMean());
+            preEventMean = accsub.getMean();
+            ArrayOps.removeValue(accraw, preEventMean);
             if (writeDebug) {
-                errorlog.add(String.format("Pre-event mean of %10.6e removed from uncorrected acceleration",accsub.getMean()));
+                errorlog.add(String.format("Pre-event mean of %10.6e removed from uncorrected acceleration",preEventMean));
             }
         }
 //        if (writeDebug) {
@@ -326,18 +333,18 @@ public class V2Process {
         if (writeDebug) {
             errorlog.add("acceleration integrated to velocity");
         }
-//        if (writeDebug) {
-//           elog.writeOutArray(velocity, V0name.getName() + "_" + channel + "_afterIntegrationToVel.txt");
-//        }
+        if (writeDebug) {
+           elog.writeOutArray(velocity, V0name.getName() + "_" + channel + "_afterIntegrationToVel.txt");
+        }
         ///////////////////////////////
         //
         // Remove Trend with Best Fit
         //
         ///////////////////////////////
         //Remove any linear or 2nd order polynomial trend from velocity
-        int numOrder = ArrayOps.removeTrendWithBestFit( velocity, dtime);
+        trendRemovalOrder = ArrayOps.removeTrendWithBestFit( velocity, dtime);
         if (writeDebug) {
-            errorlog.add(String.format("Best fit trend of order %d removed from velocity", numOrder));
+            errorlog.add(String.format("Best fit trend of order %d removed from velocity", trendRemovalOrder));
         }
 //        if (writeDebug) {
 //           elog.writeOutArray(velocity, V0name.getName() + "_" + channel + "_BestFitTrendRemovedVel.txt");
@@ -420,7 +427,11 @@ public class V2Process {
             initialDis = adapt.getInitialDisplace();
             adapt.clearParamsArray();
         } else {
-            //determine new filter coefs based on earthquake magnitude
+            ///////////////////////////////
+            //
+            // Passed first QC, so filter velocity
+            //
+            ///////////////////////////////
             double[] paddedvelocity;
             filter = new ButterworthFilter();
             if (writeDebug) {
@@ -430,11 +441,6 @@ public class V2Process {
                 errorlog.add(String.format("  adjusted lowcut: %4.2f and adjusted highcut: %4.2f Hz",
                                                         lowcutadj, highcutadj));
             }
-            ///////////////////////////////
-            //
-            // Passed first QC, so filter velocity
-            //
-            ///////////////////////////////
             valid = filter.calculateCoefficients(lowcutadj, highcutadj, 
                                                 dtime, DEFAULT_NUM_POLES, true);
             if (valid) {
@@ -539,6 +545,9 @@ public class V2Process {
                 channelRMS = cp.getChannelRMS();
                 durationInterval = cp.getDurationInterval();
                 cumulativeAbsVelocity = cp.getCumulativeAbsVelocity();
+                if (writeDebug) {
+                    errorlog.add("Strong motion record");
+                }
             }
         }
         if ((writeDebug) || (procStatus != V2Status.GOOD)) {

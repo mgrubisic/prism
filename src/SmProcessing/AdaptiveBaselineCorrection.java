@@ -22,7 +22,7 @@ import SmException.SmException;
 import SmUtilities.ABCSortPairs;
 import SmUtilities.ConfigReader;
 import static SmUtilities.SmConfigConstants.*;
-import SmUtilities.SmErrorLogger;
+import SmUtilities.SmDebugLogger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
@@ -60,7 +60,7 @@ public class AdaptiveBaselineCorrection {
     private int[] ranking;
     private int solution;
     private int counter;
-    private SmErrorLogger elog;
+    private SmDebugLogger elog;
     private boolean writeArrays;
     private int taplength_calculated;
     
@@ -78,7 +78,7 @@ public class AdaptiveBaselineCorrection {
         this.polyBreaks = new int[NUM_SEGMENTS-1];
         this.solution = 0;
         this.counter = 1;
-        this.elog = SmErrorLogger.INSTANCE;
+        this.elog = SmDebugLogger.INSTANCE;
         this.taplength_calculated = 0;
         ConfigReader config = ConfigReader.INSTANCE;
         this.degreeP1lo = validateConfigParam(FIRST_POLY_ORDER_LOWER, 

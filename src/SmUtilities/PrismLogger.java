@@ -24,7 +24,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
- *
+ * This class is a singleton instance of the prism logger.  This logger is used
+ * to record the names of the output products, including their destination folders.
+ * Errors that occur during processing are also recorded here.
+ * As a singleton, other classes can create an instance of the logger which
+ * will access the current open log file.
  * @author jmjones
  */
 public class PrismLogger {
@@ -32,21 +36,38 @@ public class PrismLogger {
     private static boolean logReady = false;
     private String logname = "PrismLog.txt";
     public final static PrismLogger INSTANCE = new PrismLogger();
+    private String finalFolder;
+    private String startTime;
     
     private PrismLogger() {
     }
-    public void initializeLogger( String outfolder ) throws IOException {
+    public void initializeLogger( String outfolder, String time ) throws IOException {
+        finalFolder = outfolder;
+        startTime = time;
         if (!logReady) {
             File logId = Paths.get(outfolder, "Logs").toFile();
             if (!logId.isDirectory()) {
                 logId.mkdir();
             }
-            this.logfile = Paths.get(logId.toString(),"PrismLog.txt");
+            this.logfile = Paths.get(logId.toString(),logname);
             logReady = true;
         }
     }
     public void writeToLog( String[] msg ) throws IOException {
-        TextFileWriter textfile = new TextFileWriter( logfile, msg);
-        textfile.appendToFile();
+        if (logReady) {
+            TextFileWriter textfile = new TextFileWriter( logfile, msg);
+            textfile.appendToFile();
+        }
+    }
+    public void writeOutArray( double[] array, String name) {
+        if (logReady) {
+            TextFileWriter textout = new TextFileWriter( finalFolder, 
+                                                         name, array);
+            try {
+                textout.writeOutArray();
+            } catch (IOException err) {
+                //Nothing to do if the error logger has an error.
+            }
+        }
     }
 }

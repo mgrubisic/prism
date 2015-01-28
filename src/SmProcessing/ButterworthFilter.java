@@ -17,7 +17,7 @@
 
 package SmProcessing;
 
-import SmUtilities.SmErrorLogger;
+import SmUtilities.SmDebugLogger;
 import java.util.Arrays;
 
 /**
@@ -177,7 +177,7 @@ public class ButterworthFilter {
             filteredS = new double[np2];
             System.arraycopy(arrayS, 0, filteredS, 0, np2);
         }
-//        SmErrorLogger elog = SmErrorLogger.INSTANCE;
+//        SmDebugLogger elog = SmDebugLogger.INSTANCE;
 //        elog.writeOutArray(filteredS, "after_taper_with_pads.txt");
         //filter the array
         for (int k = 0; k < 2*nroll; k++) {

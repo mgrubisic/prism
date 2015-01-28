@@ -63,6 +63,7 @@ public class V1Component extends COSMOScontentFormat {
         this.fileName = pV0.getFileName();
         this.rcrdId = pV0.getRcrdId();
         this.SCNLauth = pV0.getSCNLauth();
+        this.eventID = pV0.getEventID();
         
         //The buildV1 method fills in these data values, the format line, and
         //the individual params for the real array.
