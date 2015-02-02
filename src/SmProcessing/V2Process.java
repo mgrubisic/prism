@@ -371,10 +371,6 @@ public class V2Process {
         if (writeDebug) {
             errorlog.add(String.format("Best fit trend of order %d removed from velocity", trendRemovalOrder));
         }
-////////////!!!!!!!! This array is velocity right before baseline correction !!!!!!!!!!!
-        if (writeBaseline) {
-           elog.writeOutArray(velocity, V0name.getName() + "_" + channel + "_BestFitTrendRemovedVel.txt");
-        }
         //Update Butterworth filter low and high cutoff thresholds for later
         FilterCutOffThresholds threshold = new FilterCutOffThresholds();
         magtype = threshold.SelectMagAndThresholds(mmag, lmag, smag, omag, noRealVal);
@@ -409,10 +405,10 @@ public class V2Process {
             System.out.println("failed QC1");
             ///////////////////////////////
             //
-            // Adaptive Baseline Correction
+            // Baseline Correction
             //
             ///////////////////////////////
-            AdaptiveBaselineCorrection adapt = new AdaptiveBaselineCorrection(
+            TwoSegmentBaseCorrection adapt = new TwoSegmentBaseCorrection(
                 dtime,velocity,lowcutadj,highcutadj,numpoles,pickIndex,taperlength);
             procStatus = adapt.startIterations();
             needsABC = true;
@@ -438,8 +434,12 @@ public class V2Process {
             ABCpoly2 = (int)goodrun[7];
             ABCbreak1 = (int)goodrun[4];
             ABCbreak2 = (int)goodrun[5];
-            if (writeBaseline) {
+            if (writeBaseline) { 
+                //the velocity here hasn't been updated by baseline correction yet
+                //and contains the array as it goes into baseline correction,
+                //where the baseline function is determined and applied
                 elog.writeOutArray(baseline, (V0name.getName() + "_" + channel + "_baseline.txt"));
+                elog.writeOutArray(velocity, V0name.getName() + "_" + channel + "_BestFitTrendRemovedVel.txt");
             } 
             if (writeDebug) {
                 errorlog.add("    length of ABC params: " + ABCnumparams);
@@ -458,7 +458,7 @@ public class V2Process {
                                                             calculated_taper));
             }
             accel = adapt.getABCacceleration();
-            velocity = adapt.getABCvelocity();
+            velocity = adapt.getABCvelocity();  //velocity is updated here by baseline correction
             displace = adapt.getABCdisplacement();
             initialVel = adapt.getInitialVelocity();
             initialDis = adapt.getInitialDisplace();
@@ -638,7 +638,7 @@ public class V2Process {
         data.add((ABCpoly1 > 0) ? String.format("%d",ABCpoly1) : "");
         data.add((ABCpoly2 > 0) ? String.format("%d",ABCpoly2) : "");
         data.add((ABCbreak1 > 0) ? String.format("%d",ABCbreak1) : "");
-        data.add((ABCbreak1 > 0) ? String.format("%d",ABCbreak2) : "");
+        data.add((ABCbreak2 > 0) ? String.format("%d",ABCbreak2) : "");
         data.add((ABCnumparams > 0) ? String.format("%d",ABCnumparams) : "");
         data.add((ABCwinrank > 0) ? String.format("%d",ABCwinrank) : "");
         
