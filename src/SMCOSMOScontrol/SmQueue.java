@@ -33,9 +33,11 @@ public class SmQueue {
     private final File fileName; //input file name and path
     private ArrayList<COSMOScontentFormat> smlist;  //holds each channel as a record
     private String[] fileContents;  // the input file contents by line
+    private String logtime;
     
-    public SmQueue (File inFileName){
+    public SmQueue (File inFileName, String logtime){
         this.fileName = inFileName;
+        this.logtime = logtime;
     }
 
     //read in the input text file
@@ -110,7 +112,7 @@ public class SmQueue {
            
             //Create the V2 processing object and do the processing.  V2 processing
             //produces 3 V2 objects: corrected acceleration, velocity, and displacement
-            V2Process v2val = new V2Process(v1rec, this.fileName);
+            V2Process v2val = new V2Process(v1rec, this.fileName, this.logtime);
 //            System.out.println("V0 file: " + this.fileName);
             V2Status V2result = v2val.processV2Data();
             

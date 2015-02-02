@@ -166,7 +166,7 @@ public final class VFileConstants {
     public static final int DEFAULT_1ST_POLY_ORD_LOWER = 1;
     public static final int DEFAULT_1ST_POLY_ORD_UPPER = 2;
     public static final int DEFAULT_2ND_POLY_ORD_LOWER = 1;
-    public static final int DEFAULT_2ND_POLY_ORD_UPPER = 2;
+    public static final int DEFAULT_2ND_POLY_ORD_UPPER = 3;
     
     //QC check constants
     public static final double DEFAULT_QA_INITIAL_VELOCITY = 0.1;

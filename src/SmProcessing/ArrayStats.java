@@ -163,10 +163,10 @@ public class ArrayStats {
             for (int i = 0; i < numIntervals; i++ ) {
                 //Catch the highest value since the upper test for a value in
                 //a bin is exclusive while the lower test is inclusive.
-                if (Math.abs(maxhigh - val) < 5*Math.ulp(maxhigh)) {
-                    hist[numIntervals-1] += 1;
-                    break;
-                }
+//                if (Math.abs(maxhigh - val) < 5*Math.ulp(maxhigh)) {
+//                    hist[numIntervals-1] += 1;
+//                    break;
+//                }
                 lowvalue = maxlow + i * histstep;
                 highvalue = maxlow + (i + 1) * histstep;
                 if ((val > lowvalue) || (Math.abs(val - lowvalue) < 5*Math.ulp(lowvalue))) {
@@ -205,20 +205,20 @@ public class ArrayStats {
         int startbin = 0;
         int stopbin = numbins;
         
-        //Find the lowest non-zero histogram bin.  This is the start bin.
-        for (int i = 0; i < numbins; i++) {
-            if (hist[i] > 0) {
-                startbin = i;
-                break;
-            }
-        }
-        //Find the highest non-zero histogram bin.  This is the stop bin.
-        for (int i = hist.length-1;  i <= 0; i-- ) {
-            if (hist[i] > 0) {
-                stopbin = i;
-                break;
-            }
-        }
+//        //Find the lowest non-zero histogram bin.  This is the start bin.
+//        for (int i = 0; i < numbins; i++) {
+//            if (hist[i] > 0) {
+//                startbin = i;
+//                break;
+//            }
+//        }
+//        //Find the highest non-zero histogram bin.  This is the stop bin.
+//        for (int i = hist.length-1;  i <= 0; i-- ) {
+//            if (hist[i] > 0) {
+//                stopbin = i;
+//                break;
+//            }
+//        }
         for (int i = startbin; i < ((stopbin-startbin)/2 + 1); i++) {
             if (hist[i] >= mode) {
                 mode = hist[i];

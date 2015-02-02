@@ -93,8 +93,6 @@ public class Prism {
                 log.initializeLogger(smc.outFolder, logtime);
                 log.writeToLog(startLog);
                 errlog.initializeLogger(smc.outFolder, logtime);
-                startLog[1] = "Prism Debug Log Entry: " + logtime;
-                errlog.writeToLog(startLog);
             } 
             catch (IOException err) {
                 throw new SmException("Unable to open the log files: " + err.getMessage());
@@ -115,7 +113,7 @@ public class Prism {
             //with an individual file and move directly to the next file.  
             //Attempt to process all the files in the list.
             for (File each: smc.inVList){
-                smc.smqueue = new SmQueue( each );
+                smc.smqueue = new SmQueue( each, logtime );
                 smc.Vproduct = new SmProduct(smc.inFolder, smc.outFolder);
                 try {
                     smc.smqueue.readInFile( each );

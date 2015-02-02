@@ -86,6 +86,10 @@ public class V2Process {
     private double taperlength;
     private double preEventMean;
     private int trendRemovalOrder;
+    private int calculated_taper;
+    private boolean strongMotion;
+    private boolean needsABC;
+    private String logtime;
     
     private V2Status procStatus;
     private QCcheck qcchecker;
@@ -98,6 +102,15 @@ public class V2Process {
     private final File V0name;
     private final String channel;
     private String eventID;
+    private double QCvelinitial;
+    private double QCvelresidual;
+    private double QCdisresidual;
+    private int ABCnumparams;
+    private int ABCwinrank;
+    private int ABCpoly1;
+    private int ABCpoly2;
+    private int ABCbreak1;
+    private int ABCbreak2;
     
     private double bracketedDuration;
     private double AriasIntensity;
@@ -106,7 +119,8 @@ public class V2Process {
     private double durationInterval;
     private double cumulativeAbsVelocity;
         
-    public V2Process(final V1Component v1rec, File inName) throws SmException {
+    public V2Process(final V1Component v1rec, File inName, String logtime) 
+                                                            throws SmException {
         double epsilon = 0.0001;
         this.inV1 = v1rec;
         this.lowcutadj = 0.0;
@@ -119,6 +133,7 @@ public class V2Process {
         this.V0name = inName;
         this.channel = inV1.getChannel();
         this.eventID = inV1.getEventID();
+        this.logtime = logtime;
         
         //Get config values to cm/sec2 (acc), cm/sec (vel), cm (dis)
         this.acc_unit_code = CMSQSECN;
@@ -142,9 +157,19 @@ public class V2Process {
         this.initialDis = 0.0;
         this.preEventMean = 0.0;
         this.trendRemovalOrder = 0;
+        this.calculated_taper = 0;
+        this.strongMotion = false;
+        this.needsABC = false;
+        this.QCvelinitial = 0.0;
+        this.QCvelresidual = 0.0;
+        this.QCdisresidual = 0.0;
+        this.ABCnumparams = 0;
+        this.ABCwinrank = 0;
+        this.ABCpoly1 = 0;
+        this.ABCpoly2 = 0;
+        this.ABCbreak1 = 0;
+        this.ABCbreak2 = 0;
         
-        SmTimeFormatter timer = new SmTimeFormatter();
-        String logtime = timer.getGMTdateTime();
         logstart = new String[2];
         logstart[0] = "\n";
         logstart[1] = "Prism Error/Debug Log Entry: " + logtime;
@@ -333,9 +358,9 @@ public class V2Process {
         if (writeDebug) {
             errorlog.add("acceleration integrated to velocity");
         }
-        if (writeDebug) {
-           elog.writeOutArray(velocity, V0name.getName() + "_" + channel + "_afterIntegrationToVel.txt");
-        }
+//        if (writeDebug) {
+//           elog.writeOutArray(velocity, V0name.getName() + "_" + channel + "_afterIntegrationToVel.txt");
+//        }
         ///////////////////////////////
         //
         // Remove Trend with Best Fit
@@ -346,9 +371,10 @@ public class V2Process {
         if (writeDebug) {
             errorlog.add(String.format("Best fit trend of order %d removed from velocity", trendRemovalOrder));
         }
-//        if (writeDebug) {
-//           elog.writeOutArray(velocity, V0name.getName() + "_" + channel + "_BestFitTrendRemovedVel.txt");
-//        }
+////////////!!!!!!!! This array is velocity right before baseline correction !!!!!!!!!!!
+        if (writeBaseline) {
+           elog.writeOutArray(velocity, V0name.getName() + "_" + channel + "_BestFitTrendRemovedVel.txt");
+        }
         //Update Butterworth filter low and high cutoff thresholds for later
         FilterCutOffThresholds threshold = new FilterCutOffThresholds();
         magtype = threshold.SelectMagAndThresholds(mmag, lmag, smag, omag, noRealVal);
@@ -389,6 +415,7 @@ public class V2Process {
             AdaptiveBaselineCorrection adapt = new AdaptiveBaselineCorrection(
                 dtime,velocity,lowcutadj,highcutadj,numpoles,pickIndex,taperlength);
             procStatus = adapt.startIterations();
+            needsABC = true;
             
             //If unable to perform any iterations in ABC, just exit with no V2
             if (procStatus == V2Status.NOABC) {
@@ -401,24 +428,33 @@ public class V2Process {
             double[] baseline = adapt.getBaselineFunction();
             ArrayList<double[]> params = adapt.getParameters();
             double[] goodrun = params.get( solution );
+            calculated_taper = adapt.getCalculatedTaperLength();
+            QCvelinitial = goodrun[2];
+            QCvelresidual = goodrun[3];
+            QCdisresidual = goodrun[1];
+            ABCnumparams = params.size();
+            ABCwinrank = solution;
+            ABCpoly1 = (int)goodrun[6];
+            ABCpoly2 = (int)goodrun[7];
+            ABCbreak1 = pickIndex;
             if (writeBaseline) {
                 elog.writeOutArray(baseline, (V0name.getName() + "_" + channel + "_baseline.txt"));
             } 
             if (writeDebug) {
-                errorlog.add("    length of ABC params: " + params.size());
+                errorlog.add("    length of ABC params: " + ABCnumparams);
                 errorlog.add("    ABC: found passing solution");
-                errorlog.add("    ABC: winning rank: " + solution);
-                errorlog.add("    ABC: poly1 order: " + goodrun[6]);
-                errorlog.add("    ABC: poly2 order: " + goodrun[7]);
-                errorlog.add("    ABC: start: " + goodrun[4] + "  stop: " + goodrun[5]);
+                errorlog.add("    ABC: winning rank: " + ABCwinrank);
+                errorlog.add("    ABC: poly1 order: " + ABCpoly1);
+                errorlog.add("    ABC: poly2 order: " + ABCpoly2);
+                errorlog.add("    ABC: start: " + ABCbreak1 + "  stop: " + ABCbreak2);
                 errorlog.add(String.format("    ABC: velstart: %f,  limit %f", 
-                                goodrun[2],qcchecker.getInitVelocityQCval()));
-                errorlog.add(String.format("    ABC: velend: %f,  limit %f",goodrun[3], 
+                                QCvelinitial,qcchecker.getInitVelocityQCval()));
+                errorlog.add(String.format("    ABC: velend: %f,  limit %f",QCvelresidual, 
                                             qcchecker.getResVelocityQCval()));
-                errorlog.add(String.format("    ABC: disend: %f,  limit %f",goodrun[1], 
+                errorlog.add(String.format("    ABC: disend: %f,  limit %f",QCdisresidual, 
                                                 qcchecker.getResDisplaceQCval()));
                 errorlog.add(String.format("    ABC: calc. taperlength: %d", 
-                                                adapt.getCalculatedTaperLength()));
+                                                            calculated_taper));
             }
             accel = adapt.getABCacceleration();
             velocity = adapt.getABCvelocity();
@@ -448,6 +484,7 @@ public class V2Process {
             } else {
                 throw new SmException("Invalid bandpass filter calculated parameters");
             }
+            calculated_taper = filter.getTaperlength();
             if (writeDebug) {
                 errorlog.add(String.format("filtering after 1st QC, taperlength: %d", 
                                                             filter.getTaperlength()));
@@ -497,6 +534,9 @@ public class V2Process {
             boolean success = qcchecker.qcVelocity(velocity) && 
                                             qcchecker.qcDisplacement(displace);
             procStatus = (success) ? V2Status.GOOD : V2Status.FAILQC;
+            QCvelinitial = Math.abs(qcchecker.getInitialVelocity());
+            QCvelresidual = Math.abs(qcchecker.getResidualVelocity());
+            QCdisresidual = Math.abs(qcchecker.getResidualDisplacement());
         }
         if (procStatus == V2Status.FAILQC) {
             errorlog.add("Final QC failed - V2 processing unsuccessful:");
@@ -537,7 +577,7 @@ public class V2Process {
         //if status is GOOD, calculate computed parameters for headers
         if (procStatus == V2Status.GOOD) {
             ComputedParams cp = new ComputedParams(accel, dtime);
-            boolean strongMotion = cp.calculateComputedParameters();
+            strongMotion = cp.calculateComputedParameters();
             if (strongMotion) {
                 bracketedDuration = cp.getBracketedDuration();
                 AriasIntensity = cp.getAriasIntensity();
@@ -552,6 +592,7 @@ public class V2Process {
         }
         if ((writeDebug) || (procStatus != V2Status.GOOD)) {
             writeOutErrorDebug();
+            makeDebugCSV();
         }
         return procStatus;
     }
@@ -561,6 +602,47 @@ public class V2Process {
         errorout = errorlog.toArray(errorout);
         elog.writeToLog(errorout);
         errorlog.clear();
+    }
+    public void makeDebugCSV() throws IOException {
+        String[] headerline = {"EVENT","MAG","NAME","CHANNEL",
+            "ARRAY LENGTH","SAMP INTERVAL(SEC)","PICK INDEX","PICK TIME(SEC)",
+            "PEAK VEL(CM/SEC)","TAPERLENGTH","PEAK ACC(G)","STRONG MOTION","EXIT STATUS",
+            "VEL INITIAL(CM/SEC)","VEL RESIDUAL(CM/SEC)","DIS RESIDUAL(CM)","NEEDS ABC",
+            "ABC POLY1","ABC POLY2","ABC 1ST BREAK","ABC 2ND BREAK",
+            "ABC PARM LENGTH","ABC WIN RANK"};
+        ArrayList<String> data = new ArrayList<>();
+        data.add(eventID);                                  //event id
+        data.add(String.format("%4.2f",magnitude));         //event magnitude
+        data.add(V0name.getName());                        //record file name
+        data.add(channel);                                  //channel number
+        data.add(String.format("%d",velocity.length));      //length of array
+        data.add(String.format("%5.3f",dtime));             //sample interval
+        data.add(String.format("%d",pickIndex));            //event onset index
+        data.add(String.format("%8.3f", pickIndex*dtime));  //event onset time
+        data.add(String.format("%8.5f",VpeakVal));          //peak velocity
+        data.add(String.format("%d",calculated_taper));     //filter taperlength
+        data.add(String.format("%5.4f",ApeakVal*TO_G_CONVERSION)); //peak acc in g
+        if (strongMotion) {
+            data.add("YES");
+        } else if (procStatus != V2Status.GOOD) {
+            data.add("--");
+        } else {
+            data.add("NO");
+        }
+        data.add(procStatus.name());                       //exit status
+        data.add(String.format("%8.6f",QCvelinitial));     //QC value initial velocity
+        data.add(String.format("%8.6f",QCvelresidual));    //QC value residual velocity
+        data.add(String.format("%8.6f",QCdisresidual));    //QC value residual displace
+        data.add((needsABC) ? "YES" : "");                 //ABC flag
+        data.add((ABCpoly1 > 0) ? String.format("%d",ABCpoly1) : "");
+        data.add((ABCpoly2 > 0) ? String.format("%d",ABCpoly2) : "");
+        data.add((ABCbreak1 > 0) ? String.format("%d",ABCbreak1) : "");
+        data.add((ABCbreak1 > 0) ? String.format("%d",ABCbreak2) : "");
+        data.add((ABCnumparams > 0) ? String.format("%d",ABCnumparams) : "");
+        data.add((ABCwinrank > 0) ? String.format("%d",ABCwinrank) : "");
+        
+        elog.writeToCSV(data, headerline, "parameterLog.csv");
+        data.clear();
     }
     
     public double getPeakVal(V2DataType dType) {

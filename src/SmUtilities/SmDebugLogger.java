@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 
 /**
  *
@@ -43,9 +44,9 @@ public class SmDebugLogger {
         startTime = time.replace("-","_").replace(" ", "_").replace(":","_");
         if (!logReady) {
             File logId = Paths.get(outfolder, "Logs").toFile();
+            logFolder = logId;
             if (!logId.isDirectory()) {
                 logId.mkdir();
-                logFolder = logId;
             }
             String[] segments = logname.split("\\.");
             sb.append(segments[0]).append("_").append(startTime).append(".").append(segments[1]);
@@ -70,14 +71,34 @@ public class SmDebugLogger {
             }
         }
     }
-    public void writeToCSV( String[] msg, String name ) throws IOException {
-        StringBuilder sb = new StringBuilder();
+    public void writeToCSV( ArrayList<String> msg, String[] headerline, 
+                                            String name ) throws IOException {
+        String[] values;
+        StringBuilder sbheader = new StringBuilder();
+        StringBuilder sbname = new StringBuilder();
+        StringBuilder sbmsg = new StringBuilder();
+        for (String each : msg) {
+            sbmsg.append(each).append(",");
+        }
+        sbmsg.replace(sbmsg.length()-1, sbmsg.length(), "");
         if (logReady) {
             String[] segments = name.split("\\.");
-            sb.append(segments[0]).append("_").append(startTime).append(".").append(segments[1]);
-            Path outfile = Paths.get(logFolder.toString(), sb.toString());
-            TextFileWriter csvfile = new TextFileWriter( outfile, msg);
-            csvfile.writeOutToFile();
+            sbname.append(segments[0]).append("_").append(startTime).append(".").append(segments[1]);
+            Path outfile = Paths.get(logFolder.toString(), sbname.toString());
+            if (!outfile.toFile().exists()) {
+                values = new String[2];
+                for (String each : headerline) {
+                    sbheader.append(each).append(",");
+                }
+                sbheader.replace(sbheader.length()-1, sbheader.length(), "");
+                values[0] = sbheader.toString();
+                values[1] = sbmsg.toString();
+            } else {
+                values = new String[1];
+                values[0] = sbmsg.toString();
+            }
+            TextFileWriter csvfile = new TextFileWriter( outfile, values);
+            csvfile.appendToFile();
         }
     }
 }
