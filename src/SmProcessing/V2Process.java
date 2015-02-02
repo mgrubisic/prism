@@ -436,7 +436,8 @@ public class V2Process {
             ABCwinrank = solution;
             ABCpoly1 = (int)goodrun[6];
             ABCpoly2 = (int)goodrun[7];
-            ABCbreak1 = pickIndex;
+            ABCbreak1 = (int)goodrun[4];
+            ABCbreak2 = (int)goodrun[5];
             if (writeBaseline) {
                 elog.writeOutArray(baseline, (V0name.getName() + "_" + channel + "_baseline.txt"));
             } 

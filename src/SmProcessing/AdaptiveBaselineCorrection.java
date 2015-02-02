@@ -164,7 +164,7 @@ public class AdaptiveBaselineCorrection {
                 onerun[1] = Math.abs(qcchecker.getResidualDisplacement());
                 onerun[2] = Math.abs(qcchecker.getInitialVelocity());
                 onerun[3] = Math.abs(qcchecker.getResidualVelocity());
-                onerun[4] = 0;
+                onerun[4] = estart;
                 onerun[5] = 0;
                 onerun[6] = order1;
                 onerun[7] = order2;
