@@ -325,7 +325,7 @@ public class V2Process {
             //No pick index detected, so skip all V2 processing
             procStatus  = V2Status.NOEVENT;
             errorlog.add("V2process: exit status = " + procStatus);
-            System.out.println("V2process: exit status = " + procStatus);
+//            System.out.println("V2process: exit status = " + procStatus);
             writeOutErrorDebug();
             return procStatus;
         }
@@ -402,7 +402,7 @@ public class V2Process {
                                   Math.abs(qcchecker.getResidualVelocity()), 
                                             qcchecker.getResVelocityQCval()));
             errorlog.add("Adaptive baseline correction beginning");
-            System.out.println("failed QC1");
+//            System.out.println("failed QC1");
             ///////////////////////////////
             //
             // Baseline Correction
@@ -415,21 +415,22 @@ public class V2Process {
             
             //If unable to perform any iterations in ABC, just exit with no V2
             if (procStatus == V2Status.NOABC) {
-                System.out.println("V2process: exit status = " + procStatus);
+//                System.out.println("V2process: exit status = " + procStatus);
                 errorlog.add("V2process: exit status = " + procStatus);
                 writeOutErrorDebug();
                 return procStatus;
             }
-            int solution = adapt.getSolution();
+//            int solution = adapt.getSolution();
             double[] baseline = adapt.getBaselineFunction();
-            ArrayList<double[]> params = adapt.getParameters();
-            double[] goodrun = params.get( solution );
+//            ArrayList<double[]> params = adapt.getParameters();
+//            double[] goodrun = params.get( solution );
+            double[] goodrun = adapt.getParams();
             calculated_taper = adapt.getCalculatedTaperLength();
             QCvelinitial = goodrun[2];
             QCvelresidual = goodrun[3];
             QCdisresidual = goodrun[1];
-            ABCnumparams = params.size();
-            ABCwinrank = solution;
+//            ABCnumparams = params.size();
+//            ABCwinrank = solution;
             ABCpoly1 = (int)goodrun[6];
             ABCpoly2 = (int)goodrun[7];
             ABCbreak1 = (int)goodrun[4];
@@ -462,7 +463,7 @@ public class V2Process {
             displace = adapt.getABCdisplacement();
             initialVel = adapt.getInitialVelocity();
             initialDis = adapt.getInitialDisplace();
-            adapt.clearParamsArray();
+//            adapt.clearParamsArray();
         } else {
             ///////////////////////////////
             //
@@ -550,9 +551,9 @@ public class V2Process {
             errorlog.add(String.format("   final displacement,: %f, limit %f",
                                   Math.abs(qcchecker.getResidualDisplacement()),
                                             qcchecker.getResDisplaceQCval()));
-            System.out.println("failed QC2");
+//            System.out.println("failed QC2");
         }
-        System.out.println("V2process: exit status = " + procStatus);
+//        System.out.println("V2process: exit status = " + procStatus);
         if (writeDebug) {
             errorlog.add("V2process: exit status = " + procStatus);
         }
