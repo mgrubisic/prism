@@ -408,10 +408,16 @@ public class V2Process {
             // Baseline Correction
             //
             ///////////////////////////////
+            needsABC = true;
             TwoSegmentBaseCorrection adapt = new TwoSegmentBaseCorrection(
                 dtime,velocity,lowcutadj,highcutadj,numpoles,pickIndex,taperlength);
-            procStatus = adapt.startIterations();
-            needsABC = true;
+            procStatus = adapt.findFit();
+            if (procStatus != V2Status.GOOD) {
+                System.out.println("ABC needed");
+                AdaptiveBaselineCorrection adaptABC = new AdaptiveBaselineCorrection(
+                dtime,velocity,lowcutadj,highcutadj,numpoles,pickIndex,taperlength);
+                procStatus = adaptABC.findFit();
+            }
             
             //If unable to perform any iterations in ABC, just exit with no V2
             if (procStatus == V2Status.NOABC) {
@@ -461,8 +467,8 @@ public class V2Process {
             accel = adapt.getABCacceleration();
             velocity = adapt.getABCvelocity();  //velocity is updated here by baseline correction
             displace = adapt.getABCdisplacement();
-            initialVel = adapt.getInitialVelocity();
-            initialDis = adapt.getInitialDisplace();
+            initialVel = velocity[0];
+            initialDis = displace[0];
 //            adapt.clearParamsArray();
         } else {
             ///////////////////////////////
