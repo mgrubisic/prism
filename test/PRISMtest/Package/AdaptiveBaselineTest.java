@@ -50,7 +50,7 @@ public class AdaptiveBaselineTest {
     static final String hn2test = "D:/PRISM/smtesting/V0fail/out/LinearTrendRemovedVel.txt";
     static String[] fileContents;
     
-    static final int NUM_BREAKS = 5;
+    static final int NUM_BREAKS = 10;
     
     double deltat1 = 0.005;
     double dtime2 = 0.01;
@@ -58,10 +58,13 @@ public class AdaptiveBaselineTest {
     double noval = -999.99;
     double[] time;
     double[] time2;
+    double[] timeS;
+    static double[] spline;
     static double[] hnn;
     static double[] hn2;
-    AdaptiveBaselineCorrection adapt;
-    AdaptiveBaselineCorrection adapt2;
+//    AdaptiveBaselineCorrection adapt;
+//    AdaptiveBaselineCorrection adapt2;
+    AdaptiveBaselineCorrection adaptS;
     
     int break1 = 2023;
     int break2 = 4636;
@@ -74,40 +77,52 @@ public class AdaptiveBaselineTest {
     int degreeL = 1;
     int degreeP1 = 2;
     int degreeP2 = 2;
-    int degreeS = 3;
+    int degreeS = 2;
     
     public AdaptiveBaselineTest() {
         FilterCutOffThresholds threshold = new FilterCutOffThresholds();
         threshold.SelectMagAndThresholds(mag, noval, noval, noval, noval);
         double lowcut = threshold.getLowCutOff();
         double highcut = threshold.getHighCutOff();
-        time = ArrayOps.makeTimeArray(dtime2, hnn.length);
-        time2 = ArrayOps.makeTimeArray(dtime2, hn2.length);
-        adapt = new AdaptiveBaselineCorrection(dtime2, hnn, lowcut, highcut,2, 
-                                                                    2023, 2.0 );
-        adapt2 = new AdaptiveBaselineCorrection(dtime2, hn2, lowcut, highcut,2, 
-                                                                    1227, 2.0 );
+//        time = ArrayOps.makeTimeArray(dtime2, hnn.length);
+//        time2 = ArrayOps.makeTimeArray(dtime2, hn2.length);
+        timeS = ArrayOps.makeTimeArray(dtime2, spline.length);
+//        adapt = new AdaptiveBaselineCorrection(dtime2, hnn, lowcut, highcut,2, 
+//                                                                    2023, 2.0 );
+//        adapt2 = new AdaptiveBaselineCorrection(dtime2, hn2, lowcut, highcut,2, 
+//                                                                    1227, 2.0 );
+        adaptS = new AdaptiveBaselineCorrection(dtime2, spline, lowcut, highcut,2, 
+                                                                    break1, 2.0 );
     }
     
     @BeforeClass
     public static void setUpClass() throws IOException {
         int next = 0;
-        Path name = Paths.get( adapttest );
+//        Path name = Paths.get( adapttest );
+//        TextFileReader infile = new TextFileReader( name.toFile() );
+//        fileContents = infile.readInTextFile();
+//        hnn = new double[fileContents.length];
+//        System.out.println("hnn filecontents: " + fileContents.length);
+//        for (String num : fileContents) {
+//            hnn[next++] = Double.parseDouble(num);
+//        }
+//        name = Paths.get( hn2test );
+//        infile = new TextFileReader( name.toFile() );
+//        fileContents = infile.readInTextFile();
+//        hn2 = new double[fileContents.length];
+//        next = 0;
+//        System.out.println("hn2 filecontents: " + fileContents.length);
+//        for (String num : fileContents) {
+//            hn2[next++] = Double.parseDouble(num);
+//        }
+        Path name = Paths.get( splinetest );
         TextFileReader infile = new TextFileReader( name.toFile() );
         fileContents = infile.readInTextFile();
-        hnn = new double[fileContents.length];
-        System.out.println("hnn filecontents: " + fileContents.length);
-        for (String num : fileContents) {
-            hnn[next++] = Double.parseDouble(num);
-        }
-        name = Paths.get( hn2test );
-        infile = new TextFileReader( name.toFile() );
-        fileContents = infile.readInTextFile();
-        hn2 = new double[fileContents.length];
+        spline = new double[fileContents.length];
         next = 0;
-        System.out.println("hn2 filecontents: " + fileContents.length);
+        System.out.println("spline filecontents: " + fileContents.length);
         for (String num : fileContents) {
-            hn2[next++] = Double.parseDouble(num);
+            spline[next++] = Double.parseDouble(num);
         }
         try {
             PrismXMLReader xml = new PrismXMLReader();
@@ -149,25 +164,28 @@ public class AdaptiveBaselineTest {
         threshold.SelectMagAndThresholds(mag, noval, noval, noval, noval);
         double lowcut = threshold.getLowCutOff();
         double highcut = threshold.getHighCutOff();
-        
-        double[] result = adapt.makeCorrection( hnn, break1, break2,degreeP1, degreeP2 );
-        double[] bnn = adapt.getBaselineFunction();
-        double[] rms = adapt.getRMSvalues();
+        double[] paddedvelocity;
+        double[] velocity = adaptS.makeCorrection( spline, break1, break2,NUM_BREAKS, degreeS, degreeP1, degreeP2 );
+        double[] bnn = adaptS.getBaselineFunction();
+        double[] rms = adaptS.getRMSvalues();
         
         ButterworthFilter filter = new ButterworthFilter();
         filter.calculateCoefficients(lowcut,highcut,dtime2,2,true);
-        filter.applyFilter(result, 2.0, break1);
-        //remove any mean value
-        ArrayStats velmean = new ArrayStats( result );
-        ArrayOps.removeValue(result, velmean.getMean());
+        paddedvelocity = filter.applyFilter(velocity, 2.0, break1);
+         //remove any mean value
+        ArrayStats velmean = new ArrayStats( paddedvelocity );
+        ArrayOps.removeValue(paddedvelocity, velmean.getMean());
+        //integrate to get displacement, differentiate
+        //for acceleration
+        System.arraycopy(paddedvelocity, filter.getPadLength(), velocity, 0, velocity.length);
         
-        TextFileWriter textsm2 = new TextFileWriter( "D:/PRISM/adaptive_test/junit4", "baseline_smooth.txt", bnn);
+        TextFileWriter textsm2 = new TextFileWriter( "D:/PRISM/adaptive_test/junitS", "baseline_smooth.txt", bnn);
         try {
             textsm2.writeOutArray();
         } catch (IOException err) {
             System.out.println("Error printing out result in MathSplineTest");
         }
-        TextFileWriter textout = new TextFileWriter( "D:/PRISM/adaptive_test/junit4", "velocity1.txt", result);
+        TextFileWriter textout = new TextFileWriter( "D:/PRISM/adaptive_test/junitS", "velocity1.txt", velocity);
         try {
             textout.writeOutArray();
         } catch (IOException err) {
@@ -175,37 +193,37 @@ public class AdaptiveBaselineTest {
         }
         System.out.println("rms1: " + rms[0] + " rms2: " + rms[1] + " rms3: " + rms[2]);
     }
-    @Test
-    public void ABC2Test() throws SmException {
-        FilterCutOffThresholds threshold = new FilterCutOffThresholds();
-        threshold.SelectMagAndThresholds(mag, noval, noval, noval, noval);
-        double lowcut = threshold.getLowCutOff();
-        double highcut = threshold.getHighCutOff();
-        double[] result = adapt2.makeCorrection( hn2, breakh1, breakh2,degreeP1, degreeP2 );
-        double[] bnn = adapt2.getBaselineFunction();
-        double[] rms = adapt2.getRMSvalues();
-        
-        ButterworthFilter filter = new ButterworthFilter();
-        filter.calculateCoefficients(lowcut,highcut,dtime2,2,true);
-        filter.applyFilter(result, 2.0, breakh1);
-        //remove any mean value
-        ArrayStats velmean = new ArrayStats( result );
-        ArrayOps.removeValue(result, velmean.getMean());
-        
-        TextFileWriter textsm2 = new TextFileWriter( "D:/PRISM/adaptive_test/junit4", "baseline_smooth_p3.txt", bnn);
-        try {
-            textsm2.writeOutArray();
-        } catch (IOException err) {
-            System.out.println("Error printing out result in MathSplineTest");
-        }
-        TextFileWriter textout = new TextFileWriter( "D:/PRISM/adaptive_test/junit4", "velocity_ABC_p3.txt", result);
-        try {
-            textout.writeOutArray();
-        } catch (IOException err) {
-            System.out.println("Error printing out result in MathSplineTest");
-        }
-        System.out.println("rms1: " + rms[0] + " rms2: " + rms[1] + " rms3: " + rms[2]);
-    }
+//    @Test
+//    public void ABC2Test() throws SmException {
+//        FilterCutOffThresholds threshold = new FilterCutOffThresholds();
+//        threshold.SelectMagAndThresholds(mag, noval, noval, noval, noval);
+//        double lowcut = threshold.getLowCutOff();
+//        double highcut = threshold.getHighCutOff();
+//        double[] result = adapt2.makeCorrection( hn2, breakh1, breakh2, NUM_BREAKS, degreeS, degreeP1, degreeP2 );
+//        double[] bnn = adapt2.getBaselineFunction();
+//        double[] rms = adapt2.getRMSvalues();
+//        
+//        ButterworthFilter filter = new ButterworthFilter();
+//        filter.calculateCoefficients(lowcut,highcut,dtime2,2,true);
+//        filter.applyFilter(result, 2.0, breakh1);
+//        //remove any mean value
+//        ArrayStats velmean = new ArrayStats( result );
+//        ArrayOps.removeValue(result, velmean.getMean());
+//        
+//        TextFileWriter textsm2 = new TextFileWriter( "D:/PRISM/adaptive_test/junit4", "baseline_smooth_p3.txt", bnn);
+//        try {
+//            textsm2.writeOutArray();
+//        } catch (IOException err) {
+//            System.out.println("Error printing out result in MathSplineTest");
+//        }
+//        TextFileWriter textout = new TextFileWriter( "D:/PRISM/adaptive_test/junit4", "velocity_ABC_p3.txt", result);
+//        try {
+//            textout.writeOutArray();
+//        } catch (IOException err) {
+//            System.out.println("Error printing out result in MathSplineTest");
+//        }
+//        System.out.println("rms1: " + rms[0] + " rms2: " + rms[1] + " rms3: " + rms[2]);
+//    }
 //    @Test
 //    public void test2DimSort() {
 //        double[] test = new double{0.5,0.02,1.6};

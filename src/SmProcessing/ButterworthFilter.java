@@ -151,6 +151,9 @@ public class ButterworthFilter {
         if ((taperlength <= 0) || ((taperlength*dtime) <= taplengthtime)) {
             taperlength = (int)(taplengthtime / dtime);
         }
+        if (taperlength > arrayS.length) { //unable to apply the given taper
+            return new double[0];
+        }
 //        System.out.println("+++ taperlength: " + taperlength);
 //        System.out.println("+++ eventOnsetIndex: " + eventOnsetIndex);
         //Copy the input array into a return array.  If the filter was configured

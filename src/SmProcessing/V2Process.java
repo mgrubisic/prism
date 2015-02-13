@@ -77,6 +77,7 @@ public class V2Process {
     private double omag;
     private double magnitude;
     private MagnitudeType magtype;
+    private BaselineType basetype;
     
     private int pickIndex;
     private int startIndex;
@@ -134,6 +135,7 @@ public class V2Process {
         this.channel = inV1.getChannel();
         this.eventID = inV1.getEventID();
         this.logtime = logtime;
+        basetype = BaselineType.SIMPLE;
         
         //Get config values to cm/sec2 (acc), cm/sec (vel), cm (dis)
         this.acc_unit_code = CMSQSECN;
@@ -353,21 +355,28 @@ public class V2Process {
         // Integrate Acceleration to Velocity
         //
         ///////////////////////////////
-        //Integrate the acceleration to get velocity.
+        //Integrate the acceleration to get velocity, using 0 as first value estimate
         velocity = ArrayOps.Integrate( accraw, dtime, 0.0);
+        //Now correct for unknown initial value by removing preevent mean (minus first val.)
+        double[] velset = Arrays.copyOfRange( velocity, 1, startIndex );
+        ArrayStats velsub = new ArrayStats( velset );
+        ArrayOps.removeValue(velocity, velsub.getMean());
+        
         if (writeDebug) {
             errorlog.add("acceleration integrated to velocity");
         }
-//        if (writeDebug) {
-//           elog.writeOutArray(velocity, V0name.getName() + "_" + channel + "_afterIntegrationToVel.txt");
-//        }
+        if (writeDebug) {
+           elog.writeOutArray(velocity, V0name.getName() + "_" + channel + "_afterIntegrationToVel.txt");
+        }
         ///////////////////////////////
         //
         // Remove Trend with Best Fit
         //
         ///////////////////////////////
         //Remove any linear or 2nd order polynomial trend from velocity
-        trendRemovalOrder = ArrayOps.removeTrendWithBestFit( velocity, dtime);
+        double[] veltest = new double[velocity.length];
+        System.arraycopy( velocity, 0, veltest, 0, velocity.length);
+        trendRemovalOrder = ArrayOps.removeTrendWithBestFit( veltest, dtime);
         if (writeDebug) {
             errorlog.add(String.format("Best fit trend of order %d removed from velocity", trendRemovalOrder));
         }
@@ -392,7 +401,7 @@ public class V2Process {
         //
         ///////////////////////////////
         qcchecker.findWindow(lowcutadj, samplerate, pickIndex);
-        boolean passedQC = qcchecker.qcVelocity(velocity);
+        boolean passedQC = qcchecker.qcVelocity(veltest);
         if ( !passedQC ){
             errorlog.add("Velocity QC1 failed:");
             errorlog.add(String.format("   initial velocity: %f,  limit %f",
@@ -408,16 +417,22 @@ public class V2Process {
             // Baseline Correction
             //
             ///////////////////////////////
-            needsABC = true;
-            TwoSegmentBaseCorrection adapt = new TwoSegmentBaseCorrection(
-                dtime,velocity,lowcutadj,highcutadj,numpoles,pickIndex,taperlength);
-            procStatus = adapt.findFit();
-            if (procStatus != V2Status.GOOD) {
-                System.out.println("ABC needed");
-                AdaptiveBaselineCorrection adaptABC = new AdaptiveBaselineCorrection(
-                dtime,velocity,lowcutadj,highcutadj,numpoles,pickIndex,taperlength);
-                procStatus = adaptABC.findFit();
-            }
+            needsABC = true;            
+            System.out.println("ABC needed");
+            AdaptiveBaselineCorrection adaptABC = new AdaptiveBaselineCorrection(
+            dtime,velocity,lowcutadj,highcutadj,numpoles,pickIndex,taperlength);
+            procStatus = adaptABC.findFit();
+            basetype = BaselineType.ABC;
+            int solution = adaptABC.getSolution();
+            double[] baseline = adaptABC.getBaselineFunction();
+            double[] goodrun = adaptABC.getSolutionParms(solution);
+            calculated_taper = adaptABC.getCalculatedTaperLength();
+            ABCnumparams = adaptABC.getNumRuns();
+            ABCwinrank = solution;
+            adaptABC.clearParamsArray();
+            accel = adaptABC.getABCacceleration();
+            velocity = adaptABC.getABCvelocity();
+            displace = adaptABC.getABCdisplacement();
             
             //If unable to perform any iterations in ABC, just exit with no V2
             if (procStatus == V2Status.NOABC) {
@@ -426,17 +441,9 @@ public class V2Process {
                 writeOutErrorDebug();
                 return procStatus;
             }
-//            int solution = adapt.getSolution();
-            double[] baseline = adapt.getBaselineFunction();
-//            ArrayList<double[]> params = adapt.getParameters();
-//            double[] goodrun = params.get( solution );
-            double[] goodrun = adapt.getParams();
-            calculated_taper = adapt.getCalculatedTaperLength();
             QCvelinitial = goodrun[2];
             QCvelresidual = goodrun[3];
             QCdisresidual = goodrun[1];
-//            ABCnumparams = params.size();
-//            ABCwinrank = solution;
             ABCpoly1 = (int)goodrun[6];
             ABCpoly2 = (int)goodrun[7];
             ABCbreak1 = (int)goodrun[4];
@@ -464,18 +471,15 @@ public class V2Process {
                 errorlog.add(String.format("    ABC: calc. taperlength: %d", 
                                                             calculated_taper));
             }
-            accel = adapt.getABCacceleration();
-            velocity = adapt.getABCvelocity();  //velocity is updated here by baseline correction
-            displace = adapt.getABCdisplacement();
             initialVel = velocity[0];
             initialDis = displace[0];
-//            adapt.clearParamsArray();
         } else {
             ///////////////////////////////
             //
             // Passed first QC, so filter velocity
             //
             ///////////////////////////////
+            velocity = veltest;
             double[] paddedvelocity;
             filter = new ButterworthFilter();
             if (writeDebug) {
@@ -503,8 +507,6 @@ public class V2Process {
 //            if (writeDebug) {
 //               elog.writeOutArray(paddedvelocity, V0name.getName() + "_" + channel + "_paddedVelocityAfterFiltering.txt");
 //            }
-           //Integrate the velocity to get displacement.
-//            displace = ArrayOps.Integrate( velocity, dtime);
             //The velocity array was updated with the filtered values in the 
             //apply filter call
             initialVel = velocity[0];
@@ -614,8 +616,9 @@ public class V2Process {
     public void makeDebugCSV() throws IOException {
         String[] headerline = {"EVENT","MAG","NAME","CHANNEL",
             "ARRAY LENGTH","SAMP INTERVAL(SEC)","PICK INDEX","PICK TIME(SEC)",
-            "PEAK VEL(CM/SEC)","TAPERLENGTH","PEAK ACC(G)","STRONG MOTION","EXIT STATUS",
-            "VEL INITIAL(CM/SEC)","VEL RESIDUAL(CM/SEC)","DIS RESIDUAL(CM)","NEEDS ABC",
+            "PEAK VEL(CM/SEC)","TAPERLENGTH","PRE-EVENT MEAN","PEAK ACC(G)",
+            "STRONG MOTION","EXIT STATUS","VEL INITIAL(CM/SEC)",
+            "VEL RESIDUAL(CM/SEC)","DIS RESIDUAL(CM)","BASELINE CORRECTION",
             "ABC POLY1","ABC POLY2","ABC 1ST BREAK","ABC 2ND BREAK",
             "ABC PARM LENGTH","ABC WIN RANK"};
         ArrayList<String> data = new ArrayList<>();
@@ -629,6 +632,7 @@ public class V2Process {
         data.add(String.format("%8.3f", pickIndex*dtime));  //event onset time
         data.add(String.format("%8.5f",VpeakVal));          //peak velocity
         data.add(String.format("%d",calculated_taper));     //filter taperlength
+        data.add(String.format("%8.6f",preEventMean));      //preevent mean removed
         data.add(String.format("%5.4f",ApeakVal*TO_G_CONVERSION)); //peak acc in g
         if (strongMotion) {
             data.add("YES");
@@ -641,7 +645,7 @@ public class V2Process {
         data.add(String.format("%8.6f",QCvelinitial));     //QC value initial velocity
         data.add(String.format("%8.6f",QCvelresidual));    //QC value residual velocity
         data.add(String.format("%8.6f",QCdisresidual));    //QC value residual displace
-        data.add((needsABC) ? "YES" : "");                 //ABC flag
+        data.add(basetype.name());
         data.add((ABCpoly1 > 0) ? String.format("%d",ABCpoly1) : "");
         data.add((ABCpoly2 > 0) ? String.format("%d",ABCpoly2) : "");
         data.add((ABCbreak1 > 0) ? String.format("%d",ABCbreak1) : "");

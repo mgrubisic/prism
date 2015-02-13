@@ -21,9 +21,7 @@ import SmUtilities.ConfigReader;
 import SmUtilities.PrismXMLReader;
 import java.io.IOException;
 import javax.xml.parsers.ParserConfigurationException;
-import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
 import org.junit.Rule;
 import org.junit.rules.ExpectedException;
 import org.xml.sax.SAXException;
@@ -46,7 +44,6 @@ public class PrismXMLReaderTest {
         org.junit.Assert.assertEquals("U.S. Geological Survey", config.getConfigValue("PRISM/ProcessingAgency/StrongMotionNetworkCode/AgencyFullName"));
         org.junit.Assert.assertEquals("USGS", config.getConfigValue("PRISM/ProcessingAgency/StrongMotionNetworkCode/AgencyAbbreviation"));
         org.junit.Assert.assertEquals("NP", config.getConfigValue("PRISM/ProcessingAgency/StrongMotionNetworkCode/AgencyIRISCode"));
-        org.junit.Assert.assertEquals("Single", config.getConfigValue("PRISM/OutputFileFormat"));
         org.junit.Assert.assertEquals("04", config.getConfigValue("PRISM/DataUnitsForCountConversion/DataUnitCodes/DataUnitCode"));
         org.junit.Assert.assertEquals("cm/sec2", config.getConfigValue("PRISM/DataUnitsForCountConversion/DataUnitCodes/DataUnitName"));    
     }

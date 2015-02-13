@@ -63,7 +63,6 @@ public class AdaptiveBaselineCorrection {
     private ArrayList<double[]> params;
     private int[] breaks;
     private double[] rms;
-    private int[] polyBreaks;
     private int[] ranking;
     private int solution;
     private int counter;
@@ -80,7 +79,6 @@ public class AdaptiveBaselineCorrection {
         this.highcut = highcut;
         this.numpoles = numpoles;
         this.rms = new double[NUM_SEGMENTS];
-        this.polyBreaks = new int[NUM_SEGMENTS-1];
         this.taplength_calculated = 0;
         this.solution = 0;
         this.counter = 1;
@@ -135,7 +133,7 @@ public class AdaptiveBaselineCorrection {
     }
     
     public VFileConstants.V2Status findFit() throws SmException {
-        int vlen = velocity.length;
+        int vlen = velstart.length;
         int endval = (int)(0.8 * vlen);
         int spl_break = NUM_BREAKS;
         int startval = estart + MOVING_WINDOW;
@@ -275,10 +273,8 @@ public class AdaptiveBaselineCorrection {
         }
         return status;
     }
-    public double[] makeCorrection( double[] array, int break1, int break2, int spl_order,
+    public double[] makeCorrection( double[] array, int break1, int break2, int numknots,
                         int degreeS, int degreeP1, int degreeP2 ) {
-        polyBreaks[0] = break1;
-        polyBreaks[1] = break2;
         double[] h1;
         double[] h2;
         double[] h3;
@@ -289,16 +285,16 @@ public class AdaptiveBaselineCorrection {
 //        breaks = makeBreaks( break1, break2, spl_order);
         
         h1 = new double[break1];
-        h2 = new double[break2-break1];
+        h2 = new double[break2-break1+1];
         h3 = new double[array.length-break2];
         System.arraycopy(array, 0, h1, 0, break1);
-        System.arraycopy(array, break1, h2, 0, break2-break1);
+        System.arraycopy(array, break1, h2, 0, break2-break1+1);
         System.arraycopy(array, break2, h3, 0, array.length-break2);
         double[] result = new double[ array.length ];
         
         //Get the polynomials that were fitted to the input array
         //Construct the baseline function from each section
-        PolynomialSplineFunction spfunction = getSplines(h2, breaks, degreeS);
+        PolynomialSplineFunction spfunction = getSplines(h2, break1, break2, numknots, degreeS);
         double[] coefs1 = ArrayOps.findPolynomialTrend(h1, degreeP1, dtime);
         double[] coefs3 = ArrayOps.findPolynomialTrend(h3, degreeP2, dtime);
         
@@ -337,24 +333,24 @@ public class AdaptiveBaselineCorrection {
         
         return result;
     }
-    public PolynomialSplineFunction getSplines( double[] vals, int[] inbreaks, 
+    public PolynomialSplineFunction getSplines( double[] vals, int start, int end, int numknots, 
                                                                     int degree ) {
         int len;
         double[] loctime;
         double[] subset;
-        int numbreaks= inbreaks.length;
         
         PolynomialFunction poly;
         PolynomialFunction[] polyArrays;
         PolynomialSplineFunction spfunction;
-        polyArrays = new PolynomialFunction[numbreaks-1];
-        double[] knots = new double[numbreaks];
+        polyArrays = new PolynomialFunction[numknots];
+        int[] inbreaks = makeBreaks(start, end, numknots);
+        double[] knots = new double[inbreaks.length];
         
         //For each section of the array to fit (between each break), fit a
         //polynomial of the specified degree.  Save each polynomial in an 
         //array for the polynomial spline function.
-        for (int i = 0; i < numbreaks-2; i++) {
-            len = inbreaks[i+2] - inbreaks[i] + 1;
+        for (int i = 0; i < inbreaks.length-1; i++) {
+            len = inbreaks[i+1] - inbreaks[i] + 1;
             subset = new double[len];
             System.arraycopy(vals,inbreaks[i],subset,0,len);
             loctime = ArrayOps.makeTimeArray( dtime, len);
@@ -367,35 +363,21 @@ public class AdaptiveBaselineCorrection {
             poly = new PolynomialFunction (coefs);
             polyArrays[i] = poly;
         }
-        //Add one last polynomial between the last 2 knots
-        len = inbreaks[inbreaks.length-1] - inbreaks[inbreaks.length-2] + 1;
-        subset = new double[len];
-        System.arraycopy(vals,inbreaks[inbreaks.length-2],subset,0,len);
-        loctime = ArrayOps.makeTimeArray( dtime, len);
-        ArrayList<WeightedObservedPoint> points = new ArrayList<>();
-        for (int j = 0; j < len; j++ ){
-            points.add(new WeightedObservedPoint( 1.0, loctime[j], subset[j]));
-        }
-        PolynomialCurveFitter fitter = PolynomialCurveFitter.create(degree);
-        double[] coefs = fitter.fit(points);
-        poly = new PolynomialFunction (coefs);
-        polyArrays[polyArrays.length-1] = poly;
-        
         //Calculate the knots for the spline function and create a new spline
         //function object.
-        for (int k = 0; k < numbreaks; k++) {
+        for (int k = 0; k < knots.length; k++) {
             knots[k] = inbreaks[k] * dtime;
         }
         spfunction = new PolynomialSplineFunction( knots, polyArrays );
         return spfunction;    
     }
     public int[] makeBreaks(int start, int end, int numbreaks) {
-        int[] breakers = new int[numbreaks];
-        int interval = Math.round((end-start) / (numbreaks-1));
-        for (int i = 0; i < numbreaks-1; i++) {
+        int[] breakers = new int[numbreaks+1];
+        int interval = Math.round((end-start) / (numbreaks));
+        for (int i = 0; i < numbreaks; i++) {
             breakers[i] = i * interval;
         }
-        breakers[numbreaks-1] = end-start;
+        breakers[numbreaks] = end-start;
         return breakers;
     }
     public double[] getBaselineFunction() {
@@ -413,8 +395,8 @@ public class AdaptiveBaselineCorrection {
     public double[] getSolutionParms(int sol) {
         return params.get(sol);
     }
-    public int[] getBreaks() {
-        return breaks;
+    public int getNumRuns() {
+        return params.size();
     }
     public int getMovingWindow() {
         return MOVING_WINDOW;
@@ -425,9 +407,6 @@ public class AdaptiveBaselineCorrection {
     public double[] getRMSvalues() {
         return rms;
     }
-    public int[] getPolyBreaks() {
-        return polyBreaks;
-    }
     public double[] getABCvelocity() {
         return velocity;
     }
@@ -436,6 +415,9 @@ public class AdaptiveBaselineCorrection {
     }
     public double[] getABCacceleration() {
         return accel;
+    }
+    public int getCalculatedTaperLength() {
+        return this.taplength_calculated;
     }
     public void clearParamsArray() {
         params.clear();

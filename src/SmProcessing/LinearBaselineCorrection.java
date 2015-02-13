@@ -25,7 +25,7 @@ import SmUtilities.SmDebugLogger;
  *
  * @author jmjones
  */
-public class TwoSegmentBaseCorrection {
+public class LinearBaselineCorrection {
     private final int RESULT_PARMS = 14;
     
     private double dtime;
@@ -44,7 +44,7 @@ public class TwoSegmentBaseCorrection {
     private int taplength_calculated;
     private double[] onerun;
     
-    public TwoSegmentBaseCorrection(double delttime, double[] invel, 
+    public LinearBaselineCorrection(double delttime, double[] invel, 
                                       double lowcut,double highcut,int numpoles,
                                       int ppick, double taplengthtime) {
         this.dtime = delttime;
@@ -102,8 +102,8 @@ public class TwoSegmentBaseCorrection {
         onerun[3] = Math.abs(qcchecker.getResidualVelocity());
         onerun[4] = estart;
         onerun[5] = 0;
-        onerun[6] = 0;
-        onerun[7] = 0;
+        onerun[6] = 1;
+        onerun[7] = 1;
 
         success = (onerun[2] <= qcchecker.getInitVelocityQCval()) && 
                     (onerun[3] <= qcchecker.getResVelocityQCval()) && 

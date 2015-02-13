@@ -8,14 +8,9 @@
 
 package SMCOSMOScontrol;
 
-import COSMOSformat.COSMOScontentFormat;
-import COSMOSformat.V0Component;
-import static SmConstants.VFileConstants.CORACC;
 import static SmConstants.VFileConstants.RAWACC;
-import static SmConstants.VFileConstants.UNCORACC;
 import SmException.FormatException;
 import SmException.SmException;
-import SmUtilities.ConfigReader;
 import SmUtilities.PrismLogger;
 import SmUtilities.PrismXMLReader;
 import SmUtilities.SmDebugLogger;
@@ -35,7 +30,7 @@ import org.xml.sax.SAXException;
  * automatically by other software.  This class takes an input folder as a param.,
  * reads in *.V0 files in the folder and then processes each file in turn.
  * Processing involves reading in the file and parsing into record(s), running
- * the waveform processing algorithms to create the other data products, and then
+ * the waveform processing algorithms to create the data products, and then
  * writing out the data in the different formats.
  * @author jmjones
  */
@@ -72,7 +67,15 @@ public class Prism {
             throw new SmException("Input and output directories must provided.");
         }
     }
-    
+    /**
+     * Main method starts the loggers, reads in the configuration file, 
+     * reads in all .v0 or .v0c file names in the input folder, processes each file
+     * in turn, and then deletes the input file.
+     * @param args input string arguments, input folder, output folder, optional
+     * configuration file (full path names)
+     * @throws SmException if a fatal error occurs during processing
+     * @throws IOException if unable to read in the files or file names
+     */
     public static void main(String[] args) throws SmException, IOException { 
         String config = "";
         int lineCount = 0; 
@@ -145,6 +148,11 @@ public class Prism {
             System.err.println(err.getMessage());
         }
     }
+    /**
+     * Reads in the configuration file and parses the xml
+     * @param filename the configuration file name
+     * @throws SmException if unable to read in or parse the file
+     */
     public void readConfigFile( String filename ) throws SmException {
 
         try {
@@ -156,6 +164,14 @@ public class Prism {
             throw new SmException("Unable to read configuration file " + filename);
         }
     }
+    /**
+     * Gets the list of v0 files in the input folder and returns an array of
+     * file names
+     * @param filePath directory path to the files
+     * @param exten file extension to pick up
+     * @return list of file names
+     * @throws IOException if the folder is empty
+     */
     //Get the list of .V* files in the input folder and return as an array of
     //file names.  Flag if the input folder doesn't contain any files.
     public File[] getFileList(String filePath, String exten) throws IOException {
@@ -174,31 +190,50 @@ public class Prism {
             return inList.toArray(finalList);
         }
     }
+    /**
+     * Gets the input folder name
+     * @return input folder name
+     */
     public String getInFolder()
     {
         return this.inFolder;
     }
-    
+    /**
+     * Gets the output folder name
+     * @return output folder name
+     */
     public String getOutFolder()
     {
         return this.outFolder;
     }
-    
+    /**
+     * Gets the configuration file name
+     * @return the configuration file name
+     */
     public String getConfigFile()
     {
         return this.configFile;
     }
-    
+    /**
+     * Gets the list of input files
+     * @return the list of input files
+     */
     public File[] getInVList()
     {
         return this.inVList;
     }
-    
+    /**
+     * Gets the processing queue
+     * @return the processing queue
+     */
     public SmQueue getSmqueue()
     {
         return this.smqueue;
     }
-        
+    /**
+     * Sets the input file list to the given list
+     * @param inVList list to set as the input file list
+     */
     public void setInVList(File[] inVList)
     {
         this.inVList = inVList;

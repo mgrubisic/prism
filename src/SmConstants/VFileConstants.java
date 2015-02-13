@@ -151,6 +151,7 @@ public final class VFileConstants {
     public static final double TO_G_CONVERSION = 0.0010197;  //g per cm per sq. sec
     
     public enum EventOnsetType{ AIC, DE };
+    public enum BaselineType{ SIMPLE, LINEAR, ABC };
     
     //event onset constants
     public static final double DEFAULT_EVENT_ONSET_BUFFER = 0.0;
