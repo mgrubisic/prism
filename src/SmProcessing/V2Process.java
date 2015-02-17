@@ -419,20 +419,21 @@ public class V2Process {
             ///////////////////////////////
             needsABC = true;            
             System.out.println("ABC needed");
-            AdaptiveBaselineCorrection adaptABC = new AdaptiveBaselineCorrection(
+            AdaptiveBaselineCorrection adapt = new AdaptiveBaselineCorrection(
             dtime,velocity,lowcutadj,highcutadj,numpoles,pickIndex,taperlength);
-            procStatus = adaptABC.findFit();
+            procStatus = adapt.findFit();
+            System.out.println("procstatus: " + procStatus.name());
             basetype = BaselineType.ABC;
-            int solution = adaptABC.getSolution();
-            double[] baseline = adaptABC.getBaselineFunction();
-            double[] goodrun = adaptABC.getSolutionParms(solution);
-            calculated_taper = adaptABC.getCalculatedTaperLength();
-            ABCnumparams = adaptABC.getNumRuns();
+            int solution = adapt.getSolution();
+            double[] baseline = adapt.getBaselineFunction();
+            double[] goodrun = adapt.getSolutionParms(solution);
+            calculated_taper = adapt.getCalculatedTaperLength();
+            ABCnumparams = adapt.getNumRuns();
             ABCwinrank = solution;
-            adaptABC.clearParamsArray();
-            accel = adaptABC.getABCacceleration();
-            velocity = adaptABC.getABCvelocity();
-            displace = adaptABC.getABCdisplacement();
+            adapt.clearParamsArray();
+            accel = adapt.getABCacceleration();
+            velocity = adapt.getABCvelocity();
+            displace = adapt.getABCdisplacement();
             
             //If unable to perform any iterations in ABC, just exit with no V2
             if (procStatus == V2Status.NOABC) {
@@ -457,8 +458,8 @@ public class V2Process {
             } 
             if (writeDebug) {
                 errorlog.add("    length of ABC params: " + ABCnumparams);
-                errorlog.add("    ABC: found passing solution");
-                errorlog.add("    ABC: winning rank: " + ABCwinrank);
+                errorlog.add("    ABC: final status: " + procStatus.name());
+                errorlog.add("    ABC: rank: " + ABCwinrank);
                 errorlog.add("    ABC: poly1 order: " + ABCpoly1);
                 errorlog.add("    ABC: poly2 order: " + ABCpoly2);
                 errorlog.add("    ABC: start: " + ABCbreak1 + "  stop: " + ABCbreak2);

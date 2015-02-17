@@ -19,12 +19,14 @@ package SmProcessing;
 
 import SmConstants.VFileConstants;
 import static SmConstants.VFileConstants.*;
+import SmConstants.VFileConstants.V2Status;
 import SmException.SmException;
 import SmUtilities.ABCSortPairs;
 import SmUtilities.ConfigReader;
 import static SmUtilities.SmConfigConstants.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import org.apache.commons.math3.analysis.interpolation.SplineInterpolator;
 import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
 import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
 import org.apache.commons.math3.fitting.PolynomialCurveFitter;
@@ -147,6 +149,7 @@ public class AdaptiveBaselineCorrection {
         boolean pass = false;
         VFileConstants.V2Status status = V2Status.NOABC;
         QCcheck qcchecker = new QCcheck();
+        qcchecker.validateQCvalues();
         qcchecker.findWindow(lowcut, (1.0/dtime), estart);
         filter = new ButterworthFilter();
         boolean valid = filter.calculateCoefficients(lowcut,highcut,dtime,numpoles, true);
@@ -281,6 +284,7 @@ public class AdaptiveBaselineCorrection {
         double[] r1;
         double[] r2;
         double[] r3;
+        double[] bnt;
         double[] time = ArrayOps.makeTimeArray(dtime, array.length);
 //        breaks = makeBreaks( break1, break2, spl_order);
         
@@ -301,16 +305,18 @@ public class AdaptiveBaselineCorrection {
         PolynomialFunction b1poly = new PolynomialFunction( coefs1 );
         PolynomialFunction b3poly = new PolynomialFunction( coefs3 );
 
+        bnt = new double[time.length];
         bnn = new double[time.length];
         for (int i = 0; i < bnn.length; i++) {
             if ( i < break1) {
-                bnn[i] = b1poly.value(time[i]);
+                bnt[i] = b1poly.value(time[i]);
             } else if ( i >= break2) {
-                bnn[i] = b3poly.value(time[i] - (break2*dtime));
+                bnt[i] = b3poly.value(time[i] - (break2*dtime));
             } else {
-                bnn[i] = spfunction.value(time[i] - (break1*dtime));
+                bnt[i] = spfunction.value(time[i] - (break1*dtime));
             }
         }
+        bnn = ArrayOps.perform3PtSmoothing(bnt);
         //If smoothing selected, then smooth out discontinuities in the baseline
         //function before removing it from the input array.
         r1 = new double[h1.length];
@@ -339,36 +345,44 @@ public class AdaptiveBaselineCorrection {
         double[] loctime;
         double[] subset;
         
-        PolynomialFunction poly;
-        PolynomialFunction[] polyArrays;
+//        PolynomialFunction poly;
+//        PolynomialFunction[] polyArrays;
         PolynomialSplineFunction spfunction;
-        polyArrays = new PolynomialFunction[numknots];
+//        polyArrays = new PolynomialFunction[numknots];
+        SplineInterpolator spline = new SplineInterpolator();
         int[] inbreaks = makeBreaks(start, end, numknots);
         double[] knots = new double[inbreaks.length];
+        double[] knotvals = new double[inbreaks.length];
+        for (int i = 0; i < inbreaks.length; i++) {
+            knots[i] = inbreaks[i] * dtime;
+            knotvals[i] = vals[inbreaks[i]];
+        }
         
         //For each section of the array to fit (between each break), fit a
         //polynomial of the specified degree.  Save each polynomial in an 
         //array for the polynomial spline function.
-        for (int i = 0; i < inbreaks.length-1; i++) {
-            len = inbreaks[i+1] - inbreaks[i] + 1;
-            subset = new double[len];
-            System.arraycopy(vals,inbreaks[i],subset,0,len);
-            loctime = ArrayOps.makeTimeArray( dtime, len);
-            ArrayList<WeightedObservedPoint> points = new ArrayList<>();
-            for (int j = 0; j < len; j++ ){
-                points.add(new WeightedObservedPoint( 1.0, loctime[j], subset[j]));
-            }
-            PolynomialCurveFitter fitter = PolynomialCurveFitter.create(degree);
-            double[] coefs = fitter.fit(points);
-            poly = new PolynomialFunction (coefs);
-            polyArrays[i] = poly;
-        }
-        //Calculate the knots for the spline function and create a new spline
-        //function object.
-        for (int k = 0; k < knots.length; k++) {
-            knots[k] = inbreaks[k] * dtime;
-        }
-        spfunction = new PolynomialSplineFunction( knots, polyArrays );
+//        for (int i = 0; i < inbreaks.length-1; i++) {
+//            len = inbreaks[i+1] - inbreaks[i] + 1;
+//            subset = new double[len];
+//            System.arraycopy(vals,inbreaks[i],subset,0,len);
+//            loctime = ArrayOps.makeTimeArray( dtime, len);
+//            ArrayList<WeightedObservedPoint> points = new ArrayList<>();
+//            for (int j = 0; j < len; j++ ){
+//                points.add(new WeightedObservedPoint( 1.0, loctime[j], subset[j]));
+//            }
+//            PolynomialCurveFitter fitter = PolynomialCurveFitter.create(degree);
+//            double[] coefs = fitter.fit(points);
+//            poly = new PolynomialFunction (coefs);
+//            polyArrays[i] = poly;
+//        }
+//        //Calculate the knots for the spline function and create a new spline
+//        //function object.
+//        for (int k = 0; k < knots.length; k++) {
+//            knots[k] = inbreaks[k] * dtime;
+//        }
+//        spfunction = new PolynomialSplineFunction( knots, polyArrays );
+        spfunction = spline.interpolate(knots, knotvals);
+        
         return spfunction;    
     }
     public int[] makeBreaks(int start, int end, int numbreaks) {

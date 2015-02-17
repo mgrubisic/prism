@@ -50,7 +50,7 @@ public class AdaptiveBaselineTest {
     static final String hn2test = "D:/PRISM/smtesting/V0fail/out/LinearTrendRemovedVel.txt";
     static String[] fileContents;
     
-    static final int NUM_BREAKS = 10;
+    static final int NUM_BREAKS = 6;
     
     double deltat1 = 0.005;
     double dtime2 = 0.01;
