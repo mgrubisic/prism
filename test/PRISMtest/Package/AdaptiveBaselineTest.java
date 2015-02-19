@@ -19,6 +19,7 @@ package PRISMtest.Package;
 
 import static SmConstants.VFileConstants.*;
 import SmException.SmException;
+import SmProcessing.ABC2;
 import SmProcessing.AdaptiveBaselineCorrection;
 import SmProcessing.ArrayOps;
 import static SmProcessing.ArrayOps.makeTimeArray;
@@ -63,7 +64,7 @@ public class AdaptiveBaselineTest {
     static double[] hnn;
     static double[] hn2;
 //    AdaptiveBaselineCorrection adapt;
-//    AdaptiveBaselineCorrection adapt2;
+    ABC2 adapt2;
     AdaptiveBaselineCorrection adaptS;
     
     int break1 = 2023;
@@ -89,8 +90,7 @@ public class AdaptiveBaselineTest {
         timeS = ArrayOps.makeTimeArray(dtime2, spline.length);
 //        adapt = new AdaptiveBaselineCorrection(dtime2, hnn, lowcut, highcut,2, 
 //                                                                    2023, 2.0 );
-//        adapt2 = new AdaptiveBaselineCorrection(dtime2, hn2, lowcut, highcut,2, 
-//                                                                    1227, 2.0 );
+        adapt2 = new ABC2(dtime2, spline, lowcut, highcut,2, break1, 2.0 );
         adaptS = new AdaptiveBaselineCorrection(dtime2, spline, lowcut, highcut,2, 
                                                                     break1, 2.0 );
     }
@@ -179,7 +179,7 @@ public class AdaptiveBaselineTest {
         //for acceleration
         System.arraycopy(paddedvelocity, filter.getPadLength(), velocity, 0, velocity.length);
         
-        TextFileWriter textsm2 = new TextFileWriter( "D:/PRISM/adaptive_test/junitS", "baseline_smooth.txt", bnn);
+        TextFileWriter textsm2 = new TextFileWriter( "D:/PRISM/adaptive_test/junitS", "baseline_triple.txt", bnn);
         try {
             textsm2.writeOutArray();
         } catch (IOException err) {
@@ -193,39 +193,41 @@ public class AdaptiveBaselineTest {
         }
         System.out.println("rms1: " + rms[0] + " rms2: " + rms[1] + " rms3: " + rms[2]);
     }
-//    @Test
-//    public void ABC2Test() throws SmException {
-//        FilterCutOffThresholds threshold = new FilterCutOffThresholds();
-//        threshold.SelectMagAndThresholds(mag, noval, noval, noval, noval);
-//        double lowcut = threshold.getLowCutOff();
-//        double highcut = threshold.getHighCutOff();
-//        double[] result = adapt2.makeCorrection( hn2, breakh1, breakh2, NUM_BREAKS, degreeS, degreeP1, degreeP2 );
-//        double[] bnn = adapt2.getBaselineFunction();
-//        double[] rms = adapt2.getRMSvalues();
-//        
-//        ButterworthFilter filter = new ButterworthFilter();
-//        filter.calculateCoefficients(lowcut,highcut,dtime2,2,true);
-//        filter.applyFilter(result, 2.0, breakh1);
-//        //remove any mean value
-//        ArrayStats velmean = new ArrayStats( result );
-//        ArrayOps.removeValue(result, velmean.getMean());
-//        
-//        TextFileWriter textsm2 = new TextFileWriter( "D:/PRISM/adaptive_test/junit4", "baseline_smooth_p3.txt", bnn);
-//        try {
-//            textsm2.writeOutArray();
-//        } catch (IOException err) {
-//            System.out.println("Error printing out result in MathSplineTest");
-//        }
-//        TextFileWriter textout = new TextFileWriter( "D:/PRISM/adaptive_test/junit4", "velocity_ABC_p3.txt", result);
-//        try {
-//            textout.writeOutArray();
-//        } catch (IOException err) {
-//            System.out.println("Error printing out result in MathSplineTest");
-//        }
-//        System.out.println("rms1: " + rms[0] + " rms2: " + rms[1] + " rms3: " + rms[2]);
-//    }
-//    @Test
-//    public void test2DimSort() {
-//        double[] test = new double{0.5,0.02,1.6};
-//    }
+    @Test
+    public void ABC2Test() throws SmException {
+        FilterCutOffThresholds threshold = new FilterCutOffThresholds();
+        threshold.SelectMagAndThresholds(mag, noval, noval, noval, noval);
+        double lowcut = threshold.getLowCutOff();
+        double highcut = threshold.getHighCutOff();
+        double[] paddedvelocity;
+        double[] rms = new double[3];
+        rms[0] = adapt2.findFirstPolynomialFit();
+        double[] velocity = adapt2.makeCorrection( spline, break2,NUM_BREAKS);
+        double[] bnn = adapt2.getBaselineFunction();
+        double[] rms2 = adapt2.getRMSvalues();
+        
+        ButterworthFilter filter = new ButterworthFilter();
+        filter.calculateCoefficients(lowcut,highcut,dtime2,2,true);
+        paddedvelocity = filter.applyFilter(velocity, 2.0, break1);
+         //remove any mean value
+        ArrayStats velmean = new ArrayStats( paddedvelocity );
+        ArrayOps.removeValue(paddedvelocity, velmean.getMean());
+        //integrate to get displacement, differentiate
+        //for acceleration
+        System.arraycopy(paddedvelocity, filter.getPadLength(), velocity, 0, velocity.length);
+        
+        TextFileWriter textsm2 = new TextFileWriter( "D:/PRISM/adaptive_test/junitS", "baseline_spline.txt", bnn);
+        try {
+            textsm2.writeOutArray();
+        } catch (IOException err) {
+            System.out.println("Error printing out result in MathSplineTest");
+        }
+        TextFileWriter textout = new TextFileWriter( "D:/PRISM/adaptive_test/junitS", "velocityspline.txt", velocity);
+        try {
+            textout.writeOutArray();
+        } catch (IOException err) {
+            System.out.println("Error printing out result in MathSplineTest");
+        }
+        System.out.println("rms21: " + rms[0] + " rms22: " + rms2[1] + " rms23: " + rms2[2]);
+    }
 }

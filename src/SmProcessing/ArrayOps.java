@@ -256,36 +256,6 @@ public class ArrayOps {
         return coefs;
     }
     /**
-     * Finds a polynomial trend from the input array with an initial guess for
-     * the coefficients.
-     * The polynomial trend is calculated with the apache commons math 
-     * PolynomialCurveFitter class, and the coefficients are returned.
-     * 
-     * @param array input array containing data with a polynomial trend.
-     * @param guess array containing initial coefficient guesses, and the order
-     * of this array defines the degree of the polynomial
-     * @param timestep sample interval
-     * @return array of coefficients or an array of 0 length if input parameters
-     * are invalid
-     */
-    public static double[] findPolynomialTrendWithGuess(double[] array, double[] guess, 
-                                                            double timestep) {
-        if ((array == null) || (array.length == 0) || (guess.length == 0) ||
-                                    (Math.abs(timestep - 0.0) < OPS_EPSILON)) {
-            return new double[0];
-        }
-        int len = array.length;
-        double[] time = makeTimeArray( timestep, len);
-        ArrayList<WeightedObservedPoint> points = new ArrayList<>();
-        for (int i = 0; i < len; i++ ){
-            points.add(new WeightedObservedPoint( 1.0, time[i], array[i]));
-        }
-        PolynomialCurveFitter fitter = PolynomialCurveFitter.create(guess.length);
-        fitter.withStartPoint(guess);
-        double[] coefs = fitter.fit(points);
-        return coefs;
-    }
-    /**
      * Removes a polynomial trend from the input array, with the trend defined
      * by the array of coefficients.
      * @param array input array to remove the polynomial trend from
@@ -301,7 +271,6 @@ public class ArrayOps {
             return false;
         }
         int len = array.length;
-        double value;
         double[] time = makeTimeArray( timestep, len);
         PolynomialFunction poly = new PolynomialFunction( coefs );
         for (int i = 0; i < len; i++) {
