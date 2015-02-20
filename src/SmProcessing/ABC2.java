@@ -40,8 +40,9 @@ import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
 public class ABC2 {
     private final int NUM_SEGMENTS = 3;
     private final int RESULT_PARMS = 14;
-    private final int NUM_BREAKS = 10;
-    private final int CUBIC_ORD = 3;
+    private final int MAX_BREAKS = 5;
+    private final int MIN_BREAKS = 2;
+    private final int CUBIC_ORDER = 3;
     
     private final int MOVING_WINDOW = 200;
     private final double EPSILON = 0.00001;
@@ -142,7 +143,6 @@ public class ABC2 {
     public VFileConstants.V2Status findFit() throws SmException {
         int vlen = velstart.length;
         int endval = (int)(0.8 * vlen);
-        int spl_break = NUM_BREAKS;
         int startval = estart + MOVING_WINDOW;
         double[] v1poly = new double[estart];
         double[] paddedvelocity;
@@ -151,6 +151,7 @@ public class ABC2 {
         ButterworthFilter filter;
         params = new ArrayList<>();
         double[] onerun;
+        int spl_break;
         boolean pass = false;
         VFileConstants.V2Status status = V2Status.NOABC;
         QCcheck qcchecker = new QCcheck();
@@ -166,48 +167,58 @@ public class ABC2 {
         //variable bestFirstDegree contains the degree of the fit.
         rms[0] = findFirstPolynomialFit();
         
-        for (int t2 = startval; t2 <= endval; t2 += MOVING_WINDOW) {
-            if ((t2-estart) >= ((int)1.0/lowcut)) {
-                //remove the spline fit from velocity
-                velocity = makeCorrection(velstart,t2,spl_break);
-                //now filter velocity
-                paddedvelocity = filter.applyFilter(velocity, taplength, estart);
-                 //remove any mean value
-                ArrayStats velmean = new ArrayStats( paddedvelocity );
-                ArrayOps.removeValue(paddedvelocity, velmean.getMean());
-                //integrate to get displacement, differentiate
-                //for acceleration
-                paddeddisplace = ArrayOps.Integrate( paddedvelocity, dtime, 0.0);
-                displace = new double[velocity.length];
-                System.arraycopy(paddedvelocity, filter.getPadLength(), velocity, 0, velocity.length);
-                System.arraycopy(paddeddisplace, filter.getPadLength(), displace, 0, displace.length);
-                accel = ArrayOps.Differentiate(velocity, dtime);
-                qcchecker.qcVelocity(velocity);
-                qcchecker.qcDisplacement(displace);
-                //store the results in an array for comparison
-                onerun = new double[RESULT_PARMS];
-                onerun[0] = Math.sqrt(Math.pow(rms[0], 2) +
-                        Math.pow(rms[1],2) + Math.pow(rms[2],2));
-                onerun[1] = Math.abs(qcchecker.getResidualDisplacement());
-                onerun[2] = Math.abs(qcchecker.getInitialVelocity());
-                onerun[3] = Math.abs(qcchecker.getResidualVelocity());
-                onerun[4] = estart;
-                onerun[5] = t2;
-                onerun[6] = bestfirstdegree;
-                onerun[7] = bestthirddegree;
-                onerun[8] = counter;
-                onerun[9] = rms[0];
-                onerun[10] = rms[1];
-                onerun[11] = rms[2];
-                onerun[12] = spl_break;
-                onerun[13]= CUBIC_ORD;
-                //Penalty for initial acceleration step
-                ArrayStats accstat = new ArrayStats(accel);
-                if (Math.abs(Math.abs(accel[0]) - Math.abs(accstat.getPeakVal())) < 5*Math.ulp(accel[0])) {
-                    onerun[0] = 1000;
+        for (int order3 = degreeP3lo; order3 <= degreeP3hi; order3++) {
+            for (int t2 = startval; t2 <= endval; t2 += MOVING_WINDOW) {
+//                System.out.println("t2: " + t2 + " order3: " + order3 + " count: " + counter);
+                if ((t2-estart) >= ((int)1.0/lowcut)) {
+                    if ((int)((t2-estart)/MOVING_WINDOW) < 2) {
+                        spl_break = MIN_BREAKS;
+                    } else if ((int)((t2-estart)/MOVING_WINDOW) > MAX_BREAKS) {
+                        spl_break = MAX_BREAKS;
+                    } else {
+                        spl_break = (int)((t2-estart)/MOVING_WINDOW);
+                    }
+                    //remove the spline fit from velocity
+                    velocity = makeCorrection(velstart,t2,spl_break,order3);
+                    //now filter velocity
+                    paddedvelocity = filter.applyFilter(velocity, taplength, estart);
+                     //remove any mean value
+                    ArrayStats velmean = new ArrayStats( paddedvelocity );
+                    ArrayOps.removeValue(paddedvelocity, velmean.getMean());
+                    //integrate to get displacement, differentiate
+                    //for acceleration
+                    paddeddisplace = ArrayOps.Integrate( paddedvelocity, dtime, 0.0);
+                    displace = new double[velocity.length];
+                    System.arraycopy(paddedvelocity, filter.getPadLength(), velocity, 0, velocity.length);
+                    System.arraycopy(paddeddisplace, filter.getPadLength(), displace, 0, displace.length);
+                    accel = ArrayOps.Differentiate(velocity, dtime);
+                    qcchecker.qcVelocity(velocity);
+                    qcchecker.qcDisplacement(displace);
+                    //store the results in an array for comparison
+                    onerun = new double[RESULT_PARMS];
+                    onerun[0] = Math.sqrt(Math.pow(rms[0], 2) +
+                            Math.pow(rms[1],2) + Math.pow(rms[2],2));
+                    onerun[1] = Math.abs(qcchecker.getResidualDisplacement());
+                    onerun[2] = Math.abs(qcchecker.getInitialVelocity());
+                    onerun[3] = Math.abs(qcchecker.getResidualVelocity());
+                    onerun[4] = estart;
+                    onerun[5] = t2;
+                    onerun[6] = bestfirstdegree;
+                    onerun[7] = order3;
+                    onerun[8] = counter;
+                    onerun[9] = rms[0];
+                    onerun[10] = rms[1];
+                    onerun[11] = rms[2];
+                    onerun[12] = spl_break;
+                    onerun[13]= CUBIC_ORDER;
+                    //Penalty for initial acceleration step
+                    ArrayStats accstat = new ArrayStats(accel);
+                    if (Math.abs(Math.abs(accel[0]) - Math.abs(accstat.getPeakVal())) < 5*Math.ulp(accel[0])) {
+                        onerun[0] = 1000;
+                    }
+                    params.add(onerun);
+                    counter++;
                 }
-                params.add(onerun);
-                counter++;
             }
         }
         //exit with error status if no estimates performed
@@ -216,7 +227,6 @@ public class ABC2 {
             return status;
         }
         //Sort the results based on cumulative rms
-        System.out.println("length of params: " + params.size());
         int count = 0;
         ABCSortPairs sorter = new ABCSortPairs();
         double[] temp;
@@ -230,11 +240,18 @@ public class ABC2 {
         //check each solution against the QA values and find the first that passes
         for (int idx : ranking) {
             eachrun = params.get(idx);
+//            System.out.println("rank: " + idx);
+//            System.out.println("rms: " + eachrun[0]);
+//            System.out.println("break2: " + eachrun[5]);
+//            System.out.println("order3: " + eachrun[7]);
+//            System.out.println("numbreaks: " + eachrun[12]);
+//            System.out.println("counter: " + eachrun[8]);
             success = (eachrun[2] <= qcchecker.getInitVelocityQCval()) && 
                           (eachrun[3] <= qcchecker.getResVelocityQCval()) && 
                                 (eachrun[1] <= qcchecker.getResDisplaceQCval());
             if (success) {
-                velocity = makeCorrection(velstart,(int)eachrun[5],(int)eachrun[12]);
+                velocity = makeCorrection(velstart,(int)eachrun[5],(int)eachrun[12],
+                                                    (int)eachrun[7]);
 
                 paddedvelocity = filter.applyFilter(velocity, taplength, estart);
                 taplength_calculated = filter.getTaperlength();
@@ -250,15 +267,16 @@ public class ABC2 {
 
                 status = V2Status.GOOD;
                 solution = idx;
-                System.out.println("ABC: found passing solution");
-                System.out.println("ABC: start: " + eachrun[4] + "  stop: " + eachrun[5]);
+//                System.out.println("ABC: found passing solution");
+//                System.out.println("ABC: start: " + eachrun[4] + "  stop: " + eachrun[5]);
                 break;
             }
         }
         if (status != V2Status.GOOD) { //just pick the lowest rms run to return
             solution = 0;
             eachrun = params.get(solution);
-            velocity = makeCorrection(velstart,(int)eachrun[5],(int)eachrun[12]);
+            velocity = makeCorrection(velstart,(int)eachrun[5],(int)eachrun[12],
+                                                                (int)eachrun[7]);
             //now filter velocity
             paddedvelocity = filter.applyFilter(velocity, taplength, estart);
             taplength_calculated = filter.getTaperlength();
@@ -306,7 +324,7 @@ public class ABC2 {
         bestfirstdegree = bestdegree;
         return bestrms;
     }
-    public double[] makeCorrection( double[] array, int break2, int numknots) {
+    public double[] makeCorrection( double[] array, int break2, int numknots, int order3) {
         double[] h2;
         double[] h3;
         double[] r1;
@@ -314,14 +332,11 @@ public class ABC2 {
         double[] r3;
         int break1 = estart;
         double[] time = ArrayOps.makeTimeArray(dtime, array.length);
-//        breaks = makeBreaks( break1, break2, spl_order);
         
-//        h1 = new double[break1];
-        h2 = new double[break2-break1+1]; //make these longer to overlap
-        h3 = new double[array.length-break2+1];
-//        System.arraycopy(array, 0, h1, 0, break1);
+        h2 = new double[break2-break1+1]; //make this longer to overlap
+        h3 = new double[array.length-break2];
         System.arraycopy(array, break1, h2, 0, break2-break1+1);
-        System.arraycopy(array, break2-1, h3, 0, array.length-break2);
+        System.arraycopy(array, break2, h3, 0, array.length-break2);
         double[] result = new double[ array.length ];
         
         //Get the polynomials that were fitted to the input array
@@ -332,23 +347,23 @@ public class ABC2 {
             fit2[i] = sp2.value(time[i]);
         }
         h3[0] = fit2[fit2.length-1];
-        double[] fit3 = find3rdPolyFit(h3);
-        this.bestthirddegree = 1;
-        System.out.println("best third degree: " + bestthirddegree);
+        double[] fit3 = find3rdPolyFit(h3, order3);
+        this.bestthirddegree = 0;
 
         bnn = new double[time.length];
         for (int i = 0; i < bnn.length; i++) {
             if ( i < break1) {
                 bnn[i] = b1[i];
             } else if ( i >= break2) {
-                bnn[i] = fit3[i - break2+1];
+                bnn[i] = fit3[i - break2];
             } else {
                 bnn[i] = fit2[i - break1];
             }
         }
         //smooth out discontinuities in the baseline
         //function before removing it from the input array.
-        ArrayOps.perform3PtSmoothing(bnn);
+        getSplineSmooth( bnn, estart-50, estart+50 );
+        getSplineSmooth( bnn, break2-50, break2+50 );
         
 //        r1 = new double[h1.length];
         r2 = new double[h2.length];
@@ -373,11 +388,7 @@ public class ABC2 {
         double[] loctime;
         double[] subset;
         
-        PolynomialSplineFunction spfunction;
-//        LoessInterpolator loess = new LoessInterpolator();
-//        double[] time = ArrayOps.makeTimeArray(dtime, vals.length);
-//        spfunction = loess.interpolate(time, vals);
-        
+        PolynomialSplineFunction spfunction;        
         SplineInterpolator spline = new SplineInterpolator();
         int[] inbreaks = makeBreaks(start, end, numknots);
         double[] knots = new double[inbreaks.length];
@@ -393,11 +404,16 @@ public class ABC2 {
         spfunction = spline.interpolate(knots, knotvals);
         return spfunction;    
     }
-    public double[] find3rdPolyFit(double[] array) {
-        double[] result;
-        LoessInterpolator loess = new LoessInterpolator();
+    public double[] find3rdPolyFit(double[] array, int degree) {
+        double[] result = new double[array.length];
         double[] time = ArrayOps.makeTimeArray(dtime, array.length);
-        result = loess.smooth( time, array);
+        double[] coefs = ArrayOps.findPolynomialTrend(array, degree, dtime);
+        PolynomialFunction poly = new PolynomialFunction( coefs );
+        for (int i = 0; i < array.length; i++) {
+            result[i] = poly.value(time[i]);
+        }
+//        LoessInterpolator loess = new LoessInterpolator();
+//        result = loess.smooth( time, array);
         return result;
     }
     public int[] makeBreaks(int start, int end, int numbreaks) {
@@ -408,6 +424,45 @@ public class ABC2 {
         }
         breakers[numbreaks] = end-start;
         return breakers;
+    }
+    public void getSplineSmooth( double[] vals, int break1, int break2 ) {
+        double start;
+        double end;
+        double ssq;
+        double esq;
+        
+        int len = vals.length;
+        double[] loctime = ArrayOps.makeTimeArray( dtime, len);
+        double t1 = break1 * dtime;
+        double t2 = (break2-1) * dtime;
+        double time12 = dtime * 12.0;   //dt12
+        double intlen = t2 - t1;        //t21
+        
+        double a = vals[break1-1];
+        double b = vals[break2];
+        double c = (   3.0 * vals[break1-5] 
+                    - 16.0 * vals[break1-4] 
+                    + 36.0 * vals[break1-3] 
+                    - 48.0 * vals[break1-2] 
+                    + 25.0 * vals[break1-1]   )/ time12;
+        
+        double d = ( -25.0 * vals[break2] 
+                    + 48.0 * vals[break2+1] 
+                    - 36.0 * vals[break2+2] 
+                    + 16.0 * vals[break2+3] 
+                    -  3.0 * vals[break2+4]   )/ time12;
+
+        for (int i = break1; i < break2; i++) {
+            start = loctime[i] - t1;
+            end = loctime[i] - t2;
+            ssq = Math.pow(start, 2);
+            esq = Math.pow(end, 2);
+            vals[i] = (1.0 + ((2.0 * start)/intlen)) * esq * a + 
+                      (1.0 - ((2.0 * end)/intlen)) * ssq * b +
+                      start * esq * c +
+                      end * ssq * d;
+            vals[i] = vals[i] / Math.pow(intlen, 2);
+        }
     }
     public double[] getBaselineFunction() {
         return bnn;

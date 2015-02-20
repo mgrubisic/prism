@@ -339,8 +339,8 @@ public class AdaptiveBaselineCorrection {
         
         return result;
     }
-    public PolynomialSplineFunction getSplines( double[] vals, int start, int end, int numknots, 
-                                                                    int degree ) {
+    public PolynomialSplineFunction getSplines( double[] vals, int start, int end,  
+                                                        int numknots, int degree ) {
         int len;
         double[] loctime;
         double[] subset;

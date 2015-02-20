@@ -202,7 +202,7 @@ public class AdaptiveBaselineTest {
         double[] paddedvelocity;
         double[] rms = new double[3];
         rms[0] = adapt2.findFirstPolynomialFit();
-        double[] velocity = adapt2.makeCorrection( spline, break2,NUM_BREAKS);
+        double[] velocity = adapt2.makeCorrection( spline, break2,NUM_BREAKS, 2);
         double[] bnn = adapt2.getBaselineFunction();
         double[] rms2 = adapt2.getRMSvalues();
         

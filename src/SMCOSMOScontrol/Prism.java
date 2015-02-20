@@ -43,7 +43,11 @@ public class Prism {
     private File[] inVList;
     private SmQueue smqueue;
     private SmProduct Vproduct;
-
+    /**
+     * Constructor for PRISM main
+     * @param args input arguments
+     * @throws SmException error processing a COSMOS file
+     */
     public Prism (String[] args) throws SmException {
         this.configFile = "";
         if (args.length > 1) {
@@ -172,8 +176,6 @@ public class Prism {
      * @return list of file names
      * @throws IOException if the folder is empty
      */
-    //Get the list of .V* files in the input folder and return as an array of
-    //file names.  Flag if the input folder doesn't contain any files.
     public File[] getFileList(String filePath, String exten) throws IOException {
         Path dir = Paths.get(filePath);
         ArrayList<File> inList = new ArrayList<>();
