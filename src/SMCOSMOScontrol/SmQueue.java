@@ -25,35 +25,52 @@ import java.io.*;
 import java.util.ArrayList;
 
 /**
- *  
+ *  This class builds a queue of all the records in one input V0 file.  The file
+ * may contain only one channel or could have mulitple channels bundled together.
+ * The contents of the queue are processed to create V1 - V3 records, complete
+ * with their text files ready for writing out to file.
  * @author jmjones
  */
-// This class holds a record for each channel in the input V0 file.  The file
-// may only contain one channel or could have multiple channels bundled together.
 public class SmQueue {
     private final File fileName; //input file name and path
     private ArrayList<COSMOScontentFormat> smlist;  //holds each channel as a record
     private String[] fileContents;  // the input file contents by line
     private String logtime;
-    
+    /**
+     * Constructor for SmQueue
+     * @param inFileName input file name
+     * @param logtime time processing started (not used?)
+     */
     public SmQueue (File inFileName, String logtime){
         this.fileName = inFileName;
         this.logtime = logtime;
     }
 
     //read in the input text file
+    /**
+     * This method reads in the input text file
+     * @param filename input file name
+     * @throws IOException if unable to read the file
+     */
     public void readInFile(File filename) throws IOException{
         TextFileReader infile = new TextFileReader( filename );
         fileContents = infile.readInTextFile();
     }
-
-    // Start with the COSMOS text file in an array of strings.  Create a record for
-    // each channel in the file and fill the record with the header and data
-    // arrays.  Let the record object determine how much of the file goes into
-    // each channel record.  Create an arrayList of all the records contained
-    // in the file so they can be processed individually.  Keeping them in
-    // the list will also facilitate writing out the results either individually
-    // or bundled.
+    /**
+     * Start with the COSMOS text file in an array of strings.  Create a record for
+     * each channel in the file and fill the record with the header and data
+     * arrays.  Let the record object determine how much of the file goes into
+     * each channel record.  Create an arrayList of all the records contained
+     * in the file so they can be processed individually.  Keeping them in
+     * the list will also facilitate writing out the results either individually
+     * or bundled.
+     * 
+     * @param dataType the type of file read in (V0, V1, etc.)
+     * @return the number of records in the queue
+     * @throws FormatException if unable to parse the file due to unexpected formatting
+     * @throws NumberFormatException if unable to convert text to expected numeric
+     * @throws SmException if unable to parse the file, see log file
+     */
     public int parseVFile(String dataType) throws FormatException, 
                                         NumberFormatException, SmException {
         int currentLine = 0;
@@ -91,6 +108,15 @@ public class SmQueue {
         }
         return smlist.size();
     }
+    /**
+     * This method processes each record in the queue and hands the products off
+     * to the product object.
+     * @param Vprod the product queue object that will receive the processed results
+     * @throws FormatException if a called method is unable to format, such as text to numerics
+     * @throws SmException if a called method found a processing error such as an
+     * invalid header parameter
+     * @throws IOException if unable to create directories, etc.
+     */
     public void processQueueContents(SmProduct Vprod) 
                                 throws FormatException, SmException, IOException {
 
@@ -114,7 +140,6 @@ public class SmQueue {
             //Create the V2 processing object and do the processing.  V2 processing
             //produces 3 V2 objects: corrected acceleration, velocity, and displacement
             V2Process v2val = new V2Process(v1rec, this.fileName, this.logtime);
-//            System.out.println("V0 file: " + this.fileName);
             V2Status V2result = v2val.processV2Data();
             
             Vprod.setDirectories(v0rec.getRcrdId(),v0rec.getSCNLauth(), 
@@ -145,6 +170,10 @@ public class SmQueue {
             }
         }
     }
+    /**
+     * Getter for the queue of records from the file
+     * @return the queue of cosmos objects
+     */
     public ArrayList<COSMOScontentFormat> getSmList() {
         return smlist;
     }

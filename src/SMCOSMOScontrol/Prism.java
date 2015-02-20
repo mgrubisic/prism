@@ -124,16 +124,11 @@ public class Prism {
                 smc.Vproduct = new SmProduct(smc.inFolder, smc.outFolder);
                 try {
                     smc.smqueue.readInFile( each );
-//                    System.out.println("prism: infile " + each);
-                    //This if stmt is used to test v2 reads only
-//                    if (each.toString().endsWith("2")) {
-//                        recordCount = smc.smqueue.parseVFile( CORACC );
-//                        continue;
-//                    }
+                    
                     // parse the raw acceleration file into channel record(s)
                     recordCount = smc.smqueue.parseVFile( RAWACC );
                     
-                    //next is to process the records, then write out results
+                    //process the records, then write out results
                     smc.smqueue.processQueueContents(smc.Vproduct);
 
                     String[] outlist = smc.Vproduct.writeOutProducts();

@@ -1,8 +1,10 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+/*******************************************************************************
+ * Name: Java class SmProduct.java
+ * Project: PRISM strong motion record processing using COSMOS data format
+ * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
+ * 
+ * Date: first release date Feb. 2015
+ ******************************************************************************/
 
 package SMCOSMOScontrol;
 
@@ -18,17 +20,16 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- *
+ * This class handles the writing of products out to their files and the creation
+ * of the directory structure.  This class assumes a file name structure for the V0 files.
  * @author jmjones
  */
 public class SmProduct {
@@ -45,8 +46,11 @@ public class SmProduct {
     private File logDir;
     private ArrayList<String> loglist;
     
-    //The products package assumes a file name structure for the V0 files.
-    //
+    /**
+     * Constructor for the product class.
+     * @param inFolder the input folder
+     * @param newFolder the output folder, top level
+     */
     public SmProduct(final String inFolder, final String newFolder) {
         this.inFolder = inFolder;
         this.V0List = new ArrayList<>();
@@ -61,6 +65,11 @@ public class SmProduct {
         this.loglist = new ArrayList<>();        
 //        this.loglist.add(inFileName.toString());       
     }
+    /**
+     * Method to add a product to the product queue for later writing out to a file.
+     * @param newprod the COSMOS object for the queue
+     * @param ext the type of object, such as V0, V1, etc.
+     */
     public void addProduct(COSMOScontentFormat newprod, String ext ) {
         if (ext.equalsIgnoreCase("V0")) {
             V0Component rec = (V0Component)newprod;
@@ -80,6 +89,16 @@ public class SmProduct {
             this.V3List.add(rec);
         }
     }
+    /**
+     * Method to set up the directory structure within the output directory.
+     * @param rcid extracted from the input file, this defines the folder structure
+     * according to the SCNL code
+     * @param scnlauth must be present in the V0 for the standard folder structure
+     * to be put in place.
+     * @param eventMarker event time pulled from the file header in case of Orphan,
+     * this event time will be used in place of the station name
+     * @param V2result flag for the creation of a Trouble folder
+     */
     public void setDirectories(String rcid, String scnlauth, String eventMarker, 
                                                             V2Status V2result) {
         String event;
@@ -88,6 +107,7 @@ public class SmProduct {
         boolean validid = validateRcrdId( rcid );
         String[] sections = rcid.split("\\.");
         
+        //determine the event and station names
         if ((!scnlauth.isEmpty()) && (validid)) {
             event = sb.append(sections[0]).append(".").append(sections[1]).toString(); 
         } else {
@@ -99,13 +119,14 @@ public class SmProduct {
             sb = new StringBuilder(MAX_LINE_LENGTH);
             station = sb.append(sections[2]).append(".").append(sections[3]).toString();
         }
-        
+        //create the log folder
         File logId = Paths.get(this.outFolder, "Logs").toFile();
         if (!logId.isDirectory()) {
             logId.mkdir();
         }
         this.logDir = logId;
         
+        //create the event and station directories
         File eventId = Paths.get(this.outFolder, event).toFile();
         if (!eventId.isDirectory()) {
             eventId.mkdir();
@@ -125,7 +146,7 @@ public class SmProduct {
         }
         this.stationDir = stationId;
         
-//        System.out.println("event: " + this.eventDir + " and station: " + this.stationDir);
+        //Create the V0 - V3 folders
         File V0Id = Paths.get(stationId.toString(), "V0").toFile();
         if (!V0Id.isDirectory()) {
             V0Id.mkdir();
@@ -146,18 +167,21 @@ public class SmProduct {
                 V3Id.mkdir();
             }        
         }
-//        System.out.println("success: " + V2result);
-//        System.out.println("eventdir: " + this.eventDir.toString());
-//        System.out.println("stationdir: " + this.stationDir.toString());
-        
     }
+    /**
+     * Writes out each of the products to the respective folder, first creating
+     * the full path name, then writing out the text file, then adding the name
+     * of the file to the log list.
+     * @return the text file list of file names (log list)
+     * @throws IOException if unable to write out the file
+     */
     public String[] writeOutProducts() throws IOException {
         TextFileWriter textout;
         Iterator iter;
         Path outName = null;
         String[] contents;
         String chanvalue;
-//        System.out.println("productlist length: " + this.V1List.size());
+        //write out V0s
         iter = this.V0List.iterator();
         while (iter.hasNext()) {
             V0Component rec0 = (V0Component)iter.next();
@@ -170,7 +194,7 @@ public class SmProduct {
             this.loglist.add(outName.toString());
         }
         this.V0List.clear();
-        
+        //write out V1s
         iter = this.V1List.iterator();
         while (iter.hasNext()) {
             V1Component rec1 = (V1Component)iter.next();
@@ -183,7 +207,7 @@ public class SmProduct {
             this.loglist.add(outName.toString());
         }
         this.V1List.clear();
-        
+        //write out V2s
         iter = this.V2List.iterator();
         while (iter.hasNext()) {
             V2Component rec2 = (V2Component)iter.next();
@@ -217,7 +241,7 @@ public class SmProduct {
             }
         }
         this.V2List.clear();
-        
+        //write out V3s
         iter = this.V3List.iterator();
         while (iter.hasNext()) {
             V3Component rec3 = (V3Component)iter.next();
@@ -235,6 +259,16 @@ public class SmProduct {
         outlist = loglist.toArray(outlist);
         return outlist;
     }
+    /**
+     * Builds the output filename from a folder path, file name, file extension,
+     * channel number, and V2 processing type extension
+     * @param outloc the output folder for this file
+     * @param fileName the file name
+     * @param fileExtension the extension of V1, V2, etc.
+     * @param channel the channel id if needed in the filename
+     * @param ext an extension for V2s, such as 'acc', 'vel', or 'dis'
+     * @return the full file path
+     */
     public Path buildFilename(File outloc, String fileName, String fileExtension, 
                                                     String channel, String ext) {
         Path pathname = Paths.get(fileName);
@@ -254,12 +288,14 @@ public class SmProduct {
         sb.append(".");
         sb.append(fileExtension);
         name = matcher.replaceFirst(sb.toString());
-//        System.out.println("fileExtension " + fileExtension);
-//        System.out.println("name: " + name);
-//        System.out.println("stationDir: " + this.stationDir);
         Path outName = Paths.get(outloc.toString(),fileExtension, name);
         return outName;
     }
+    /**
+     * Validates the format of the record id before its use in building directory names
+     * @param id the record id
+     * @return true if record id has a recognized format, false if it doesn't
+     */
     public boolean validateRcrdId( String id ) {
         StringBuilder sb = new StringBuilder(80);
         String pat = sb.append("^")
@@ -280,6 +316,11 @@ public class SmProduct {
         Matcher m = officialname.matcher(id);
         return m.matches();
     }
+    /**
+     * Removes the input file from the input directory, if it exists
+     * @param source the input file
+     * @throws IOException if unable to delete the file
+     */
     public void deleteV0AfterProcessing(File source) throws IOException {
 //        System.out.println("filename: " + this.fileName.getName());
 //        Files.deleteIfExists(source);
