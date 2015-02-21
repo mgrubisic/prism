@@ -1,19 +1,10 @@
-/*
- * Copyright (C) 2015 jmjones
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+/*******************************************************************************
+ * Name: Java class SmDebugLogger.java
+ * Project: PRISM strong motion record processing using COSMOS data format
+ * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
+ * 
+ * Date: first release date Feb. 2015
+ ******************************************************************************/
 
 package SmUtilities;
 
@@ -24,20 +15,35 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 
 /**
- *
+ * This class is a singleton instance of the prism debug logger.  This logger is used
+ * to record the processing flow parameters to be used for debugging.
+ * As a singleton, other classes can create an instance of the logger which
+ * will access the current log file.  This logger is currently set up to create
+ * a new logging file with the time appended to the name.
  * @author jmjones
  */
 public class SmDebugLogger {
     private Path logfile;
     private static boolean logReady = false;
-    private String logname = "DebugLog.txt";
+    private final String logname = "DebugLog.txt";
     public final static SmDebugLogger INSTANCE = new SmDebugLogger();
     private String finalFolder;
     private File logFolder;
     private String startTime;
-
+    /**
+     * Constructor for the logger is private as part of the
+     * singleton implementation.  Access to the logger is through the INSTANCE 
+     * variable:  SmDebugLogger logger = SmDebugLogger.INSTANCE.
+     */
     private SmDebugLogger() {
     }
+    /**
+     * This method initializes the logger and checks if the log folder exists,
+     * and if not it creates the log folder in the top level output folder
+     * @param outfolder the top level output folder, where the log folder resides
+     * @param time appended at the end of the file name
+     * @throws IOException if unable to write out a file
+     */
     public void initializeLogger( String outfolder, String time ) throws IOException {
         StringBuilder sb = new StringBuilder();
         finalFolder = outfolder;
@@ -54,12 +60,24 @@ public class SmDebugLogger {
             logReady = true;
         }
     }
+    /**
+     * Writes the array of text messages out to the log file, appending to the
+     * end of the current file.
+     * @param msg the list of messages to be written to the log
+     * @throws IOException if unable to write to the file
+     */
     public void writeToLog( String[] msg ) throws IOException {
         if (logReady) {
             TextFileWriter textfile = new TextFileWriter( logfile, msg);
             textfile.appendToFile();
         }
     }
+    /**
+     * This method is used for debug, to write out data arrays as text files
+     * for debugging.  The files are written into the topmost folder.
+     * @param array the data array to be written out
+     * @param name file name to be used for the file
+     */
     public void writeOutArray( double[] array, String name) {
         if (logReady) {
             TextFileWriter textout = new TextFileWriter( finalFolder, 

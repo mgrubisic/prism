@@ -1,8 +1,10 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+/*******************************************************************************
+ * Name: Java class TextFileWriter.java
+ * Project: PRISM strong motion record processing using COSMOS data format
+ * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
+ * 
+ * Date: first release date Feb. 2015
+ ******************************************************************************/
 
 package SmUtilities;
 
@@ -18,7 +20,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
 /**
- * 
+ * This class is used to write an array of text out to a file
  * @author jmjones
  */
 public class TextFileWriter {
@@ -26,23 +28,34 @@ public class TextFileWriter {
     private final String[] contents;
     private final double[] array;
     private final Charset ENCODING = StandardCharsets.UTF_8;
-    
+    /**
+     * The constructor stores the output file name and the contents to be
+     * written out
+     * @param outfilename the output full path filename
+     * @param contents the text contents to be written out
+     */
     public TextFileWriter( Path outfilename, String[] contents) {
         this.contents = contents;
         this.outName = outfilename;
         this.array = new double[0];
     }
-    
+    /**
+     * This constructor is used for debug when writing out a data array
+     * @param dir the directory to write the file to
+     * @param outname the name for the debug file
+     * @param array the data array to write out
+     */
     public TextFileWriter( String dir, String outname, double[] array) { //debug
         this.array = array;
         this.contents = new String[ array.length ];
         this.outName = Paths.get(dir, outname);
     }
-    
+    /**
+     * This method writes out the text to the output file, with a newline
+     * inserted between each line of text.
+     * @throws IOException if unable to write out to file
+     */
     public void writeOutToFile() throws IOException {
-        //try-with-resources automatically closes the resource upon completion.
-        //At the end of the try, the file is closed, for both regular completion 
-        //and exception.
         try (BufferedWriter writer = Files.newBufferedWriter(outName, ENCODING)) {
             for (String line : contents) {
                 writer.write(line);
@@ -50,13 +63,15 @@ public class TextFileWriter {
             }
         }
     }
+    /**
+     * This method is used to append text to the end of an existing log file.  If
+     * no file exists, it is created.
+     * @throws IOException if unable to write to file
+     */
     public void appendToFile() throws IOException {
         if (Files.notExists(outName)) {
             Files.createFile(outName);
         }
-        //try-with-resources automatically closes the resource upon completion.
-        //At the end of the try, the file is closed, for both regular completion 
-        //and exception.
         try (BufferedWriter writer = Files.newBufferedWriter(outName, ENCODING, 
                                                     StandardOpenOption.APPEND)) {
             for (String line : contents) {
@@ -65,6 +80,10 @@ public class TextFileWriter {
             }
         }
     }
+    /**
+     * Writes out the data array for debug purposes, converting the numerics to text
+     * @throws IOException if unable to write out to the file
+     */
     public void writeOutArray( ) throws IOException {  //mainly for debug
         int len = array.length;
         for (int i = 0; i < len; i++) {

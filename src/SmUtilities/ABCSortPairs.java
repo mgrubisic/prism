@@ -1,35 +1,29 @@
-/*
- * Copyright (C) 2014 jmjones
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+/*******************************************************************************
+ * Name: Java class ABCSortPairs.java
+ * Project: PRISM strong motion record processing using COSMOS data format
+ * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
+ * 
+ * Date: first release date Feb. 2015
+ ******************************************************************************/
 
 package SmUtilities;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
 /**
- *
+ * This class provides a sorting mechanism for pairs of numbers, one of which is
+ * the value to sort on and the other is an id.  The pairs are added into the
+ * sorter and the id numbers are returned in their sorted order.
  * @author jmjones
  */
 public class ABCSortPairs {
-//    private SortedSet<SortVals> pairs = new TreeSet<>();
     private SortedSet<SortVals> sorter;
-    
+    /**
+     * Constructor for the sorter sets up the structure and defines the sorting
+     * mechanism.
+     */
     public ABCSortPairs() {
         sorter = new TreeSet<>(new Comparator<SortVals>()
             {
@@ -41,9 +35,19 @@ public class ABCSortPairs {
                 }
             });
     }
+    /**
+     * This method adds a pair to the sorter
+     * @param first the double numeric to be sorted on
+     * @param second an id or index accompanying the numeric, this value is
+     * returned in the sorted list
+     */
     public void addPair( double first, int second) {
         sorter.add(new SortVals(first, second));
     }
+    /**
+     * This method returns the ids in the order of sorted input values
+     * @return list of ids in order of sorted input doubles
+     */
     public int[] getSortedVals() {
         int[] outint = new int[0];
         if (!sorter.isEmpty()) {
@@ -55,18 +59,32 @@ public class ABCSortPairs {
         }
         return outint;
     }
-    
+    /**
+     * This class defines the sorted pair type.
+     */
     public class SortVals {
-        private double realval;
-        private int index;
-        
+        private final double realval;
+        private final int index;
+        /**
+         * Default constructor
+         * @param rval real value for sorting
+         * @param idx index for identifying sorted values
+         */
         public SortVals( double rval, int idx) {
             this.realval = rval;
             this.index = idx;
         }
+        /**
+         * Getter for the numeric for sorting on
+         * @return the real value used for sorting
+         */
         public double getReal() {
             return realval;
         }
+        /**
+         * Getter for the index associated with each input numeric
+         * @return the index for the sorted pair
+         */
         public int getIndex() {
             return index;
         }
