@@ -1,19 +1,10 @@
-/*
- * Copyright (C) 2014 jmjones
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+/*******************************************************************************
+ * Name: Java class EventOnsetCoefs.java
+ * Project: PRISM strong motion record processing using COSMOS data format
+ * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
+ * 
+ * Date: first release date Feb. 2015
+ ******************************************************************************/
 
 package SmProcessing;
 
@@ -21,7 +12,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- *
+ * This class contains the coefficients for the PwD event onset detection calculations.
+ * The coefficients for the Ae and AeB arrays have been pre-calculated in matlab
+ * and are stored here and accessed through this class according to the sample 
+ * interval.
  * @author jmjones
  */
 public class EventOnsetCoefs {
@@ -62,7 +56,10 @@ public class EventOnsetCoefs {
                                      0.00079, 
                                     -311.99721, 
                                     -0.04583};
-    
+/**
+ * The constructor sets up the data structure for access to the values through
+ * the getter methods.
+ */    
     public EventOnsetCoefs() {
         AeB = new HashMap<>();
         AeB.put(100, aeb_01);
@@ -76,12 +73,20 @@ public class EventOnsetCoefs {
         Ae.put(50, ae_005);
         Ae.put(20, ae_002);
     }
-    
+    /**
+     * Get the array of AeB coefficients that are associated with the input sample interval.
+     * @param deltaT the interval in seconds between samples for this record
+     * @return the coefficients for the requested array
+     */
     public double[] getAeBCoefs(double deltaT) {
         int key = (int)(deltaT * DELTAT_TO_INT);
         return AeB.get(key);
     }
-    
+    /**
+     * Get the array of Ae coefficients that are associated with the input sample interval.
+     * @param deltaT the interval in seconds between samples for this record
+     * @return the coefficients for the requested array
+     */
     public double[] getAeCoefs(double deltaT) {
         int key = (int)(deltaT * DELTAT_TO_INT);
         return Ae.get(key);

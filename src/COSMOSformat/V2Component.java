@@ -31,9 +31,9 @@ import java.util.Arrays;
  * @author jmjones
  */
 public class V2Component extends COSMOScontentFormat {
-    private VRealArray V2Data;
-    private final V0Component parentV0;  //link back to the parent V0 record
-    private final V1Component parentV1;  //link back to the parent V1 record
+    private VRealArray V2Data; // VRealArray object holding the data array 
+    private final V0Component parentV0; // link back to the parent V0 record
+    private final V1Component parentV1; // link back to the parent V1 record 
 
     /** 
      * Use this constructor when the V2 component is read in from a file and

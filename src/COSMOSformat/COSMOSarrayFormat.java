@@ -26,13 +26,13 @@ import SmException.FormatException;
  * @author jmjones
  */
 abstract class COSMOSarrayFormat {
-    private String formatLine;  //save a copy of the line with formatting
-    private int numLines;  //total number of lines for numeric block
-    private int numVals;  //total number of values in numeric block
-    private String numberFormat;  //text of format, i.e. (10I8)
-    private int valsPerLine; //number of values packed per 80-char line
-    private int fieldWidth;  //number of characters for each numeric value
-    private int precision;  //number of places after decimal point (reals)
+    private String formatLine;  // save a copy of the line with formatting 
+    private int numLines;  // total number of lines for numeric block 
+    private int numVals;  // total number of values in numeric block 
+    private String numberFormat;  // text of format, i.e. (10I8) 
+    private int valsPerLine; // number of values packed per 80-char line 
+    private int fieldWidth;  // number of characters for each numeric value
+    private int precision;  // number of places after decimal point (reals)
     
     /**
      * Constructor for this class simply initializes the instance variables

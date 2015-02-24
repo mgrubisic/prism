@@ -26,7 +26,7 @@ import static SmUtilities.SmConfigConstants.OUT_ARRAY_FORMAT;
  * @author jmjones
  */
 public class V0Component extends COSMOScontentFormat {
-    private VIntArray V0Data;  //raw acceleration counts
+    private VIntArray V0Data;  // VIntArray object of raw acceleration counts 
     /**
      * Default constructor
      * @param procType identifies the data type of raw accel., uncorrected 

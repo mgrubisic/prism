@@ -20,10 +20,10 @@ import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
  * Zisin Jishin 38, 365-379.
  * 
  * The result is the index of the event offset in the input array.
- * index = min(AIC(n)) + 1
- * AIC(n) = k*log(var(x([1,k])) + (n-k-1)*log(var(x[k+1,n]))
- * Translated into Java (in 2014) from matlab code by Erol Kalkan (in 2014), 
- * from algorithms in Fortran and R by Bill Ellsworth.
+ * index = min(AIC(n)) + 1.
+ * AIC(n) = k*log(var(x([1,k])) + (n-k-1)*log(var(x[k+1,n])).  
+ * Translated into Java by Jeanne Jones (in 2014) from matlab code by Erol Kalkan  
+ * (in 2014), from algorithms in Fortran and R by Bill Ellsworth.
  * 
  * @author jmjones
  */
@@ -32,14 +32,31 @@ public class AICEventDetect {
     private int bufferedIndex;
     private double[] array;
     private double bufferVal;
-    private final double EPSILON = 0.00001;
-    
+    /**
+     * Constructor for AICEventDetect just initializes variables
+     */
     public AICEventDetect() {
         this.index = 0;
         this.bufferedIndex = 0;
         this.bufferVal = 0.0;
     }
-    
+    /**
+     * This method calculates the event onset index by first removing the median 
+     * value from the array. Then the portion of the array to search over
+     * (either just to the peak value or the full length) is selected.  This
+     * portion is sent to the aicval method, which iterates over the entire
+     * length of the portion, calculating the variance before and after the 
+     * current iteration index.  aicval returns an array of combined variances 
+     * and this method selects the smallest (the global minimum).  The index 
+     * into the variance array right after the occurrence of the global minimum 
+     * is determined to be the event onset.
+     * @param InArray the input array to search for the event onset
+     * @param pickrange selects the range of the input array over which to look
+     * for the event onset.  If set to 'To_Peak', the portion of the input array
+     * from the start to the largest absolute value is used.  If set to 'Full',
+     * the entire input array is used.
+     * @return the index value for the event onset in the input array
+     */
     public int calculateIndex( double[] InArray, String pickrange ) {
         if ((InArray == null) || (InArray.length == 0)) {
             index = -1;
@@ -62,24 +79,40 @@ public class AICEventDetect {
         double median = stats.getPercentile(50);
         ArrayOps.removeValue(array, median);
         
-        //window the array based on the pickrange
+        //window the array based on the pickrange, choosing either the whole
+        //array or only the values from the start to the peak absolute value
         if (range.equalsIgnoreCase("to_peak")) {
             arrstats = new ArrayStats( array );
             int indpeak = arrstats.getPeakValIndex();
             arrnew = new double[indpeak];
             System.arraycopy(array, 0 , arrnew, 0, indpeak);
-//            System.out.println("Inarray peak: " + indpeak);
         } else {
             arrnew = array;
         }
+        
+        //call the method aicval with this windowed array, and it returns an
+        //array of calculated variances, with each entry corresponding to the
+        //combined variances at that particular index in the windowed array
         double[] temp = aicval(arrnew);
         
-        //select the minimum value from this array, get the index and add 1
-        //to it for the global minimum.
+        //select the minimum value from this array, get the index (the location
+        //in the array of the global minmum) and add 1 to use as the event onset
         arrstats = new ArrayStats( temp );
         index = arrstats.getMinValIndex() + 1;
         return index;
     }
+    /**
+     * This method handles the iteration over the entire (portion) of the array
+     * to calculate the global minimum combined variance.  At each iteration step,
+     * the array is divided into 2 sections at the current iteration index and
+     * the variance of each section is calculated. The entry into the output array
+     * for each iteration step is calculated by (for iteration step i):
+     * i * log(var1) + (segment.length-i) * log(var2)
+     * @param segment the windowed portion of the input array over which to locate
+     * the global minimum
+     * @return an array of calculated variances corresponding to the combined
+     * variances of the windowed array at each index value
+     */
     private double[] aicval( double[] segment ) {
         double[] vararray = new double[segment.length];
         double[] temp;
@@ -109,12 +142,25 @@ public class AICEventDetect {
             s2 = sumstats.getVariance();
             s2 = (s2 > 0.0) ? Math.log(s2) : 0.0;
             
+            //combine the 2 variances, weighted by the number of entries in
+            //each section
             vararray[i] = i * s1 + (segment.length-i) * s2;
         }
         return vararray;
     }
+    /**
+     * This method subtracts a buffer of a certain length of time to this class's
+     * calculated event onset.  The number of samples is calculated by dividing
+     * the input buffer time by the number of seconds per sample.  This value
+     * is then subtracted from the current event onset index.
+     * @param buffer The amount of time in seconds to move the event onset 
+     * forward (towards the beginning of the array)
+     * @param dtime the number of seconds per sample for this record
+     * @return the buffered event onset index
+     */
     public int applyBuffer( double buffer, double dtime ) {
-        if (Math.abs(dtime - 0.0) < EPSILON) {
+        //check for dtime set to 0 and exit before trying divide
+        if (Math.abs(dtime - 0.0) < 5*Math.ulp(dtime)) {
             bufferedIndex = -1;
         } else {
             bufferVal = buffer;
@@ -123,9 +169,17 @@ public class AICEventDetect {
         }
         return bufferedIndex;
     }
+    /**
+     * The getter for the event onset index.
+     * @return the event onset
+     */
     public int getIndex() {
         return index;
     }
+    /**
+     * The getter for the buffered event onset index.
+     * @return the buffered event onset
+     */
     public int getBufferedIndex() {
         return bufferedIndex;
     }

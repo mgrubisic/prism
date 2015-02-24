@@ -1,19 +1,10 @@
-/*
- * Copyright (C) 2015 jmjones
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+/*******************************************************************************
+ * Name: Java class ComputedParams.java
+ * Project: PRISM strong motion record processing using COSMOS data format
+ * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
+ * 
+ * Date: first release date Feb. 2015
+ ******************************************************************************/
 
 package SmProcessing;
 
@@ -23,9 +14,9 @@ import java.util.Arrays;
 
 /**
  * The computed parameters class calculates the computed parameters for records
- * where the acceleration exceeds 5% g at any point.  The values computed are
- * bracketed duration, duration interval, Arias intensity, Housner intensity,
- * channel RMS, and cumulative absolute velocity.
+ * where the acceleration exceeds a threshold (default is 5% g) at any point.  
+ * The values computed are bracketed duration, duration interval, Arias intensity, 
+ * Housner intensity, channel RMS, and cumulative absolute velocity.
  * @author jmjones
  */
 public class ComputedParams {
@@ -40,6 +31,7 @@ public class ComputedParams {
     private int durstart;
     private int durend;
     private final int len;
+    private final double threshold;
     
     private double sumGaccsq;
     private double bracketedDuration;
@@ -54,8 +46,9 @@ public class ComputedParams {
      * in g, and the sum/integration of squared acceleration in g.
      * @param inAcc acceleration in cm/sq.sec
      * @param dtime time interval between samples in seconds
+     * @param inThreshold percentage of g to qualify as strong motion record
      */
-    public ComputedParams(final double[] inAcc, double dtime) {
+    public ComputedParams(final double[] inAcc, double dtime, double inThreshold) {
         this.dt = dtime;
         this.acc = inAcc;
         this.len = inAcc.length;
@@ -73,6 +66,7 @@ public class ComputedParams {
         this.brackend = 0;
         this.durstart = 0;
         this.durend = 0;
+        this.threshold = inThreshold / 100.0; //change from % to value
         
         //Get the acceleration in g for calculations
         gacc = convertArrayUnits(acc, TO_G_CONVERSION);
@@ -91,7 +85,8 @@ public class ComputedParams {
     /**
      * This method performs the calculations for the computed parameters.  It 
      * returns true if the bracketed duration calculation found at least one
-     * value greater than 5%g, which indicates that the calculations were performed.  If
+     * value greater than the input threshold (5%g default), which indicates that 
+     * the calculations were performed.  If
      * the return is false, all computed parameters are set at 0.
      * @return true if calculations performed, false if no strong motion detected
      */
@@ -120,34 +115,34 @@ public class ComputedParams {
         return true;
     }
     /**
-     * Calculates the number of seconds that the acceleration is greater than
-     * 5% g.  Determines the difference in time between the first moment that 
-     * acceleration is greater than 5%g and the last moment that acc. is greater than 5%g.  
+     * Calculates the number of seconds that the acceleration is greater than the threshold.
+     * Determines the difference in time between the first moment that 
+     * acceleration is greater than threshold and the last moment that acc. is greater than threshold.  
      * If no values
-     * in the array are greater than 5%g, return is set to false and no computed 
+     * in the array are greater than threshold, return is set to false and no computed 
      * parameters are calculated.
-     * @return true if at least 1 value is greater than 5%g, false if no values greater than 5%g
+     * @return true if at least 1 value is greater than threshold, 
+     * false if no values greater than threshold
      */
     private boolean calculateBracketedDuration() {
-        //Check if any value is greater than 0.05.  If not, no need to compute
+        //Check if any value is greater than strong motion threshold.  If not, no need to compute
         //parameters
         ArrayStats test = new ArrayStats(gacc);
-//        System.out.println("peak gacc: " + Math.abs(test.getPeakVal()));
-        if (Math.abs(test.getPeakVal()) < 0.05) {
+        if (Math.abs(test.getPeakVal()) < threshold) {
             return false;
         }
-        //Find the index of the first value > 0.05
+        //Find the index of the first value > threshold
         for (int i = 0; i < len; i++) {
-            if (Math.abs(gacc[i]) > 0.05) {
+            if (Math.abs(gacc[i]) > threshold) {
                 brackstart = i;
                 break;
             }
         }
 //        System.out.println("bracketed start: " + brackstart);
         
-        //Now find the index where the last value < 0.05
+        //Now find the index where the last value < threshold
         for (int j = len-1; j > t1; j--) {
-            if (Math.abs(gacc[j]) > 0.05) {
+            if (Math.abs(gacc[j]) > threshold) {
                 brackend = j;
                 break;
             }

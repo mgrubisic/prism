@@ -1,23 +1,12 @@
-/*
- * Copyright (C) 2014 jmjones
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
-
+/*******************************************************************************
+ * Name: Java class ButterworthFilter.java
+ * Project: PRISM strong motion record processing using COSMOS data format
+ * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
+ * 
+ * Date: first release date Feb. 2015
+ ******************************************************************************/
 package SmProcessing;
 
-import SmUtilities.SmDebugLogger;
 import java.util.Arrays;
 
 /**
@@ -25,9 +14,10 @@ import java.util.Arrays;
 *
 *  function bandpass implements a butterworth bandpass filter
 *
-*  s[] = input time series array of doubles
-*  nd = the number of points in the time series, which is less than the length of s (see below)
-*  f1 = the lower cutoff frequency
+*  s[] = input time series array of doubles 
+* 
+*  nd = the number of points in the time series, which is less than the length of s (see below) 
+*  f1 = the lower cutoff frequency 
 *  f2 = the higher cutoff frequency
 *  delt = the timestep
 *  nroll = butterworth bandpass filter order is 2*nroll (max val nroll=8)
@@ -66,7 +56,7 @@ public class ButterworthFilter {
     private int nroll;
     private boolean icaus;
     private final double pi = Math.PI;
-    private final int MAXPOLES = 8;
+    private final int MAXROLL = 8;
     private final double epsilon = 0.001;
     private double[] fact;
     private double[] b1;
@@ -75,22 +65,35 @@ public class ButterworthFilter {
     
     private int taperlength;
     
-    //Constructor
+    /**
+     * Default constructor
+     */
     public ButterworthFilter() {
     }
-    
+    /**
+     * This method calculates the filter coefficients based on the corner frequencies,
+     * the sample time interval, and the roll off.  A flag is also input to select
+     * the type of filtering, either causal or acausal.
+     * @param lowCutOff the filter low cutoff frequency
+     * @param highCutOff the filter high cutoff frequency
+     * @param dtime the sample time interval for the record
+     * @param rolloff the filter roll off, which is 1/2 the filter order
+     * @param acausal flag indicating causal or acausal filtering
+     * @return true or false flag indicating successful calculation of filter
+     * coefficients (based on valid input parameters)
+     */
     public boolean calculateCoefficients(double lowCutOff, double highCutOff, double dtime,
-                                int numberPoles, boolean acausal) {
+                                int rolloff, boolean acausal) {
         
         this.f1 = lowCutOff;
         this.f2 = highCutOff;
         this.dtime = dtime;
-        this.nroll = numberPoles;
+        this.nroll = rolloff;
         this.icaus = acausal;           //true if acausal filter
         
-        fact = new double[2*MAXPOLES];
-        b1 = new double[2*MAXPOLES];
-        b2 = new double[2*MAXPOLES];
+        fact = new double[2*MAXROLL];
+        b1 = new double[2*MAXROLL];
+        b2 = new double[2*MAXROLL];
         this.npad = 0;
         this.taperlength = 0;
         
@@ -100,7 +103,7 @@ public class ButterworthFilter {
         
         //Check input parameters for valid values
         if ((Math.abs(f1 - 0.0) < epsilon) || (Math.abs(f2 - f1) < epsilon)
-                                                || (numberPoles > MAXPOLES)){
+                                                || (rolloff > MAXROLL)){
             return false;
         }
         double nyquist = (1.0 / dtime) / 2.0;
@@ -108,10 +111,13 @@ public class ButterworthFilter {
             return false;
         }
         
-        //for w1 and w2 calc., the 2 in the num. and denom. can be deleted !!!
+        //for w1 and w2 calc., the 2 in the num. and denom. can be deleted but its
+        //left in for clarity
         double w1 = 2.0 * Math.tan(((2.0*pi*f1)*dtime)/2.0) / dtime;
         double w2 = 2.0 * Math.tan(((2.0*pi*f2)*dtime)/2.0) / dtime;
         
+        //calculate the filter coefficients into arrays b1 and b2, and calculate
+        //the gain into array fact
         for (int k = 1; k < nroll+1; k++) {
             pre = (-1.0) * Math.sin((pi*(2.0*k - 1)) / (4.0*nroll));
             pim = Math.cos((pi*(2.0*k - 1)) / (4.0*nroll));
@@ -138,7 +144,27 @@ public class ButterworthFilter {
         }
         return true;
     }
-    
+    /**
+     * This method does the actual filtering of the input array.  If the input
+     * flag was set to acausal, the array is filtered forwards and backwards.  
+     * If it was set to causal, the filtering is only forwards.  Before filtering,
+     * if acausal, pads are added to the front and back of the array. The ends of
+     * the input array are tapered by a half-cosine taper (only acausal) in order to prevent
+     * ringing in the output waveform.  The taper length is calculated by finding
+     * the first zero crossing that occurs before the event onset.  This time
+     * becomes the taper length time, with exceptions.  The exceptions: if there's
+     * no zero crossing found before the event onset, or the calculated time
+     * is less than the value entered as taplengthtime.  For these exceptions,
+     * the input taper length value is used instead.
+     * @param arrayS the input array to filter, NOTE: this array is updated with
+     * the filtered version upon return
+     * @param taplengthtime the length of time in seconds to apply the taper, the
+     * actual taper length at front and back is 1/2 of this (half cosine). This
+     * value is only used if the calculated taper length is invalid or too short.
+     * @param eventOnsetIndex the event onset index is used to refine the
+     * taper length
+     * @return an array containing the filtered result with the pads still included
+     */
     public double[] applyFilter( double[] arrayS, double taplengthtime, int eventOnsetIndex ) {
         
         int np2;
@@ -156,6 +182,7 @@ public class ButterworthFilter {
         }
 //        System.out.println("+++ taperlength: " + taperlength);
 //        System.out.println("+++ eventOnsetIndex: " + eventOnsetIndex);
+        
         //Copy the input array into a return array.  If the filter was configured
         //as acausal, then pad the length of the array by the value calculated below.
         //Before padding, apply a cosine taper to the front and back of the 
@@ -224,7 +251,13 @@ public class ButterworthFilter {
 //        System.out.println("+++ after filter, arrayS[end] = " + arrayS[arrayS.length-1]);
         return filteredS;
     }
-    
+    /**
+     * This method adds the half cosine taper to the front and back of the array
+     * @param array input array to have the taper applied to
+     * @param range the number of elements at the front and back of the array
+     * that the taper should be applied to.  The length of the half cosine taper
+     * itself is 1/2 of the range.
+     */
     public void applyCosineTaper( double[] array, int range ) {
         //The range is the number of elements at the front and back of the
         //array that the taper should be applied to.
@@ -250,22 +283,38 @@ public class ButterworthFilter {
             k--;
         }
     }
-    
+    /**
+     * Getter for the array with the calculated gains
+     * @return the gains
+     */
     public double[] getFact() {
         return fact;
     }
+    /**
+     * Getter for the first coefficient array
+     * @return the first coefficient array
+     */
     public double[] getB1() {
         return b1;
     }
+    /**
+     * Getter for the 2nd coefficient array
+     * @return the second coefficient array
+     */
     public double[] getB2() {
         return b2;
     }
+    /**
+     * Getter for the lengths of pads applied to front and back of array for
+     * acausal filtering
+     * @return the pad length
+     */
     public int getPadLength() {
         return npad;
     }
     /**
-     *
-     * @return
+     * Getter for the calculated taper length
+     * @return the calculated taper length
      */
     public int getTaperlength() {
         return taperlength;

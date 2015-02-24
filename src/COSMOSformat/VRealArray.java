@@ -23,8 +23,8 @@ import java.util.ArrayList;
  * @author jmjones
  */
 public class VRealArray extends COSMOSarrayFormat {
-    private double[] realVals;
-    private String displayType;
+    private double[] realVals;  // the array of doubles 
+    private String displayType; // display type for doubles, such as 'F'
     /**
      * Default constructor
      */    

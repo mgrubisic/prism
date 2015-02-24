@@ -45,8 +45,6 @@ public class SmQueue {
         this.fileName = inFileName;
         this.logtime = logtime;
     }
-
-    //read in the input text file
     /**
      * This method reads in the input text file
      * @param filename input file name
@@ -90,7 +88,7 @@ public class SmQueue {
                 smlist.add(rec);                
             } else if ((dataType.equals( CORACC )) || (dataType.equals( VELOCITY )) ||
                                                  (dataType.equals( DISPLACE ))) {
-                //Peek at current line to see what piece of V2 is next.
+                //Look at current line to see what piece of V2 is next.
                 if (fileContents[currentLine].matches("(?s).*(?i)Velocity.*")) {
                     dataType = VELOCITY;
                 } else if (fileContents[currentLine].matches("(?s).*(?i)Displace.*"))  {

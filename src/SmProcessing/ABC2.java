@@ -170,14 +170,15 @@ public class ABC2 {
         for (int order3 = degreeP3lo; order3 <= degreeP3hi; order3++) {
             for (int t2 = startval; t2 <= endval; t2 += MOVING_WINDOW) {
 //                System.out.println("t2: " + t2 + " order3: " + order3 + " count: " + counter);
-                if ((t2-estart) >= ((int)1.0/lowcut)) {
-                    if ((int)((t2-estart)/MOVING_WINDOW) < 2) {
-                        spl_break = MIN_BREAKS;
-                    } else if ((int)((t2-estart)/MOVING_WINDOW) > MAX_BREAKS) {
-                        spl_break = MAX_BREAKS;
-                    } else {
-                        spl_break = (int)((t2-estart)/MOVING_WINDOW);
-                    }
+                if (((t2-estart)*dtime) >= ((int)1.0/lowcut)) {
+                    spl_break = 2;
+//                    if ((int)((t2-estart)/MOVING_WINDOW) < 2) {
+//                        spl_break = MIN_BREAKS;
+//                    } else if ((int)((t2-estart)/MOVING_WINDOW) > MAX_BREAKS) {
+//                        spl_break = MAX_BREAKS;
+//                    } else {
+//                        spl_break = (int)((t2-estart)/MOVING_WINDOW);
+//                    }
                     //remove the spline fit from velocity
                     velocity = makeCorrection(velstart,t2,spl_break,order3);
                     //now filter velocity
@@ -242,6 +243,7 @@ public class ABC2 {
             eachrun = params.get(idx);
 //            System.out.println("rank: " + idx);
 //            System.out.println("rms: " + eachrun[0]);
+//            System.out.println("break1: " + eachrun[4]);
 //            System.out.println("break2: " + eachrun[5]);
 //            System.out.println("order3: " + eachrun[7]);
 //            System.out.println("numbreaks: " + eachrun[12]);
@@ -341,29 +343,30 @@ public class ABC2 {
         
         //Get the polynomials that were fitted to the input array
         //Construct the baseline function from each section
-        PolynomialSplineFunction sp2 = getSplines(h2, break1, break2, numknots);
-        double[] fit2 = new double[h2.length];
-        for (int i = 0; i < h2.length; i++) {
-            fit2[i] = sp2.value(time[i]);
-        }
-        h3[0] = fit2[fit2.length-1];
+//        PolynomialSplineFunction sp2 = getSplines(h2, break1, break2, numknots);
+//        for (int i = 0; i < h2.length; i++) {
+//            fit2[i] = sp2.value(time[i]);
+//        }
+//        h3[0] = fit2[fit2.length-1];
         double[] fit3 = find3rdPolyFit(h3, order3);
-        this.bestthirddegree = 0;
-
+        
         bnn = new double[time.length];
         for (int i = 0; i < bnn.length; i++) {
-            if ( i < break1) {
+            if ( i <= break1) {
                 bnn[i] = b1[i];
             } else if ( i >= break2) {
                 bnn[i] = fit3[i - break2];
             } else {
-                bnn[i] = fit2[i - break1];
+//                bnn[i] = fit2[i - break1];
+                bnn[i] = 0.0;
             }
         }
+        getSplineSmooth( bnn, break1, break2  );
+
         //smooth out discontinuities in the baseline
         //function before removing it from the input array.
-        getSplineSmooth( bnn, estart-50, estart+50 );
-        getSplineSmooth( bnn, break2-50, break2+50 );
+//        getSplineSmooth( bnn, estart-50, estart+50 );
+//        getSplineSmooth( bnn, break2-50, break2+50 );
         
 //        r1 = new double[h1.length];
         r2 = new double[h2.length];

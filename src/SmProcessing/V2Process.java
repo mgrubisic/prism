@@ -80,6 +80,7 @@ public class V2Process {
     private int trendRemovalOrder;
     private int calculated_taper;
     private boolean strongMotion;
+    private double smThreshold;
     private boolean needsABC;
     private String logtime;
     
@@ -152,6 +153,7 @@ public class V2Process {
         this.trendRemovalOrder = 0;
         this.calculated_taper = 0;
         this.strongMotion = false;
+        this.smThreshold = 0.0;
         this.needsABC = false;
         this.QCvelinitial = 0.0;
         this.QCvelresidual = 0.0;
@@ -216,13 +218,18 @@ public class V2Process {
             this.ebuffer = (pbuf == null) ? DEFAULT_EVENT_ONSET_BUFFER : Double.parseDouble(pbuf);
             this.ebuffer = (this.ebuffer < 0.0) ? DEFAULT_EVENT_ONSET_BUFFER : this.ebuffer;
             
+            String thold = config.getConfigValue(SM_THRESHOLD);
+            this.smThreshold = (thold == null) ? DEFAULT_SM_THRESHOLD : Double.parseDouble(thold);
+            this.smThreshold = ((this.smThreshold < 0.0) || (this.smThreshold > 100.0)) ? 
+                                                DEFAULT_SM_THRESHOLD : this.smThreshold;
+            
             String eventmethod = config.getConfigValue(EVENT_ONSET_METHOD);
             if (eventmethod == null) {
                 this.emethod = DEFAULT_EVENT_ONSET_METHOD;
             } else if (eventmethod.equalsIgnoreCase("AIC")) {
                 this.emethod = EventOnsetType.AIC;
             } else {
-                this.emethod = EventOnsetType.DE;
+                this.emethod = EventOnsetType.PWD;
             }
         } catch (NumberFormatException err) {
             throw new SmException("Error extracting numeric values from configuration file");
@@ -321,9 +328,9 @@ public class V2Process {
         if (writeDebug) {
             errorlog.add(String.format("Best fit trend of order %d removed from velocity", trendRemovalOrder));
         }
-//        if (writeBaseline) { 
-//            elog.writeOutArray(veltest, V0name.getName() + "_" + channel + "_BestFitTrendRemovedVel.txt");                
-//        }
+        if (writeBaseline) { 
+            elog.writeOutArray(veltest, V0name.getName() + "_" + channel + "_BestFitTrendRemovedVel.txt");                
+        }
         //perform first QA check on velocity copy, check first and last sections of
         //velocity array - should be close to 0.0 with tolerances.  If not,
         //perform adaptive baseline correction.
@@ -412,9 +419,13 @@ public class V2Process {
         if (writeDebug) {
             errorlog.add(String.format("Peak Velocity: %f",VpeakVal));
         }
-        //if status is GOOD, calculate computed parameters for headers
+        ////////////////////////////
+        //
+        // strong motion computed parameters done if status is good
+        //
+        ////////////////////////////
         if (procStatus == V2Status.GOOD) {
-            ComputedParams cp = new ComputedParams(accel, dtime);
+            ComputedParams cp = new ComputedParams(accel, dtime, smThreshold);
             strongMotion = cp.calculateComputedParameters();
             if (strongMotion) {
                 bracketedDuration = cp.getBracketedDuration();
@@ -459,7 +470,7 @@ public class V2Process {
                                                         filter.getTaperlength()));
         }
         // Find event onset
-        if (emethod == EventOnsetType.DE) {
+        if (emethod == EventOnsetType.PWD) {
             EventOnsetDetection depick = new EventOnsetDetection( dtime );
             pickIndex = depick.findEventOnset(acc);
             startIndex = depick.applyBuffer(ebuffer);
@@ -553,7 +564,7 @@ public class V2Process {
         double[] goodrun = adapt.getSolutionParms(solution);
         calculated_taper = adapt.getCalculatedTaperLength();
         ABCnumparams = adapt.getNumRuns();
-        ABCwinrank = solution;
+        ABCwinrank = solution + 1;
         adapt.clearParamsArray();
         accel = adapt.getABCacceleration();
         velocity = adapt.getABCvelocity();

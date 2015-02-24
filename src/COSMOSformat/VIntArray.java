@@ -23,8 +23,8 @@ import java.util.ArrayList;
  * @author jmjones
  */
 public class VIntArray extends COSMOSarrayFormat {
-    private int[] intVals;
-    private String displayType = "";
+    private int[] intVals; // the integer array 
+    private String displayType = ""; // holds the display type, such as 'I' 
     /**
      * Default constructor
      */

@@ -30,10 +30,10 @@ import java.util.ArrayList;
  * @author jmjones
  */
 public class V3Component extends COSMOScontentFormat {
-    private String V3DampingValues;
-    private ArrayList<VRealArray> V3Data;
-    private final V1Component parentV1;  //link back to the parent V1 record
-    private final V2Component parentV2;
+    private String V3DampingValues; // holds the damping values
+    private ArrayList<VRealArray> V3Data; // a list of VRealArray objects for all the different data sections
+    private final V1Component parentV1; // link back to the parent V1 record 
+    private final V2Component parentV2; // link back to the parent V2 record
     /** 
      * Use this constructor when the V3 component is read in from a file and
      * filled in with the loadComponent method.  In this case, there is no parentV2

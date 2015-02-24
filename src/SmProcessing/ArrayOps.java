@@ -16,19 +16,22 @@ import org.apache.commons.math3.fitting.WeightedObservedPoint;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 
 /**
+ * <p>
  * The ArrayOps class contains static methods to perform various operations on
  * an input array.  For trend removal operations, the input array is
  * modified in place.  For integration and differentiation, a new array is
  * created with the calculated values.  A method to make an array of time
  * values for a given time step is also included.
- * 
+ * </p>
+ * <p>
  * The constructor for this class is private, and the "static factory" methods
  * are called directly with the class name without object creation, such as 
  * ArrayOps.removeValue(array, mean).
- * 
+ * </p>
+ * <p>
  * The linear and polynomial trend methods utilize the apache commons math 
  * package.  http://commons.apache.org/proper/commons-math/
- * 
+ * </p>
  * @author jmjones
  */
 public class ArrayOps {

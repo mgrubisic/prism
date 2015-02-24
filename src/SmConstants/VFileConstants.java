@@ -121,13 +121,15 @@ public final class VFileConstants {
     public static final int SURFACE_MAGNITUDE = 13;
     public static final int OTHER_MAGNITUDE = 15;
     
-    //V2 computed parameters codes
+    //V2 computed parameters codes and default value
     public static final int BRACKETED_DURATION = 79;
     public static final int DURATION_INTERVAL = 80;
     public static final int CHANNEL_RMS = 81;
     public static final int CUMULATIVE_ABS_VEL = 82;
     public static final int HOUSNER_INTENSITY = 83;
     public static final int ARIAS_INTENSITY = 84;
+    
+    public static final double DEFAULT_SM_THRESHOLD = 5.0;
     
     //V3 response spectrum parameter codes
     public static final int NUM_SPECTRA_PERIODS = 69;
@@ -150,17 +152,17 @@ public final class VFileConstants {
     public static final double FROM_G_CONVERSION = 980.665; //cm per sq. sec per g
     public static final double TO_G_CONVERSION = 0.0010197;  //g per cm per sq. sec
     
-    public enum EventOnsetType{ AIC, DE };
+    public enum EventOnsetType{ AIC, PWD };
     public enum BaselineType{ SIMPLE, LINEAR, ABC };
     
     //event onset constants
     public static final double DEFAULT_EVENT_ONSET_BUFFER = 0.0;
-    public static final EventOnsetType DEFAULT_EVENT_ONSET_METHOD = EventOnsetType.DE;
+    public static final EventOnsetType DEFAULT_EVENT_ONSET_METHOD = EventOnsetType.PWD;
 
     //filtering constants
     public static final int DEFAULT_NUM_POLES = 2;
-    public static final double DEFAULT_HIGHCUT = 0.5;
-    public static final double DEFAULT_LOWCUT = 30.0;
+    public static final double DEFAULT_HIGHCUT = 0.1;
+    public static final double DEFAULT_LOWCUT = 20.0;
     public static final double DEFAULT_TAPER_LENGTH = 2.0;
     
     //adaptive baseline correction constants
@@ -169,7 +171,7 @@ public final class VFileConstants {
     public static final int DEFAULT_SPLINE_ORD_LOWER = 2;
     public static final int DEFAULT_SPLINE_ORD_UPPER = 3;
     public static final int DEFAULT_3RD_POLY_ORD_LOWER = 1;
-    public static final int DEFAULT_3RD_POLY_ORD_UPPER = 2;
+    public static final int DEFAULT_3RD_POLY_ORD_UPPER = 3;
     
     //QC check constants
     public static final double DEFAULT_QA_INITIAL_VELOCITY = 0.1;

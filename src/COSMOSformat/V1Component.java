@@ -26,8 +26,8 @@ import SmUtilities.SmTimeFormatter;
  * @author jmjones
  */
 public class V1Component extends COSMOScontentFormat {
-    private VRealArray V1Data;  //raw acceleration counts
-    private final V0Component parentV0;  //link back to the parent V0 record
+    private VRealArray V1Data; // VRealArray object of uncorrected acceleration counts 
+    private final V0Component parentV0; // link back to the parent V0 record 
 
     /** 
      * Use this constructor when the V1 component is read in from a file and

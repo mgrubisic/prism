@@ -23,8 +23,8 @@ import java.util.Arrays;
  * @author jmjones
  */
 public class ArrayStats {
-    private double[] statArray;
-    private int length;
+    private final double[] statArray;
+    private final int length;
     private double total;
     private double maxhigh;
     private double maxlow;
@@ -138,7 +138,9 @@ public class ArrayStats {
     /**
      * Builds a histogram from the array that was given in the constructor call, 
      * with the assumption that the array hasn't been modified since that
-     * constructor call (maxhigh and maxlow haven't changed)
+     * constructor call (maxhigh and maxlow haven't changed).  The very top
+     * value in the array is not added to the histogram (each histogram bin's
+     * lowest value is inclusive and highest value is exclusive.)
      * 
      * @param numIntervals the number of intervals to use in the histogram
      * @return array holding the counts of values that fell within each
@@ -205,20 +207,20 @@ public class ArrayStats {
         int startbin = 0;
         int stopbin = numbins;
         
-//        //Find the lowest non-zero histogram bin.  This is the start bin.
-//        for (int i = 0; i < numbins; i++) {
-//            if (hist[i] > 0) {
-//                startbin = i;
-//                break;
-//            }
-//        }
-//        //Find the highest non-zero histogram bin.  This is the stop bin.
-//        for (int i = hist.length-1;  i <= 0; i-- ) {
-//            if (hist[i] > 0) {
-//                stopbin = i;
-//                break;
-//            }
-//        }
+        //Find the lowest non-zero histogram bin.  This is the start bin.
+        for (int i = 0; i < numbins; i++) {
+            if (hist[i] > 0) {
+                startbin = i;
+                break;
+            }
+        }
+        //Find the highest non-zero histogram bin.  This is the stop bin.
+        for (int i = hist.length-1;  i <= 0; i-- ) {
+            if (hist[i] > 0) {
+                stopbin = i;
+                break;
+            }
+        }
         for (int i = startbin; i < ((stopbin-startbin)/2 + 1); i++) {
             if (hist[i] >= mode) {
                 mode = hist[i];

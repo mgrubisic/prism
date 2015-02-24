@@ -27,20 +27,20 @@ import java.util.regex.Pattern;
  * @author jmjones
  */
 public class COSMOScontentFormat {
-    protected final String procType;  //data file type flag
-    protected String channel; //the channel number for this record
-    protected String rcrdId;
-    protected String SCNLauth;
-    protected String eventID;
-    protected int noIntVal;  //NoData value for integer header array
-    protected double noRealVal;  //NoData value for real header array
-    protected String[] textHeader;  //Holds the text header lines
-    protected VIntArray intHeader;  //Holds the integer header array
-    protected VRealArray realHeader;  //Holds the real header array
-    protected String[] comments;  //Holds the comment field
-    protected String endOfData;  //Save the end-of-data line
-    protected String fileName;
-    protected File stationDir;
+    protected final String procType; // data file type, such as 'V0'
+    protected String channel; // channel number for this record 
+    protected String rcrdId; // record id extracted from the cosmos file 
+    protected String SCNLauth; // SCNL authorization tag from the cosmos file
+    protected String eventID; // event id for this record 
+    protected int noIntVal;  // NoData value for integer header array 
+    protected double noRealVal;  // NoData value for real header array 
+    protected String[] textHeader;  // Holds the text header lines 
+    protected VIntArray intHeader;  // Holds the integer header array 
+    protected VRealArray realHeader;  // Holds the real header array
+    protected String[] comments;  // Holds the comment field
+    protected String endOfData;  // Holds the end-of-data line 
+    protected String fileName; // holds the original file name 
+    protected File stationDir; // holds the station directory for this record 
     /**
      * Default constructor
      * @param procType defines the data type of raw accel., uncorrected accel., 
