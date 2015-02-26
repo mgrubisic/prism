@@ -1,19 +1,10 @@
-/*
- * Copyright (C) 2014 jmjones
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+/*******************************************************************************
+ * Name: Java class V3Process.java
+ * Project: PRISM strong motion record processing using COSMOS data format
+ * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
+ * 
+ * Date: first release date Feb. 2015
+ ******************************************************************************/
 
 package SmProcessing;
 
@@ -29,7 +20,10 @@ import SmUtilities.SmDebugLogger;
 import java.io.IOException;
 import java.util.ArrayList;
 /**
- *
+ * The V3Process class executes the steps necessary to generate a V3 product file
+ * from a V2 component object. It calculates the FFT of the corrected acceleration
+ * and extracts the values at the periods of interest, and calculates the spectra
+ * at each damping value.
  * @author jmjones
  */
 public class V3Process {
@@ -51,7 +45,16 @@ public class V3Process {
     private double Sa_0p3;
     private double Sa_1p0;
     private double Sa_3p0;
-    
+    /**
+     * The constructor reads in the coefficient files and the period file and
+     * stores them for use during the calculations.
+     * @param v2acc the V2 component with corrected acceleration
+     * @param v2vel the V2 component with velocity
+     * @param v2dis the V2 component with displacement
+     * @throws IOException if unable to read in the coefficient files
+     * @throws SmException if the sampling interval in the real header is invalid
+     * @throws FormatException if unable to parse the values in the coefficient files
+     */
     public V3Process(final V2Component v2acc, final V2Component v2vel,
                       final V2Component v2dis) throws IOException, SmException, 
                                                                 FormatException {
@@ -85,25 +88,22 @@ public class V3Process {
         //Add the T-periods to the V3 data list
         V3Data.add(T_periods);
     }
-    
+    /**
+     * Performs the V3 data processing of calculating the fft, extracting the
+     * values at the 91 periods, and calculating the spectra for each damping value
+     * and data type.
+     */
     public void processV3Data() {        
-        //Calculate FFT for the acceleration array.  Select magnitudes for the
-        //given T values only.  (freq = 1/T)
+        //Calculate FFT for the acceleration array.  
         int ulim;
         int llim;
         double uval;
         double lval;
         double scale;
-//        System.out.println("V3 process");
-//        System.out.println("velocity length: " + velocity.length);
         FFourierTransform fft = new FFourierTransform();
         double[] accspec = fft.calculateFFT(accel);
         double delta_f = 1.0 / (fft.getPowerLength() * dtime);
         
-//        System.out.println("V3: powerlength= " + fft.getPowerLength());
-//        System.out.println("return fft length: " + velspec.length);
-//        System.out.println("delta_t = " + delta_t);
-//        System.out.println("delta_f = " + delta_f);
         if (writeArrays) {
             elog.writeOutArray(accspec, "V3accelFFT.txt");
         } 
@@ -113,7 +113,7 @@ public class V3Process {
         if (writeArrays) {
             elog.writeOutArray(accsmooth, "V3accsmoothFFT.txt");
         } 
-        
+        //Select magnitudes for the given T values only.  (freq = 1/T)
         double[] accfftvals = new double[NUM_T_PERIODS];
         int ctr = 0;
         for (int f = NUM_T_PERIODS-1; f >=0; f--) {
@@ -207,33 +207,75 @@ public class V3Process {
             V3Data.add(sa);
         }
     }
+    /**
+     * Getter for one of the calculated arrays, the order of the list: the fft array,
+     * the 91 periods, sd, sv, sa repeated for each of the 5 damping values. 
+     * @param arrnum the number of the array to retrieve
+     * @return the V3 array
+     */
     public double[] getV3Array(int arrnum) {
         return V3Data.get(arrnum);
     }
+    /**
+     * Getter for the number of arrays created during V3 processing
+     * @return the larray length
+     */
     public int getV3ListLength() {
         return V3Data.size();
     }
+    /**
+     * Getter for the maximum value of the Sa spectrum (real header #74)
+     * @return the max value
+     */
     public double getPeakVal() {
         return peakVal;
     }
+    /**
+     * Getter for the period at which maximum Sa occurs (real header #75)
+     * @return the max period
+     */
     public double getPeakPeriod() {
         return peakIndex;
     }
+    /**
+     * Getter for the time in the record at which the maximum occurs (real header #76)
+     * @return 
+     */
     public double getPeakTime() {
         return peakTime;
     }
+    /**
+     * Getter for the value of Sa at 0.3 seconds period (real header #71)
+     * @return the value of Sa at 0.3 seconds
+     */
     public double getSa_0p3() {
         return Sa_0p3;
     }
+    /**
+     * Getter for the value of Sa at 0.2 seconds period (real header #70)
+     * @return the value of Sa at 0.2 seconds
+     */
     public double getSa_0p2() {
         return Sa_0p2;
     }
+    /**
+     * Getter for the value of Sa at 1.0 seconds period (real header #72)
+     * @return the value of Sa at 1.0 seconds
+     */
     public double getSa_1p0() {
         return Sa_1p0;
     }
+    /**
+     * Getter for the value of Sa at 3.0 seconds period (real header #73)
+     * @return the value of Sa at 3.0 seconds
+     */
     public double getSa_3p0() {
         return Sa_3p0;
     }
+    /**
+     * Getter for the data units of the acceleration array
+     * @return 
+     */
     public String getDataUnits() {
         return CMSQSECT;
     }

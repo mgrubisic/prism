@@ -1,32 +1,18 @@
-/*
- * Copyright (C) 2014 jmjones
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+/*******************************************************************************
+ * Name: Java class FilterCutOffThresholds.java
+ * Project: PRISM strong motion record processing using COSMOS data format
+ * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
+ * 
+ * Date: first release date Feb. 2015
+ ******************************************************************************/
 
 package SmProcessing;
 
-import static SmConstants.VFileConstants.LOCAL_MAGNITUDE;
-import static SmConstants.VFileConstants.MOMENT_MAGNITUDE;
 import SmConstants.VFileConstants.MagnitudeType;
 import static SmConstants.VFileConstants.MagnitudeType.MOMENT;
 import static SmConstants.VFileConstants.MagnitudeType.M_LOCAL;
 import static SmConstants.VFileConstants.MagnitudeType.M_OTHER;
 import static SmConstants.VFileConstants.MagnitudeType.SURFACE;
-import static SmConstants.VFileConstants.OTHER_MAGNITUDE;
-import static SmConstants.VFileConstants.SURFACE_MAGNITUDE;
-import SmException.SmException;
 
 /**
  * This class chooses the Butterworth filter cutoff thresholds to use, based on

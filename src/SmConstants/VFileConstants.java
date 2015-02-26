@@ -67,6 +67,8 @@ public final class VFileConstants {
     public static final String DISPLACE = "Displacement data        ";
     public static final String SPECTRA =  "Response spectra         ";
     
+    public enum LogType { DEBUG, TROUBLE };
+    
     public enum V2DataType { ACC, VEL, DIS };
     public enum V2Status { GOOD, FAILQC, NOEVENT, NOABC };
     

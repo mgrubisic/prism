@@ -8,6 +8,7 @@
 
 package SMCOSMOScontrol;
 
+import SmConstants.VFileConstants;
 import static SmConstants.VFileConstants.RAWACC;
 import SmException.FormatException;
 import SmException.SmException;
@@ -133,6 +134,10 @@ public class Prism {
 
                     String[] outlist = smc.Vproduct.writeOutProducts();
                     log.writeToLog(outlist);
+                    String[] troublelist = smc.Vproduct.buildTroubleLog(outlist);
+                    if (troublelist.length > 0) {
+                        errlog.writeToLog(troublelist, VFileConstants.LogType.TROUBLE);
+                    }
                     smc.Vproduct.deleteV0AfterProcessing(each);
                 }
                 catch (FormatException | IOException | SmException err) {

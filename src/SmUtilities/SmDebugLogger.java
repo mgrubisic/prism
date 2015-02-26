@@ -8,6 +8,7 @@
 
 package SmUtilities;
 
+import SmConstants.VFileConstants.LogType;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -17,15 +18,16 @@ import java.util.ArrayList;
 /**
  * This class is a singleton instance of the prism debug logger.  This logger is used
  * to record the processing flow parameters to be used for debugging.
- * As a singleton, other classes can create an instance of the logger which
- * will access the current log file.  This logger is currently set up to create
+ * This logger is currently set up to create
  * a new logging file with the time appended to the name.
  * @author jmjones
  */
 public class SmDebugLogger {
     private Path logfile;
+    private Path troublefile;
     private static boolean logReady = false;
     private final String logname = "DebugLog.txt";
+    private final String troublename = "TroubleLog.txt";
     public final static SmDebugLogger INSTANCE = new SmDebugLogger();
     private String finalFolder;
     private File logFolder;
@@ -57,6 +59,11 @@ public class SmDebugLogger {
             String[] segments = logname.split("\\.");
             sb.append(segments[0]).append("_").append(startTime).append(".").append(segments[1]);
             this.logfile = Paths.get(logId.toString(),sb.toString());
+
+            segments = troublename.split("\\.");
+            sb = new StringBuilder();
+            sb.append(segments[0]).append("_").append(startTime).append(".").append(segments[1]);
+            this.troublefile = Paths.get(logId.toString(),sb.toString());
             logReady = true;
         }
     }
@@ -66,10 +73,15 @@ public class SmDebugLogger {
      * @param msg the list of messages to be written to the log
      * @throws IOException if unable to write to the file
      */
-    public void writeToLog( String[] msg ) throws IOException {
+    public void writeToLog( String[] msg, LogType logger ) throws IOException {
         if (logReady) {
-            TextFileWriter textfile = new TextFileWriter( logfile, msg);
-            textfile.appendToFile();
+            if (logger == LogType.DEBUG) {
+                TextFileWriter textfile = new TextFileWriter( logfile, msg);
+                textfile.appendToFile();
+            } else if (logger == LogType.TROUBLE) {
+                TextFileWriter textfile = new TextFileWriter( troublefile, msg);
+                textfile.appendToFile();                
+            }
         }
     }
     /**
@@ -89,6 +101,14 @@ public class SmDebugLogger {
             }
         }
     }
+    /**
+     * Writes the list of V2 processing parameters out as a CSV file, with the
+     * first line containing the column names
+     * @param msg a list of the parameters for one record
+     * @param headerline the column names to write out the first time
+     * @param name the name of the file
+     * @throws IOException if unable to write to the file
+     */
     public void writeToCSV( ArrayList<String> msg, String[] headerline, 
                                             String name ) throws IOException {
         String[] values;

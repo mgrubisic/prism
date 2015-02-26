@@ -1,19 +1,10 @@
-/*
- * Copyright (C) 2014 jmjones
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+/*******************************************************************************
+ * Name: Java class QCcheck.java
+ * Project: PRISM strong motion record processing using COSMOS data format
+ * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
+ * 
+ * Date: first release date Feb. 2015
+ ******************************************************************************/
 
 package SmProcessing;
 
@@ -26,7 +17,9 @@ import static SmUtilities.SmConfigConstants.QC_RESIDUAL_DISPLACE;
 import static SmUtilities.SmConfigConstants.QC_RESIDUAL_VELOCITY;
 
 /**
- *
+ * This class handles the QC checks for velocity and displacement, using the
+ * QC limits defined in the configuration file.  If no configuration file is
+ * available, then default values are substituted for the limits.
  * @author jmjones
  */
 public class QCcheck {
@@ -40,9 +33,19 @@ public class QCcheck {
     private double velstart;
     private double velend;
     private double disend;
-    
+    /**
+     * Default constructor
+     */
     public QCcheck() {
     }
+    /**
+     * Retrieves the QC limits from the configuration file.  If no configuration
+     * file is found (or no entries for QC parameters found), then default values
+     * are substituted.  If values are retrieved from the configuration file, but
+     * they can't be converted to doubles, then this method returns 'false'.
+     * @return 'true' if QC limits available, 'false' if unable to correctly 
+     * extract them from the configuration file.
+     */
     public boolean validateQCvalues() {
         ConfigReader config = ConfigReader.INSTANCE;
         try {
@@ -62,6 +65,15 @@ public class QCcheck {
         }
         return true;
     }
+    /**
+     * Finds the appropriate window length in the array to use for the QC check.
+     * The length of the window is the maximum of either the event onset time or
+     * (1.0 / lowcutoff frequency) * sample rate).
+     * @param lowcutoff the filter lowcutoff frequency
+     * @param samprate the sampling rate
+     * @param eventIndex the event onset index into the array
+     * @return the index for the window length in the array
+     */
     public int findWindow(double lowcutoff, double samprate, int eventIndex) {
         this.lowcut = lowcutoff;
         this.eindex = eventIndex;
@@ -70,6 +82,17 @@ public class QCcheck {
         window = Math.max(eindex, lclength);
         return window;
     }
+    /**
+     * Performs the QC check for the velocity array.  The calculated window length
+     * is used as a starting point to find the nearest zero crossing in the array.
+     * The mean of the array over the adjusted window is used as the value to compare
+     * against the QC limit parameter.  Both the initial and residual sections of
+     * the velocity arrays are checked.  If no zero crossing occurs over the entire
+     * window length, then just the initial or final array value is substituted
+     * for comparison against the limit.
+     * @param velocity the velocity array for the QC check
+     * @return TRUE if velocity passed the QC test, FALSE if not
+     */
     public boolean qcVelocity(double[] velocity) {
         boolean pass = false;
         int vellen = velocity.length;
@@ -93,6 +116,17 @@ public class QCcheck {
         }
         return pass;
     }
+    /**
+     * Performs the QC check for the displacement array.  The calculated window length
+     * is used as a starting point to find the nearest zero crossing in the array.
+     * The mean of the array over the adjusted window is used as the value to compare
+     * against the QC limit parameter.  Only the residual section of the
+     * displacement array is checked.  If no zero crossing occurs over the entire
+     * window length, then just the final array value is substituted
+     * for comparison against the limit.
+     * @param displace the displacement array for the QC check
+     * @return TRUE if displacement passed the QC test, FALSE if not
+     */
     public boolean qcDisplacement(double[] displace) {
         boolean pass = false;
         int dislen = displace.length;
@@ -110,24 +144,52 @@ public class QCcheck {
         }
         return pass;        
     }
+    /**
+     * Getter for the calculated initial velocity value used in the QC check
+     * @return the initial velocity value
+     */
     public double getInitialVelocity() {
         return velstart;
     }
+    /**
+     * Getter for the calculated residual velocity value used in the QC check
+     * @return the residual velocity value
+     */
     public double getResidualVelocity() {
         return velend;
     }
+    /**
+     * Getter for the calculated residual displacement value used in the QC check
+     * @return the residual displacement value
+     */
     public double getResidualDisplacement() {
         return disend;
     }
+    /**
+     * Getter for the initial velocity QC parameter
+     * @return the initial velocity QC parameter
+     */
     public double getInitVelocityQCval() {
         return qcvelinit;
     }
+    /**
+     * Getter for the residual velocity QC parameter
+     * @return the residual velocity QC parameter
+     */
     public double getResVelocityQCval() {
         return qcvelres;
     }
+    /**
+     * Getter for the residual displacement QC parameter
+     * @return the residual displacement QC parameter
+     */
     public double getResDisplaceQCval() {
         return qcdisres;
     }
+    /**
+     * Getter for the QC window length (number of samples)
+     * @return the QC window length in samples
+     */
     public int getQCWindow() {
         return window;
     }

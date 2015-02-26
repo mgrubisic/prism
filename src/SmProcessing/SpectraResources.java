@@ -1,19 +1,10 @@
-/*
- * Copyright (C) 2014 jmjones
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+/*******************************************************************************
+ * Name: Java class SpectraResources.java
+ * Project: PRISM strong motion record processing using COSMOS data format
+ * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
+ * 
+ * Date: first release date Feb. 2015
+ ******************************************************************************/
 
 package SmProcessing;
 
@@ -29,7 +20,9 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 
 /**
- *
+ * This class provides access to the coefficient tables for the different sampling
+ * rates and damping values, as well as the file of periods, used during
+ * processing of response spectra.
  * @author jmjones
  */
 public class SpectraResources {
@@ -59,7 +52,12 @@ public class SpectraResources {
                                                 "spectra/CoefTable_500_0.2.txt" };
     private String[] T_periods;
     private String[][] coefs;
-    
+    /**
+     * The constructor checks to see if the files have been read in already.  If 
+     * so, it simply exits.  If not, it reads in the files and stores the contents
+     * internally for access through the getter methods.
+     * @throws IOException if unable to read in a file
+     */
     public SpectraResources() throws IOException {
         //Note that this is not considered thread-safe
         if (!initialized) {
@@ -72,6 +70,12 @@ public class SpectraResources {
             initialized = true;
         }
     }
+    /**
+     * This private method contains the actual read of the file.
+     * @param inName file to read in
+     * @return data from the file as an array of strings
+     * @throws IOException if unable to read a file
+     */
     private String[] readInResource( String inName ) throws IOException {
         InputStream stream = SpectraResources.class.getResourceAsStream(inName);
         String nextLine;
@@ -87,6 +91,11 @@ public class SpectraResources {
         tempfile.clear();
         return outarray;
     }
+    /**
+     * Getter for the periods at which spectra are computed.
+     * @return the 91 period values
+     * @throws FormatException if unable to parse the periods file
+     */
     public final double[] getTperiods() throws FormatException {
         int len = T_periods.length;
         double[] tout = new double[len];
@@ -99,6 +108,14 @@ public class SpectraResources {
         }
         return tout;
     }
+    /**
+     * Getter for the coefficient array identified by sample rate and damping
+     * value
+     * @param samplerate the sample rate
+     * @param damping the damping value
+     * @return the array of coefficients
+     * @throws FormatException if unable to parse the coefficients file
+     */
     public final double[][] getCoefArray( double samplerate, double damping) 
                                                         throws FormatException {
         int index;
@@ -118,6 +135,14 @@ public class SpectraResources {
         index = (samp*len) + damp;
         return reformatCoefArray(coefs[index],NUM_COEF_VALS);
     }
+    /**
+     * This private method actually handles the conversion of the array from
+     * text to double.
+     * @param array the coefficient array as strings
+     * @param cols the number of coefficient values
+     * @return the array of coefficients as doubles
+     * @throws FormatException if unable to parse the coefficients
+     */
     private double[][] reformatCoefArray(String[] array, int cols ) 
                                                         throws FormatException {
         double[][] outarray = new double[array.length][cols];
@@ -134,9 +159,17 @@ public class SpectraResources {
         }
         return outarray;
     }
+    /**
+     * Getter of the periods file as text, mainly for debug
+     * @return the contents of the periods file
+     */
     public final String[] getTPeriodsText() {
         return T_periods;
     }
+    /**
+     * Getter of the coefficient arrays as text, mainly for debug
+     * @return the coefficients
+     */
     public final String[][] getCoefsText() {
         return coefs;
     }

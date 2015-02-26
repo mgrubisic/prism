@@ -62,7 +62,7 @@ public class SmProduct {
         this.finalDir = new File( newFolder );
         this.eventDir = new File( newFolder );
         this.logDir = new File( newFolder );
-        this.loglist = new ArrayList<>();        
+        this.loglist = new ArrayList<>(); 
 //        this.loglist.add(inFileName.toString());       
     }
     /**
@@ -138,7 +138,7 @@ public class SmProduct {
             stationId.mkdir();
         }
         
-        if (V2result == V2Status.FAILQC) {
+        if (V2result != V2Status.GOOD) {
             stationId = Paths.get(eventId.toString(), station, "Trouble").toFile();
             if (!stationId.isDirectory()) {
                 stationId.mkdir();
@@ -257,6 +257,7 @@ public class SmProduct {
         
         String[] outlist = new String[loglist.size()];
         outlist = loglist.toArray(outlist);
+        loglist.clear();
         return outlist;
     }
     /**
@@ -324,5 +325,27 @@ public class SmProduct {
     public void deleteV0AfterProcessing(File source) throws IOException {
 //        System.out.println("filename: " + this.fileName.getName());
 //        Files.deleteIfExists(source);
+    }
+    /**
+     * Builds a trouble log from the list of all log files.  If there are no
+     * files going to trouble folders, the list returned has size 0.
+     * @param inlog the list of all output files
+     * @return a list of output files going to trouble folders, or a list of
+     * length 0 if no trouble files found.
+     */
+    public String[] buildTroubleLog(String[] inlog) {
+        ArrayList<String> trouble = new ArrayList<>();
+        String[] outlist = new String[0];
+        for (String name : inlog) {
+            if (name.contains("Trouble")) {
+                trouble.add(name);
+            }
+        }
+        if (trouble.size() > 0) {
+            outlist = new String[trouble.size()];
+            outlist = trouble.toArray(outlist);
+            trouble.clear();
+        }
+        return outlist;
     }
 }

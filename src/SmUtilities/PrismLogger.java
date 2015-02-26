@@ -17,8 +17,6 @@ import java.nio.file.Paths;
  * This class is a singleton instance of the prism logger.  This logger is used
  * to record the names of the output products, including their destination folders.
  * Errors that occur during processing are also recorded here.
- * As a singleton, other classes can create an instance of the logger which
- * will access the current open log file.
  * @author jmjones
  */
 public class PrismLogger {
