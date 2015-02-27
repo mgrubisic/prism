@@ -10,11 +10,11 @@ package SmProcessing;
 import java.util.Arrays;
 
 /**
-*  function bandpass (s, nd, f1, f2, delt, nroll, icaus)
+*  <p>function bandpass (s, nd, f1, f2, delt, nroll, icaus)</p>
 *
-*  function bandpass implements a butterworth bandpass filter
+*  <p>function bandpass implements a butterworth bandpass filter</p>
 *
-*  s[] = input time series array of doubles 
+*  <p>s[] = input time series array of doubles </p>
 * 
 *  nd = the number of points in the time series, which is less than the length of s (see below) 
 *  f1 = the lower cutoff frequency 
@@ -22,19 +22,19 @@ import java.util.Arrays;
 *  delt = the timestep
 *  nroll = butterworth bandpass filter order is 2*nroll (max val nroll=8)
 *  icaus = causal, acausal filter flag, icaus = 1 for causal filter
-*  
+*  <p>
 *  The dimension of the input array s must be at least as large
 *  as the larger of the following (if acausal filtering):
 *  (nd + (3 * nroll)/(f1 * delt))  or  (nd + (6 * nroll)/((f2 - f1) * delt))
-*  
+*  </p><p>
 *  All floating point operations are of type double
 *  In any operation with integer and double, integer is converted to double
-*
+* </p><p>
 *  From the Fortran BAND.FOR, TSPP--A Collection of FORTRAN Programs for Processing
 *                               and Manipulating Time Series
 *  Butterworth bandpass filter order 2*nroll (nroll.le.8) (see Kanasewich, 
 *    Time Sequence Analysis in Geophysics, Third Edition, 
-*    University of Alberta Press, 1981)
+*    University of Alberta Press, 1981)</p>
 *  written by W.B. Joyner 01/07/97
 * Dates: xx/xx/xx - Written by Bill Joyner
 *        09/12/00 - Changed "n" to "nroll" to eliminate confusion with

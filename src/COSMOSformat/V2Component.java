@@ -15,6 +15,7 @@ import SmException.FormatException;
 import SmException.SmException;
 import SmProcessing.V2Process;
 import SmUtilities.ConfigReader;
+import SmUtilities.ProcessStepsRecorder;
 import static SmUtilities.SmConfigConstants.OUT_ARRAY_FORMAT;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_ABBREV;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_CODE;
@@ -143,6 +144,7 @@ public class V2Component extends COSMOScontentFormat {
 
         SmTimeFormatter proctime = new SmTimeFormatter();
         ConfigReader config = ConfigReader.INSTANCE;
+        ProcessStepsRecorder stepRec = ProcessStepsRecorder.INSTANCE;
         
         //verify that real header value delta t is defined and valid
         double delta_t = this.realHeader.getRealValue(DELTA_T);
@@ -277,15 +279,12 @@ public class V2Component extends COSMOScontentFormat {
             this.realHeader.setRealValue(AVG_VAL, inVvals.getAvgVal(V2DataType.DIS));            
             this.updateEndOfDataLine(DISPLACE, this.getChannel());
         }
-        //Update the comments with signal pick value, but only if it passed
+        //Update the comments with processing steps, but only if it passed
         // the QA test.
         if (inVvals.getQCStatus() == V2Status.GOOD) {
-            ArrayList<String> lines = new ArrayList<>();
-            double picktime = inVvals.getPickIndex() * dtime;
-            String lineToAdd = String.format("|<BL>event onset(sec)=%1$8s",
-                                    String.format(realformat,picktime));
-            lines.add(lineToAdd);
-            this.comments = updateComments(this.comments, lines);
+            ArrayList<String> psteps = stepRec.formatSteps();
+            this.comments = updateComments(this.comments, psteps);
+            psteps.clear();
         }
     }
     /**

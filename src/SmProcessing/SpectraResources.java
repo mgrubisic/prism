@@ -27,7 +27,7 @@ import java.util.ArrayList;
  */
 public class SpectraResources {
     private boolean initialized = false;
-    private static final double EPSILON = 0.001;
+    private static final double EPSILON = 0.000001;
     private static final String periodFileName = "spectra/T_periods.txt";
     private static final String[] spectraFileNames = 
                                               { "spectra/CoefTable_50_0.txt",

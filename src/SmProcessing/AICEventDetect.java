@@ -12,19 +12,20 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 
 /**
+ * <p>
  * This class computes AIC for the input array and picks the P (event) onset.
  * It uses an abbreviated form of the Akaike Information Criterion to locate 
  * the global minimum.  
  * See papers by Maeda, N. (1985). A method for reading
  * and checking phase times in autoprocessing system of seismic wave data, 
  * Zisin Jishin 38, 365-379.
- * 
+ * </p><p>
  * The result is the index of the event offset in the input array.
  * index = min(AIC(n)) + 1.
  * AIC(n) = k*log(var(x([1,k])) + (n-k-1)*log(var(x[k+1,n])).  
  * Translated into Java by Jeanne Jones (in 2014) from matlab code by Erol Kalkan  
  * (in 2014), from algorithms in Fortran and R by Bill Ellsworth.
- * 
+ * </p>
  * @author jmjones
  */
 public class AICEventDetect {

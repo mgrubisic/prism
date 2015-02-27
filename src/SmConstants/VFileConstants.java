@@ -155,7 +155,9 @@ public final class VFileConstants {
     public static final double TO_G_CONVERSION = 0.0010197;  //g per cm per sq. sec
     
     public enum EventOnsetType{ AIC, PWD };
-    public enum BaselineType{ SIMPLE, LINEAR, ABC };
+    public enum BaselineType{ BESTFIT, ABC };
+    public enum CorrectionType{ AUTO, AUTO_W_REVIEW, MANUAL };
+    public enum CorrectionOrder{ ORDER1, ORDER2, ORDER3, SPLINE };
     
     //event onset constants
     public static final double DEFAULT_EVENT_ONSET_BUFFER = 0.0;
@@ -163,8 +165,8 @@ public final class VFileConstants {
 
     //filtering constants
     public static final int DEFAULT_NUM_POLES = 2;
-    public static final double DEFAULT_HIGHCUT = 0.1;
-    public static final double DEFAULT_LOWCUT = 20.0;
+    public static final double DEFAULT_HIGHCUT = 20.0;
+    public static final double DEFAULT_LOWCUT = 0.1;
     public static final double DEFAULT_TAPER_LENGTH = 2.0;
     
     //adaptive baseline correction constants

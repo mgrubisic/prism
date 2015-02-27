@@ -15,6 +15,7 @@ import SmConstants.VFileConstants.MagnitudeType;
 import SmConstants.VFileConstants.V2DataType;
 import SmException.SmException;
 import SmUtilities.ConfigReader;
+import SmUtilities.ProcessStepsRecorder;
 import static SmUtilities.SmConfigConstants.*;
 import SmUtilities.SmDebugLogger;
 import SmUtilities.SmTimeFormatter;
@@ -88,6 +89,7 @@ public class V2Process {
     private V2Status procStatus;
     private QCcheck qcchecker;
     
+    private ArrayList<String> processSteps;
     private ArrayList<String> errorlog;
     private boolean writeDebug;
     private boolean writeBaseline;
@@ -112,23 +114,27 @@ public class V2Process {
     private double channelRMS;
     private double durationInterval;
     private double cumulativeAbsVelocity;
+    
+    ProcessStepsRecorder stepRec;
         
     public V2Process(final V1Component v1rec, File inName, String logtime) 
                                                             throws SmException {
-        double epsilon = 0.0001;
+        double epsilon = 0.000001;
         this.inV1 = v1rec;
         this.lowcutadj = 0.0;
         this.highcutadj = 0.0;
-        errorlog = new ArrayList<>();
-        elog = SmDebugLogger.INSTANCE;
+        this.processSteps = new ArrayList<>();
+        this.errorlog = new ArrayList<>();
+        this.elog = SmDebugLogger.INSTANCE;
         ConfigReader config = ConfigReader.INSTANCE;
-        writeDebug = false;
-        writeBaseline = false;
+        stepRec = ProcessStepsRecorder.INSTANCE;
+        this.writeDebug = false;
+        this.writeBaseline = false;
         this.V0name = inName;
         this.channel = inV1.getChannel();
         this.eventID = inV1.getEventID();
         this.logtime = logtime;
-        basetype = BaselineType.SIMPLE;
+        this.basetype = BaselineType.BESTFIT;
         
         //Get config values to cm/sec2 (acc), cm/sec (vel), cm (dis)
         this.acc_unit_code = CMSQSECN;
@@ -173,6 +179,8 @@ public class V2Process {
         logstart = new String[2];
         logstart[0] = "\n";
         logstart[1] = "Prism Error/Debug Log Entry: " + logtime;
+        
+        stepRec.clearSteps();
         
         this.noRealVal = inV1.getNoRealVal();
         //verify that real header value delta t is defined and valid
@@ -250,11 +258,19 @@ public class V2Process {
         String baselineon = config.getConfigValue(WRITE_BASELINE_FUNCTION);
         this.writeBaseline = (baselineon == null) ? false : 
                                     baselineon.equalsIgnoreCase(BASELINE_WRITE_ON);
+        
+//        System.out.println("data unit code: " + this.data_unit_code);
+//        System.out.println("filter lowcut: " + this.lowcutoff);
+//        System.out.println("filter hicut: " + this.highcutoff);
+//        System.out.println("order: " + this.numpoles);
+//        System.out.println("taperlength: " + this.taperlength);
+//        System.out.println("event buffer: " + this.ebuffer);
+//        System.out.println("event method: " + this.emethod);
     }
     
     public V2Status processV2Data() throws SmException, IOException {  
         System.out.println("Start of V2 processing for " + V0name.toString() + " and channel " + channel);
-        
+        stepRec.addCorrectionType(CorrectionType.AUTO);
         // Correct units to CMSQSECN, if needed, and make copy of acc array
         double[] accraw = new double[0];
         double[] V1Array = inV1.getDataArray();
@@ -284,7 +300,7 @@ public class V2Process {
             makeDebugCSV();
             return procStatus;
         }
-        
+        stepRec.addEventOnset(pickIndex * dtime);
         // Update Butterworth filter low and high cutoff thresholds for later
         updateThresholds();
         
@@ -299,6 +315,7 @@ public class V2Process {
             ArrayStats accsub = new ArrayStats( subset );
             preEventMean = accsub.getMean();
             ArrayOps.removeValue(accraw, preEventMean);
+            stepRec.addPreEventMean(preEventMean);
             errorlog.add(String.format("Pre-event mean of %10.6e removed from uncorrected acceleration",preEventMean));
         }
 //        if (writeDebug) {
@@ -330,9 +347,9 @@ public class V2Process {
         double[] veltest = new double[velocity.length];
         System.arraycopy( velocity, 0, veltest, 0, velocity.length);
         trendRemovalOrder = ArrayOps.removeTrendWithBestFit( veltest, dtime);
-//        if (writeBaseline) { 
-//            elog.writeOutArray(veltest, V0name.getName() + "_" + channel + "_BestFitTrendRemovedVel.txt");                
-//        }
+        if (writeBaseline) { 
+            elog.writeOutArray(veltest, V0name.getName() + "_" + channel + "_BestFitTrendRemovedVel.txt");                
+        }
         //perform first QA check on velocity copy, check first and last sections of
         //velocity array - should be close to 0.0 with tolerances.  If not,
         //perform adaptive baseline correction.
@@ -376,6 +393,11 @@ public class V2Process {
             //
             ///////////////////////////////
             errorlog.add(String.format("Best fit trend of order %d removed from velocity", trendRemovalOrder));
+            if (trendRemovalOrder == 1) {
+                stepRec.addBaselineStep(0.0, (velocity.length*dtime), CorrectionOrder.ORDER1);
+            } else {
+                stepRec.addBaselineStep(0.0, (velocity.length*dtime), CorrectionOrder.ORDER2);
+            }
             velocity = veltest;
             filterIntegrateDiff();
             ///////////////////////////////
@@ -567,6 +589,19 @@ public class V2Process {
         ABCpoly2 = (int)goodrun[7];
         ABCbreak1 = (int)goodrun[4];
         ABCbreak2 = (int)goodrun[5];
+        if (ABCpoly1 == 1) {
+            stepRec.addBaselineStep(0.0, (ABCbreak1*dtime), CorrectionOrder.ORDER1);
+        } else {
+            stepRec.addBaselineStep(0.0, (ABCbreak1*dtime), CorrectionOrder.ORDER2);
+        }
+        stepRec.addBaselineStep((ABCbreak1*dtime), (ABCbreak2*dtime), CorrectionOrder.SPLINE);
+        if (ABCpoly2 == 1) {
+            stepRec.addBaselineStep((ABCbreak2*dtime), (velocity.length*dtime), CorrectionOrder.ORDER1);
+        } else if (ABCpoly2 == 2) {
+            stepRec.addBaselineStep((ABCbreak2*dtime), (velocity.length*dtime), CorrectionOrder.ORDER2);
+        } else {
+            stepRec.addBaselineStep((ABCbreak2*dtime), (velocity.length*dtime), CorrectionOrder.ORDER3);
+        }
         errorlog.add("    length of ABC params: " + ABCnumparams);
         errorlog.add("    ABC: final status: " + procStatus.name());
         errorlog.add("    ABC: rank: " + ABCwinrank);
@@ -588,7 +623,7 @@ public class V2Process {
             "PEAK VEL(CM/SEC)","TAPERLENGTH","PRE-EVENT MEAN","PEAK ACC(G)",
             "STRONG MOTION","EXIT STATUS","VEL INITIAL(CM/SEC)",
             "VEL RESIDUAL(CM/SEC)","DIS RESIDUAL(CM)","BASELINE CORRECTION",
-            "ABC POLY1","ABC POLY2","ABC 1ST BREAK","ABC 2ND BREAK",
+            "POLY1","ABC POLY2","ABC 1ST BREAK","ABC 2ND BREAK",
             "ABC PARM LENGTH","ABC WIN RANK"};
         ArrayList<String> data = new ArrayList<>();
         data.add(eventID);                                  //event id
@@ -616,7 +651,11 @@ public class V2Process {
             data.add(String.format("%8.6f",QCvelresidual));    //QC value residual velocity
             data.add(String.format("%8.6f",QCdisresidual));    //QC value residual displace
             data.add(basetype.name());
-            data.add((ABCpoly1 > 0) ? String.format("%d",ABCpoly1) : "");
+            if (basetype == BaselineType.BESTFIT) {
+                data.add((trendRemovalOrder > 0) ? String.format("%d",trendRemovalOrder) : "");
+            } else {
+                data.add((ABCpoly1 > 0) ? String.format("%d",ABCpoly1) : "");
+            }
             data.add((ABCpoly2 > 0) ? String.format("%d",ABCpoly2) : "");
             data.add((ABCbreak1 > 0) ? String.format("%d",ABCbreak1) : "");
             data.add((ABCbreak2 > 0) ? String.format("%d",ABCbreak2) : "");
@@ -737,5 +776,10 @@ public class V2Process {
     }
     public double getInitialDisplace() {
         return initialDis;
+    }
+    public String[] getProcessSteps() {
+        String[] outlist = new String[processSteps.size()];
+        outlist = processSteps.toArray(outlist);
+        return outlist;
     }
 }

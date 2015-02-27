@@ -39,11 +39,11 @@ public class ArrayStatsTest {
     ArrayStats r1mode;
     double EPSILON = 0.001;
     double EPS2 = 0.1;
-    int[] hista1 = {2,2,2,2,2,2,2,2,2,2};
-    int[] histb1 = {2,2,2,2,2,2,2,2,2,2};
-    int[] hista2 = {5,0,0,0,0,0,10,0,0,10};
-    int[] histt1 = {3,6,0,0,11};
-    int[] histmode = {30,10,10,0,10,0,0,30,20,20};
+    int[] hista1 = {2,2,2,2,2,2,2,2,2,1};
+    int[] histb1 = {2,2,2,2,2,2,2,2,2,1};
+    int[] hista2 = {5,0,0,0,0,0,10,0,0,0};
+    int[] histt1 = {3,6,0,0,3};
+    int[] histmode = {30,10,10,0,10,0,0,30,20,0};
     double[] r1 = {3.24,65.2,-2.22,9.87,-4.65,1.11};
     
     double[] mode = { 3.1,3.1,3.1,3.1,3.1,3.1,3.1,3.1,3.1,3.1,
