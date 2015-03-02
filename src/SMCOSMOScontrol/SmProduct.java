@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -324,7 +325,8 @@ public class SmProduct {
      */
     public void deleteV0AfterProcessing(File source) throws IOException {
 //        System.out.println("filename: " + this.fileName.getName());
-//        Files.deleteIfExists(source);
+        Path infile = source.toPath();
+        Files.deleteIfExists(infile);
     }
     /**
      * Builds a trouble log from the list of all log files.  If there are no

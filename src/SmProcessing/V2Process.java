@@ -18,14 +18,15 @@ import SmUtilities.ConfigReader;
 import SmUtilities.ProcessStepsRecorder;
 import static SmUtilities.SmConfigConstants.*;
 import SmUtilities.SmDebugLogger;
-import SmUtilities.SmTimeFormatter;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
- *
+ * This class handles the V2 processing, performing the necessary steps to process
+ * the uncorrected acceleration into corrected acceleration, velocity and displacement.
+ * It performs 2 QC checks to test the accuracy of the processing.
  * @author jmjones
  */
 public class V2Process {
@@ -89,7 +90,6 @@ public class V2Process {
     private V2Status procStatus;
     private QCcheck qcchecker;
     
-    private ArrayList<String> processSteps;
     private ArrayList<String> errorlog;
     private boolean writeDebug;
     private boolean writeBaseline;
@@ -116,14 +116,21 @@ public class V2Process {
     private double cumulativeAbsVelocity;
     
     ProcessStepsRecorder stepRec;
-        
+    /**
+     * Constructor gets the necessary header and configuration file parameters
+     * and validates them.
+     * @param v1rec the V1 component object holding the uncorrected acceleration
+     * @param inName the name of the V0 input file
+     * @param logtime the processing time
+     * @throws SmException if unable to access valid header or configuration file
+     * parameters
+     */
     public V2Process(final V1Component v1rec, File inName, String logtime) 
                                                             throws SmException {
         double epsilon = 0.000001;
         this.inV1 = v1rec;
         this.lowcutadj = 0.0;
         this.highcutadj = 0.0;
-        this.processSteps = new ArrayList<>();
         this.errorlog = new ArrayList<>();
         this.elog = SmDebugLogger.INSTANCE;
         ConfigReader config = ConfigReader.INSTANCE;
@@ -259,17 +266,22 @@ public class V2Process {
         this.writeBaseline = (baselineon == null) ? false : 
                                     baselineon.equalsIgnoreCase(BASELINE_WRITE_ON);
         
-//        System.out.println("data unit code: " + this.data_unit_code);
-//        System.out.println("filter lowcut: " + this.lowcutoff);
-//        System.out.println("filter hicut: " + this.highcutoff);
-//        System.out.println("order: " + this.numpoles);
-//        System.out.println("taperlength: " + this.taperlength);
-//        System.out.println("event buffer: " + this.ebuffer);
-//        System.out.println("event method: " + this.emethod);
     }
-    
+    /**
+     * Controls the flow of automatic V2 processing, starting with event detection,
+     * pre-event mean removal, integration to velocity, 
+     * best fit trend removal, and the first QC.  If this
+     * QC fails, adaptive baseline correction is attempted. If the first QC passed,
+     * the baseline-corrected velocity is filtered, integrated to displacement, and
+     * differentiated to corrected acceleration.  A final QC check is performed
+     * in both best fit and adaptive baseline correction and the status of the
+     * processing is returned.
+     * @return the status of V2 processing, such as GOOD, FAILQC, etc.
+     * @throws SmException if unable to perform processing
+     * @throws IOException if unable to write out to log files
+     */
     public V2Status processV2Data() throws SmException, IOException {  
-        System.out.println("Start of V2 processing for " + V0name.toString() + " and channel " + channel);
+//        System.out.println("Start of V2 processing for " + V0name.toString() + " and channel " + channel);
         stepRec.addCorrectionType(CorrectionType.AUTO);
         // Correct units to CMSQSECN, if needed, and make copy of acc array
         double[] accraw = new double[0];
@@ -376,7 +388,7 @@ public class V2Process {
             //
             ///////////////////////////////
             needsABC = true;            
-            System.out.println("ABC needed");
+//            System.out.println("ABC needed");
             double[] goodrun = adaptiveCorrection();
             //If unable to perform any iterations in ABC, just exit with no V2
             if (procStatus == V2Status.NOABC) {
@@ -466,6 +478,10 @@ public class V2Process {
         }
         return procStatus;
     }
+    /**
+     * Writes out the error log to file
+     * @throws IOException if unable to write to file
+     */
     private void writeOutErrorDebug() throws IOException {
         elog.writeToLog(logstart, LogType.DEBUG);
         String[] errorout = new String[errorlog.size()];
@@ -473,6 +489,13 @@ public class V2Process {
         elog.writeToLog(errorout, LogType.DEBUG);
         errorlog.clear();
     }
+    /**
+     * Finds the event onset using the specified method and applies any optional buffer.
+     * First any linear trend is removed, then the array is filtered, and then
+     * the event onset technique is applied.
+     * @param acc the input acceleration
+     * @throws SmException if unable to calculate filter coefficients
+     */
     private void findEventOnset(double[] acc) throws SmException {
         ArrayOps.removeLinearTrend( acc, dtime);
         
@@ -505,6 +528,10 @@ public class V2Process {
         errorlog.add(String.format("pick time in seconds: %8.3f, buffered time: %8.3f",
                                           (pickIndex*dtime),(startIndex*dtime)));
     }
+    /**
+     * Updates the filter threshold values based on the EQ magnitude
+     * @throws SmException if unable to extract value magnitude values from the header
+     */
     private void updateThresholds() throws SmException {
         FilterCutOffThresholds threshold = new FilterCutOffThresholds();
         magtype = threshold.SelectMagAndThresholds(mmag, lmag, smag, omag, noRealVal);
@@ -516,6 +543,11 @@ public class V2Process {
         magnitude = threshold.getMagnitude();
         errorlog.add(String.format("earthquake magnitude: %3.2f",magnitude));
     }
+    /**
+     * Steps for filtering velocity, integrating to displacement, and differentiating
+     * to corrected acceleration in the case where ABC is not needed
+     * @throws SmException if unable to calculate the filter coefficients
+     */
     private void filterIntegrateDiff() throws SmException {
         double[] paddedvelocity;
         ButterworthFilter filter = new ButterworthFilter();
@@ -558,11 +590,16 @@ public class V2Process {
         accel = ArrayOps.Differentiate(velocity, dtime);
         errorlog.add("Velocity differentiated to corrected acceleration");
     }
+    /**
+     * Calls adaptive baseline correction and extracts the results
+     * @return the parameter array for the returned solution
+     * @throws SmException if unable to get filter coefficients during ABC
+     */
     private double[] adaptiveCorrection() throws SmException {
         ABC2 adapt = new ABC2(
-        dtime,velocity,lowcutadj,highcutadj,numpoles,pickIndex,taperlength);
+            dtime,velocity,lowcutadj,highcutadj,numpoles,pickIndex,taperlength);
         procStatus = adapt.findFit();
-        System.out.println("procstatus: " + procStatus.name());
+//        System.out.println("procstatus: " + procStatus.name());
         basetype = BaselineType.ABC;
         int solution = adapt.getSolution();
         double[] baseline = adapt.getBaselineFunction();
@@ -581,6 +618,10 @@ public class V2Process {
         } 
         return goodrun;
     }
+    /**
+     * Extracts the statistics from the ABC run and places into the class variables
+     * @param goodrun the array containing the ABC parameters
+     */
     private void updateABCstats(double[] goodrun) {
         QCvelinitial = goodrun[2];
         QCvelresidual = goodrun[3];
@@ -617,6 +658,10 @@ public class V2Process {
         errorlog.add(String.format("    ABC: calc. taperlength: %d", 
                                                     calculated_taper));
     }
+    /**
+     * Makes the CSV file contents for debug and writes to file
+     * @throws IOException if unable to write to file
+     */
     private void makeDebugCSV() throws IOException {
         String[] headerline = {"EVENT","MAG","NAME","CHANNEL",
             "ARRAY LENGTH","SAMP INTERVAL(SEC)","PICK INDEX","PICK TIME(SEC)",
@@ -665,7 +710,11 @@ public class V2Process {
         elog.writeToCSV(data, headerline, "parameterLog.csv");
         data.clear();
     }
-    
+    /**
+     * Writes general debug information out to the error/debug log at the 
+     * start of processing
+     * @param arlen the length of the acceleration array
+     */
     private void writePrePwDdebug(int arlen){
         errorlog.add("Start of V2 processing for " + V0name.toString() + " and channel " + channel);
         errorlog.add(String.format("EventID: %s",eventID));
@@ -674,7 +723,11 @@ public class V2Process {
         errorlog.add(String.format("length of acceleration array: %d",arlen));
         errorlog.add("Event detection: remove linear trend, filter, event onset detection");
     }
-    
+    /**
+     * Getter for the peak value for the particular data type
+     * @param dType the data type (ACC, VEL, DIS)
+     * @return the peak value
+     */
     public double getPeakVal(V2DataType dType) {
         if (dType == V2DataType.ACC) {
             return this.ApeakVal;
@@ -684,6 +737,11 @@ public class V2Process {
             return this.DpeakVal;
         }
     }
+    /**
+     * Getter for the peak index for the particular data type
+     * @param dType the data type (ACC, VEL, DIS)
+     * @return the peak index
+     */
     public int getPeakIndex(V2DataType dType) {
         if (dType == V2DataType.ACC) {
             return this.ApeakIndex;
@@ -693,6 +751,11 @@ public class V2Process {
             return this.DpeakIndex;
         }
     }
+    /**
+     * Getter for the average value for the particular data type
+     * @param dType the data type (ACC, VEL, DIS)
+     * @return the average value
+     */
     public double getAvgVal(V2DataType dType) {
         if (dType == V2DataType.ACC) {
             return this.AavgVal;
@@ -702,6 +765,11 @@ public class V2Process {
             return this.DavgVal;
         }
     }
+    /**
+     * Getter for the array for the particular data type
+     * @param dType the data type (ACC, VEL, DIS)
+     * @return the array reference
+     */
     public double[] getV2Array(V2DataType dType) {
         if (dType == V2DataType.ACC) {
             return this.accel;
@@ -711,6 +779,11 @@ public class V2Process {
             return this.displace;
         }
     }
+    /**
+     * Getter for the array length for the particular data type
+     * @param dType the data type (ACC, VEL, DIS)
+     * @return the array length
+     */
     public int getV2ArrayLength(V2DataType dType) {
         if (dType == V2DataType.ACC) {
             return this.accel.length;
@@ -720,6 +793,11 @@ public class V2Process {
             return this.displace.length;
         }
     }
+    /**
+     * Getter for the data unit code for the particular data type
+     * @param dType the data type (ACC, VEL, DIS)
+     * @return the data unit code
+     */
     public int getDataUnitCode(V2DataType dType) {
         if (dType == V2DataType.ACC) {
             return this.acc_unit_code;
@@ -729,6 +807,11 @@ public class V2Process {
             return this.dis_unit_code;
         }
     }
+    /**
+     * Getter for the data units for the particular data type
+     * @param dType the data type (ACC, VEL, DIS)
+     * @return the data units text name
+     */
     public String getDataUnits(V2DataType dType) {
         if (dType == V2DataType.ACC) {
             return this.acc_units;
@@ -738,48 +821,95 @@ public class V2Process {
             return this.dis_units;
         }
     }
+    /**
+     * Getter for the adjusted filter low cutoff value
+     * @return the adjusted low filter cutoff frequency
+     */
     public double getLowCut() {
         return this.lowcutadj;
     }
+    /**
+     * Getter for the adjusted filter high cutoff value
+     * @return the adjusted high filter cutoff frequency
+     */
     public double getHighCut() {
         return this.highcutadj;
     }
+    /**
+     * Getter for the final QC status of the V2 processing
+     * @return the QC exit status
+     */
     public V2Status getQCStatus() {
         return this.procStatus;
     }
+    /**
+     * Getter for the event onset index
+     * @return the event onset index
+     */
     public int getPickIndex() {
         return this.pickIndex;
     }
+    /**
+     * Getter for the start index, which is the event index modified by the buffer value
+     * @return the start index
+     */
     public int getStartIndex() {
         return this.startIndex;
     }
+    /**
+     * Getter for the Bracketed Duration for the real header
+     * @return the bracketed duration
+     */
     public double getBracketedDuration() {
         return bracketedDuration;
     }
+    /**
+     * Getter for the Arias Intensity value for the real header
+     * @return the Arias Intensity
+     */
     public double getAriasIntensity() {
         return AriasIntensity;
     }
+    /**
+     * Getter for the Housner Intensity value for the real header
+     * @return the Housner Intensity
+     */
     public double getHousnerIntensity() {
         return HousnerIntensity;
     }
+    /**
+     * Getter for the channel RMS for the real header
+     * @return the channel RMS
+     */
     public double getChannelRMS() {
         return channelRMS;
     }
+    /**
+     * Getter for the duration interval for the real header
+     * @return the duration interval
+     */
     public double getDurationInterval() {
         return durationInterval;
     }
+    /**
+     * Getter for the Cumulative absolute velocity for the real header
+     * @return the cumulative absolute velociy
+     */
     public double getCumulativeAbsVelocity() {
         return cumulativeAbsVelocity;
     }
+    /**
+     * Getter for the initial velocity value for the real header
+     * @return the initial velocity value
+     */
     public double getInitialVelocity() {
         return initialVel;
     }
+    /**
+     * Getter for the initial displacement value for the real header
+     * @return the initial displacement value
+     */
     public double getInitialDisplace() {
         return initialDis;
-    }
-    public String[] getProcessSteps() {
-        String[] outlist = new String[processSteps.size()];
-        outlist = processSteps.toArray(outlist);
-        return outlist;
     }
 }

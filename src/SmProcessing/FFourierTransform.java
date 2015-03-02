@@ -34,7 +34,7 @@ public class FFourierTransform {
     }
     /**
      * Performs the FFT calculations by padding the input array to the closest
-     * power of 2 >= the current length, calling the FFT transform method,
+     * power of 2 gt or eq to the current length, calling the FFT transform method,
      * extracting only the first half of the complex array returned and coverting
      * these values to magnitudes.
      * @param array input array for calculating the transform
@@ -58,7 +58,7 @@ public class FFourierTransform {
         return mags;
     }
     /**
-     * finds the nearest power of 2 that is >= the input value
+     * finds the nearest power of 2 that is greater than or equal to the input value
      * @param length the length of the input array
      * @return the nearest power of 2 length
      */

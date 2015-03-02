@@ -71,6 +71,7 @@ public class SmDebugLogger {
      * Writes the array of text messages out to the log file, appending to the
      * end of the current file.
      * @param msg the list of messages to be written to the log
+     * @param logger the type of log file, either debug or trouble
      * @throws IOException if unable to write to the file
      */
     public void writeToLog( String[] msg, LogType logger ) throws IOException {

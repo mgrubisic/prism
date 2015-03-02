@@ -239,7 +239,7 @@ public class V3Process {
     }
     /**
      * Getter for the time in the record at which the maximum occurs (real header #76)
-     * @return 
+     * @return the peak time
      */
     public double getPeakTime() {
         return peakTime;
@@ -274,7 +274,7 @@ public class V3Process {
     }
     /**
      * Getter for the data units of the acceleration array
-     * @return 
+     * @return the data units
      */
     public String getDataUnits() {
         return CMSQSECT;

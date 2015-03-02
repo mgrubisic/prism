@@ -46,7 +46,7 @@ public class ArrayOps {
      * This method allows for the removal of a mean that was calculated on
      * a subset of another array, or removal of the median.
      * 
-     * @param array input array to have value removed from
+     * @param array input array to have value removed from, this array is modified
      * @param val pre-calculated value to remove from the array
      * @return true if calculation performed, false if input parameters are invalid
      */
@@ -119,7 +119,7 @@ public class ArrayOps {
      * subset array) is used to determine a linear trend, and then the trend
      * is removed from the entire array.  It is assumed that both arrays use
      * the same time step.
-     * @param array input array to have the linear trend removed from
+     * @param array input array to have the linear trend removed from, this array is modified
      * @param subarray input array to use to calculate the linear trend. This
      * array is not modified in the process.
      * @param timestep the sample interval of the input array
@@ -261,7 +261,7 @@ public class ArrayOps {
     /**
      * Removes a polynomial trend from the input array, with the trend defined
      * by the array of coefficients.
-     * @param array input array to remove the polynomial trend from
+     * @param array input array to remove the polynomial trend from, this array is modified
      * @param coefs array of coefficients defining the polynomial trend.  These 
      * coefficients are returned from the findPolynomialTrend method.
      * @param timestep sample interval
@@ -285,12 +285,12 @@ public class ArrayOps {
      * Calculates the root mean square (rms) value for the input array
      * @param orig original array to calculate rms for
      * @param est estimated array to compare with the original
-     * @return the rms value or Double.MIN_VALUE if input arrays are invalid
+     * @return the rms value or -1 if input arrays are invalid
      */
     public static double rootMeanSquare( double[] orig, double[] est ) {
         if ((orig == null) || (orig.length == 0) || (est == null) || 
                              (est.length == 0) || (orig.length != est.length)) {
-            return Double.MIN_VALUE;
+            return -1;
         }
         int len = orig.length;
         double rms = 0.0;

@@ -1,33 +1,30 @@
-/*
- * Copyright (C) 2014 jmjones
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+/*******************************************************************************
+ * Name: Java class EventOnsetDetection.java
+ * Project: PRISM strong motion record processing using COSMOS data format
+ * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
+ * 
+ * Date: first release date Feb. 2015
+ ******************************************************************************/
 
 package SmProcessing;
 
-import SmUtilities.TextFileWriter;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
 /**
- * This class uses the damping energy concept to pick the event onset time.
+ * <p>
+ * This class uses the P-wave Detector method to pick the event onset time.
+ * </p><p>
+ * Described in:
+ * Kalkan, Erol, An Automatic P-Wave Onset Time Detector, USGS, 2015, in review.
+ * </p>
+ * The method creates a mathematical model of a single-degree-of-freedom
+ * oscillator with a short resonant frequency, high resonant frequency, and
+ * high damping ratio.  When the input trace is applied to the model, the output
+ * damping energy can be used to detect the arrival of the P-wave.  The damping
+ * energy "is zero at the beginning of the signal, zero or near zero before the
+ * P-wave arrival, and builds up rapidly with the P-wave." (p.1)
  * @author jmjones
  */
 public class EventOnsetDetection {
-    private static final int NUM_BINS = 200;
+    private static final int NUM_BINS = 200; //used for the histogram
     private static final double XI = 0.6;  //damping ratio
     private static final double TN = 0.01; //vibration period
     private final double omegan;
@@ -44,7 +41,11 @@ public class EventOnsetDetection {
     private double bufferVal;
     private int bufferedStart;
     
-    //constructor
+    /**
+     * Constructor gets the event onset coefficients for the input sampling
+     * interval for solving the oscillator motion equation.
+     * @param dtime the sampling interval in sec/sample
+     */
     public EventOnsetDetection(double dtime) {
         this.dtime = dtime;
         omegan= 2.0 * Math.PI / TN;
@@ -67,6 +68,10 @@ public class EventOnsetDetection {
         coef_e = AeB[0];
         coef_f = AeB[1];
     }
+    /**
+     * Show coefficients retrieved for the input sample interval (for debug)
+     * @return the coefficient array
+     */
     public double[] showCoefficients() {  //for debug
         double[] coefs = new double[6];
         coefs[0] = coef_a;
@@ -77,18 +82,19 @@ public class EventOnsetDetection {
         coefs[5] = coef_f;
         return coefs;
     }
-    //buffer has units of seconds and is used to increase the length of time
-    //between the detected P-wave and the reported start of waveform.
+    /**
+     * Finds the event onset by applying the input acceleration array to the 
+     * model of the ocillator and calculating the damping energy output.  This
+     * damping energy is binned by a histogram to determine when its state
+     * begins to change from 0.  The nearest zero crossing before this time
+     * is determined to be the event onset.
+     * @param acc the input acceleration array
+     * @return the event onset index
+     */
     public int findEventOnset( final double[] acc) {
         int len = acc.length;
         int found = 0;
-        
-//        System.out.println("deltaT: " + deltaT);
-//        System.out.println("const_C: " + const_C);
-//        System.out.println("coef_a: " + coef_a + " coef_b: " + coef_b);
-//        System.out.println("coef_c: " + coef_c + " coef_d: " + coef_d);
-//        System.out.println("coef_e: " + coef_e + " coef_f: " + coef_f);
-        
+                
         //Calculate the transient response of an oscillator with vibration period
         //TN and damping ratio XI subjected to support acceleration (array acc)
         //and sampled at a step deltaT.
@@ -101,7 +107,7 @@ public class EventOnsetDetection {
             y[1][k] = coef_c * y[0][k-1] + coef_d * y[1][k-1] + coef_f * acc[k];
         }
         
-        //Get the relative velocity (m/sec)
+        //Get the relative velocity (m/sec) of mass
         double[] veloc = y[1];
         double[] Edi = new double[len];
         
@@ -120,33 +126,20 @@ public class EventOnsetDetection {
                 Edoverm_max = Math.abs(each);
             }
         }
-//        System.out.println("Edoverm_max: " + Edoverm_max);
-        
         //normalize the array by dividing all vals by the max
         double[] EIM = new double[Edoverm.length];
         for (int i = 0; i < Edoverm.length; i++) {
             EIM[i] = Edoverm[i] / Edoverm_max;
         }
-        
         //Integrand of normalized damping energy (m^2/sec^3)
         double[] PIM = ArrayOps.Differentiate(EIM, dtime);
-        
-        //!!!Debug 
-//        TextFileWriter textout = new TextFileWriter( "D:/PRISM/filter_test/junit", 
-//                                                            "ppick_pim.txt", PIM);
-//        try {
-//            textout.writeOutArray();
-//        } catch (IOException err) {
-////            System.out.println("Error printing out PIM in EventOnsetDetection");
-//        }
-        //!!!Debug
-        
+
         // find the most common value in the lower half of the range of PIM.
         // The value returned is the most frequently-occurring
         // value in the lower half of the array min-max range.
         ArrayStats statPIM = new ArrayStats(PIM);
         double lowerMode = statPIM.getModalMinimum(NUM_BINS);
-//        System.out.println("+++ modalMin in ppicker: " + lowerMode);
+
         //Now find the index of the first occurrence in the array of a value
         //that is greater than the most frequently-occurring value.
         int peak = 0;
@@ -156,7 +149,6 @@ public class EventOnsetDetection {
                 break;
             }
         }
-//        System.out.println("+++ PIM index of peak: " + peak);
         //In the array subset acc[0:peak], start at the end and work back to front
         //to find the index of the first zero-crossing.  This is the start of
         //the event.  The zero-crossing is identified by 2 consecutive values
@@ -167,24 +159,41 @@ public class EventOnsetDetection {
                 break;
             }
         }
-//        System.out.println("+++ start of zero crossing: " + found);
         //Return the index into the acceleration array that marks the start of
         //the event, adjusted by the buffer amount
         eventStart = found;
         return eventStart;
     }
+    /**
+     * Applies of buffer of specified time length to the event onset index to
+     * move it forward in time (towards the start of the array).
+     * @param buffer the length of time in seconds to buffer the event onset
+     * @return the buffered index into the array
+     */
     public int applyBuffer(double buffer) {
         bufferVal = buffer;
         bufferedStart = eventStart - (int)Math.round(bufferVal/dtime);
         bufferedStart = (bufferedStart < 0) ? 0 : bufferedStart;
         return bufferedStart;
     }
+    /**
+     * Getter for the event onset index
+     * @return the event onset
+     */
     public int getEventStart() {
         return this.eventStart;
     }
+    /**
+     * Getter for the buffer length
+     * @return the buffer length
+     */
     public double getBufferLength() {
         return this.bufferVal;
     }
+    /**
+     * Getter for the buffered event start index
+     * @return the buffered event start index
+     */
     public int getBufferedStart() {
         return this.bufferedStart;
     }
