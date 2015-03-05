@@ -301,28 +301,30 @@ public class ABC2 {
     private double findFirstPolynomialFit() {
         double bestrms = Double.MAX_VALUE;
         int bestdegree = 0;
-        int len = estart+1;
+        int len = estart;
         double[] bestcoefs = new double[0];
         double[] coefs;
         double[] h1 = new double[len];
-        double[] r1 = new double[len];
         b1 = new double[len];
         double rms1;
+        PolynomialFunction poly;
+        double[] time = ArrayOps.makeTimeArray( dtime, h1.length);
         System.arraycopy(velstart,0,h1,0,h1.length);
-        System.arraycopy(velstart,0,r1,0,r1.length);
         for (int order1 = degreeP1lo; order1 <= degreeP1hi; order1++) {
             //find best fit for 1st polynomial, since its length doesn't change
             coefs = ArrayOps.findPolynomialTrend(h1, order1, dtime);
-            ArrayOps.removePolynomialTrend(r1, coefs, dtime);
-            rms1 = ArrayOps.rootMeanSquare(h1, r1);
+            poly = new PolynomialFunction( coefs );
+            for (int i = 0; i < len; i++) {
+                b1[i] = poly.value(time[i]);
+            }
+            rms1 = ArrayOps.rootMeanSquare(h1, b1);
             if (rms1 < bestrms) {
                 bestrms = rms1;
                 bestdegree = order1;
                 bestcoefs = coefs;
             }
         }
-        double[] time = ArrayOps.makeTimeArray( dtime, h1.length);
-        PolynomialFunction poly = new PolynomialFunction( bestcoefs );
+        poly = new PolynomialFunction( bestcoefs );
         for (int i = 0; i < len; i++) {
             b1[i] = poly.value(time[i]);
         }
@@ -345,48 +347,41 @@ public class ABC2 {
     private double[] makeCorrection( double[] array, int break2, int order3) {
         double[] h2;
         double[] h3;
-        double[] r2;
-        double[] r3;
         int break1 = estart;
         double[] time = ArrayOps.makeTimeArray(dtime, array.length);
         
-        h2 = new double[break2-break1]; //make this longer to overlap
+        h2 = new double[break2-break1];
+        double[] b2 = new double[break2-break1];
         h3 = new double[array.length-break2];
         System.arraycopy(array, break1, h2, 0, break2-break1);
         System.arraycopy(array, break2, h3, 0, array.length-break2);
         double[] result = new double[ array.length ];
         
         //Get the best fit baseline function for the 3rd segment
-        double[] fit3 = find3rdPolyFit(h3, order3);
+        double[] b3 = find3rdPolyFit(h3, order3);
         
         //Construct the baseline function from the first and 3rd sections
         bnn = new double[time.length];
         for (int i = 0; i < bnn.length; i++) {
-            if ( i <= break1) {
+            if ( i < break1) {
                 bnn[i] = b1[i];
             } else if ( i >= break2) {
-                bnn[i] = fit3[i - break2];
+                bnn[i] = b3[i - break2];
             } else {
                 bnn[i] = 0.0;
             }
         }
         //Connect the 1st and 3rd segments with the interpolating spline
         getSplineSmooth( bnn, break1, break2, dtime );
+        System.arraycopy(bnn,break1,b2,0,break2-break1);
         
         //Remove the baseline function from segments 2 and 3
-        r2 = new double[h2.length];
-        r3 = new double[h3.length];
         for (int i = 0; i < result.length; i++) {
             result[i] = array[i] - bnn[i];
-            if ( i >= break2) {
-                r3[i-break2] = result[i];
-            } else if (i >= break1) {
-                r2[i-break1] = result[i];
-            }
         }
         //Compute the rms of original and corrected segments
-        rms[1] = ArrayOps.rootMeanSquare(h2,r2);
-        rms[2] = ArrayOps.rootMeanSquare(h3,r3);
+        rms[1] = ArrayOps.rootMeanSquare(h2,b2);
+        rms[2] = ArrayOps.rootMeanSquare(h3,b3);
         return result;
     }
     /**

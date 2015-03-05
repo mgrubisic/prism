@@ -16,11 +16,14 @@ package SmProcessing;
  * Kalkan, Erol, An Automatic P-Wave Onset Time Detector, USGS, 2015, in review.
  * </p>
  * The method creates a mathematical model of a single-degree-of-freedom
- * oscillator with a short resonant frequency, high resonant frequency, and
+ * oscillator with a short resonant frequency, and
  * high damping ratio.  When the input trace is applied to the model, the output
  * damping energy can be used to detect the arrival of the P-wave.  The damping
  * energy "is zero at the beginning of the signal, zero or near zero before the
- * P-wave arrival, and builds up rapidly with the P-wave." (p.1)
+ * P-wave arrival, and builds up rapidly with the P-wave." (p.1) This
+ * damping energy is binned by a histogram to determine when its state
+ * begins to change from 0.  The nearest zero crossing before this time
+ * is determined to be the event onset.
  * @author jmjones
  */
 public class EventOnsetDetection {
@@ -91,7 +94,14 @@ public class EventOnsetDetection {
      * @param acc the input acceleration array
      * @return the event onset index
      */
-    public int findEventOnset( final double[] acc) {
+    public int findEventOnset( final double[] accTotal) {
+        
+        // Find the peak value and use only the array from start to the peak
+        // value to look for the p-wave arrival.
+        ArrayStats accstat = new ArrayStats( accTotal );
+        int accpeak = accstat.getPeakValIndex();
+        double[] acc = new double[accpeak];
+        System.arraycopy(accTotal,0,acc,0,accpeak);
         int len = acc.length;
         int found = 0;
                 

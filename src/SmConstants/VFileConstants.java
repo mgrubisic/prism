@@ -93,6 +93,7 @@ public final class VFileConstants {
     public enum SmArrayStyle { SINGLE_COLUMN, PACKED };
     
     public static final String DEFAULT_ARRAY_STYLE = "singleColumn";
+    public static final String DEFAULT_AG_CODE = "UNKN";
     
     //table 1 data physical parameter codes
     public static final int ACC_PARM_CODE = 1;

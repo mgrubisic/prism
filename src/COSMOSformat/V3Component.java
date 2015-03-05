@@ -151,7 +151,7 @@ public class V3Component extends COSMOScontentFormat {
         
         //Get the processing agency info from the config. data
         String agabbrev = config.getConfigValue(PROC_AGENCY_ABBREV);
-        agabbrev = (agabbrev == null) ? "Unknown" : agabbrev;
+        agabbrev = (agabbrev == null) ? DEFAULT_AG_CODE : agabbrev;
         
         String agcode = config.getConfigValue(PROC_AGENCY_CODE);
         int agency_code = (agcode == null) ? 0 : Integer.parseInt(agcode);
