@@ -319,7 +319,7 @@ public class ArrayOps {
         double[] pcoefs;
         double[] time = makeTimeArray( timestep, len);
         PolynomialFunction poly;
-        int numOrder;
+        int numOrder = 0;
 
         //find 1st order polynomial trend for input array and commpare with original
         lcoefs = findPolynomialTrend(inarr, 1, timestep);

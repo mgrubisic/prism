@@ -7,6 +7,7 @@
  ******************************************************************************/
 package SmProcessing;
 
+import static SmConstants.VFileConstants.DEFAULT_TAPER_LENGTH;
 import java.util.Arrays;
 
 /**
@@ -102,8 +103,8 @@ public class ButterworthFilter {
         int index;
         
         //Check input parameters for valid values
-        if ((Math.abs(f1 - 0.0) < epsilon) || (Math.abs(f2 - f1) < epsilon)
-                                                || (rolloff > MAXROLL)){
+        if ((Math.abs(f1 - 0.0) < epsilon) || (Math.abs(f2 - f1) < epsilon) ||
+                                           (rolloff < 2) || (rolloff > MAXROLL)){
             return false;
         }
         double nyquist = (1.0 / dtime) / 2.0;
@@ -173,15 +174,15 @@ public class ButterworthFilter {
 
 //        int taperlength = (int)(2.0 / dtime); // 2 seconds worth of samples
 //        int taperlength= (int)(((2.0/f1) + 1.0)/dtime);
+        //Calculate the length of the cosine taper.  Put a lower limit of the
+        //taperlength time specified in the configuration file, and an upper
+        //limit of 5% of array length.
+        int maxtaper = (int)(arrayS.length * 0.05);
         taperlength = ArrayOps.findZeroCrossing(arrayS, eventOnsetIndex, 0);
-        if ((taperlength <= 0) || ((taperlength*dtime) <= taplengthtime)) {
+        if ((taperlength <= 0) || ((taperlength*dtime) < taplengthtime)) {
             taperlength = (int)(taplengthtime / dtime);
         }
-        if (taperlength > arrayS.length) { //unable to apply the given taper
-            return new double[0];
-        }
-//        System.out.println("+++ taperlength: " + taperlength);
-//        System.out.println("+++ eventOnsetIndex: " + eventOnsetIndex);
+        taperlength = (taperlength > maxtaper) ? maxtaper : taperlength;
         
         //Copy the input array into a return array.  If the filter was configured
         //as acausal, then pad the length of the array by the value calculated below.
@@ -197,10 +198,10 @@ public class ButterworthFilter {
                 npad = check;
             }
 //            System.out.println("+++ npad: " + npad + " array: " + arrayS.length);
-            np2 = arrayS.length + 2 * npad;
+            np2 = arrayS.length + npad;
             filteredS = new double[np2];
             Arrays.fill(filteredS, 0.0);
-            System.arraycopy(arrayS, 0, filteredS, npad, arrayS.length);
+            System.arraycopy(arrayS, 0, filteredS, (npad/2), arrayS.length);
             
         } else {  //causal filter, filtered array is same length as input array
             np2 = arrayS.length;
@@ -243,7 +244,7 @@ public class ButterworthFilter {
                     x1 = xp;
                 }
             }
-            System.arraycopy(filteredS, npad, arrayS, 0, arrayS.length);
+            System.arraycopy(filteredS, (npad/2), arrayS, 0, arrayS.length);
         } else {
             System.arraycopy(filteredS, 0, arrayS, 0, np2);
         }
@@ -310,7 +311,7 @@ public class ButterworthFilter {
      * @return the pad length
      */
     public int getPadLength() {
-        return npad;
+        return (npad/2);
     }
     /**
      * Getter for the calculated taper length

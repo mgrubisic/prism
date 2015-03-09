@@ -89,7 +89,7 @@ public class Prism {
         // 
         try {
             Prism smc = new Prism( args ); 
-            
+
             SmTimeFormatter timer = new SmTimeFormatter();
             PrismLogger log = PrismLogger.INSTANCE;
             SmDebugLogger errlog = SmDebugLogger.INSTANCE;

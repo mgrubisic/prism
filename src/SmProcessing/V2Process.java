@@ -31,59 +31,59 @@ import java.util.Arrays;
  */
 public class V2Process {
     //need 3 sets of these params, for each data type
-    private double[] accel;
-    private double ApeakVal;
-    private int ApeakIndex;
-    private double AavgVal;
-    private final int acc_unit_code;
-    private final String acc_units;
+    protected double[] accel;
+    protected double ApeakVal;
+    protected int ApeakIndex;
+    protected double AavgVal;
+    protected final int acc_unit_code;
+    protected final String acc_units;
     
-    private double[] velocity;
-    private double VpeakVal;
-    private int VpeakIndex;
-    private double VavgVal;
-    private final int vel_unit_code;
-    private final String vel_units;
+    protected double[] velocity;
+    protected double VpeakVal;
+    protected int VpeakIndex;
+    protected double VavgVal;
+    protected final int vel_unit_code;
+    protected final String vel_units;
     
-    private double[] displace;
-    private double DpeakVal;
-    private int DpeakIndex;
-    private double DavgVal;
-    private final int dis_unit_code;
-    private final String dis_units;
+    protected double[] displace;
+    protected double DpeakVal;
+    protected int DpeakIndex;
+    protected double DavgVal;
+    protected final int dis_unit_code;
+    protected final String dis_units;
     
     private double initialVel;
     private double initialDis;
     
     private int inArrayLength;
-    private final V1Component inV1;
-    private final int data_unit_code;
-    private final double dtime;
-    private final double samplerate;
-    private final double noRealVal;
-    private final double lowcutoff;
-    private final double highcutoff;
-    private double lowcutadj;
-    private double highcutadj;
-    private double mmag;
-    private double lmag;
-    private double smag;
-    private double omag;
-    private double magnitude;
-    private MagnitudeType magtype;
-    private BaselineType basetype;
+    protected final V1Component inV1;
+    protected int data_unit_code;
+    protected double dtime;
+    protected double samplerate;
+    protected double noRealVal;
+    protected double lowcutoff;
+    protected double highcutoff;
+    protected double lowcutadj;
+    protected double highcutadj;
+    protected double mmag;
+    protected double lmag;
+    protected double smag;
+    protected double omag;
+    protected double magnitude;
+    protected MagnitudeType magtype;
+    protected BaselineType basetype;
     
     private int pickIndex;
     private int startIndex;
     private double ebuffer;
     private EventOnsetType emethod;
-    private final int numpoles;  // the filter order is numpoles
-    private double taperlength;
+    protected int numpoles;  // the filter order is numpoles*2
+    protected double taperlength;
     private double preEventMean;
     private int trendRemovalOrder;
     private int calculated_taper;
     private boolean strongMotion;
-    private double smThreshold;
+    protected double smThreshold;
     private boolean needsABC;
     private String logtime;
     
@@ -95,8 +95,8 @@ public class V2Process {
     private boolean writeBaseline;
     private SmDebugLogger elog;
     private String[] logstart;
-    private final File V0name;
-    private final String channel;
+    private File V0name;
+    private String channel;
     private String eventID;
     private double QCvelinitial;
     private double QCvelresidual;
@@ -131,12 +131,7 @@ public class V2Process {
         this.inV1 = v1rec;
         this.lowcutadj = 0.0;
         this.highcutadj = 0.0;
-        this.errorlog = new ArrayList<>();
-        this.elog = SmDebugLogger.INSTANCE;
-        ConfigReader config = ConfigReader.INSTANCE;
         stepRec = ProcessStepsRecorder.INSTANCE;
-        this.writeDebug = false;
-        this.writeBaseline = false;
         this.V0name = inName;
         this.channel = inV1.getChannel();
         this.eventID = inV1.getEventID();
@@ -172,20 +167,6 @@ public class V2Process {
         this.calculated_taper = 0;
         this.strongMotion = false;
         this.smThreshold = 0.0;
-        this.needsABC = false;
-        this.QCvelinitial = 0.0;
-        this.QCvelresidual = 0.0;
-        this.QCdisresidual = 0.0;
-        this.ABCnumparams = 0;
-        this.ABCwinrank = 0;
-        this.ABCpoly1 = 0;
-        this.ABCpoly2 = 0;
-        this.ABCbreak1 = 0;
-        this.ABCbreak2 = 0;
-        
-        logstart = new String[2];
-        logstart[0] = "\n";
-        logstart[1] = "Prism Error/Debug Log Entry: " + logtime;
         
         stepRec.clearSteps();
         
@@ -213,7 +194,27 @@ public class V2Process {
         this.lmag = inV1.getRealHeaderValue(LOCAL_MAGNITUDE);
         this.smag = inV1.getRealHeaderValue(SURFACE_MAGNITUDE);
         this.omag = inV1.getRealHeaderValue(OTHER_MAGNITUDE);
-        
+    }
+    private void finishAutoConstructor() throws SmException {
+        this.errorlog = new ArrayList<>();
+        this.elog = SmDebugLogger.INSTANCE;
+        ConfigReader config = ConfigReader.INSTANCE;
+        this.writeDebug = false;
+        this.writeBaseline = false;
+        this.needsABC = false;
+        this.QCvelinitial = 0.0;
+        this.QCvelresidual = 0.0;
+        this.QCdisresidual = 0.0;
+        this.ABCnumparams = 0;
+        this.ABCwinrank = 0;
+        this.ABCpoly1 = 0;
+        this.ABCpoly2 = 0;
+        this.ABCbreak1 = 0;
+        this.ABCbreak2 = 0;
+
+        logstart = new String[2];
+        logstart[0] = "\n";
+        logstart[1] = "Prism Error/Debug Log Entry: " + logtime;
         try {
             String unitcode = config.getConfigValue(DATA_UNITS_CODE);
             this.data_unit_code = (unitcode == null) ? CMSQSECN : Integer.parseInt(unitcode);
@@ -224,7 +225,7 @@ public class V2Process {
             String highcut = config.getConfigValue(BP_FILTER_CUTOFFHIGH);
             this.highcutoff = (highcut == null) ? DEFAULT_HIGHCUT : Double.parseDouble(highcut);
 
-            //The Butterworth filter implementation requires an even number of poles (and order)
+            //The Butterworth filter implementation requires an even number for rolloff
             String filorder = config.getConfigValue(BP_FILTER_ORDER);
             this.numpoles = (filorder == null) ? DEFAULT_NUM_POLES : Integer.parseInt(filorder)/2;
 
@@ -265,7 +266,6 @@ public class V2Process {
         String baselineon = config.getConfigValue(WRITE_BASELINE_FUNCTION);
         this.writeBaseline = (baselineon == null) ? false : 
                                     baselineon.equalsIgnoreCase(BASELINE_WRITE_ON);
-        
     }
     /**
      * Controls the flow of automatic V2 processing, starting with event detection,
@@ -280,13 +280,15 @@ public class V2Process {
      * @throws SmException if unable to perform processing
      * @throws IOException if unable to write out to log files
      */
-    public V2Status processV2Data() throws SmException, IOException {  
+    public V2Status processV2Data() throws SmException, IOException {
+        finishAutoConstructor();
 //        System.out.println("Start of V2 processing for " + V0name.toString() + " and channel " + channel);
         stepRec.addCorrectionType(CorrectionType.AUTO);
         // Correct units to CMSQSECN, if needed, and make copy of acc array
         double[] accraw = new double[0];
         double[] V1Array = inV1.getDataArray();
         inArrayLength = V1Array.length;
+
         if (data_unit_code == CMSQSECN) {
             accraw = new double[V1Array.length];
             System.arraycopy( V1Array, 0, accraw, 0, V1Array.length);

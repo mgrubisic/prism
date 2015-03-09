@@ -22,6 +22,8 @@ import static SmUtilities.SmConfigConstants.PROC_AGENCY_CODE;
 import SmUtilities.SmTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * This class extends the COSMOScontentFormat base class to define a V2 record.
@@ -368,5 +370,28 @@ public class V2Component extends COSMOScontentFormat {
         lines.clear();
         text.clear();
         return comments;
+    }
+    public int extractEONSETfromComments() throws SmException {
+        String matchRegex = "(<EONSET>)";
+        int eonset = 0;
+        double etime = 0.0;
+        if (this.comments.length < 2) {
+            return eonset;
+        }
+        try {
+            for (String each : this.comments) {
+                Pattern eField = Pattern.compile(matchRegex);
+                Matcher m = eField.matcher( each );
+                if (m.find()) {
+                    String[] vals = each.split(" ");
+                    etime = Double.parseDouble(vals[vals.length-1]);
+                    eonset = (int)(etime / (this.getRealHeaderValue(DELTA_T) * MSEC_TO_SEC));
+                    break;
+                }
+            }
+        } catch (NumberFormatException err) {
+            return eonset;
+        }
+        return eonset;
     }
 }

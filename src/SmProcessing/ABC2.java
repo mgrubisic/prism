@@ -347,6 +347,7 @@ public class ABC2 {
     private double[] makeCorrection( double[] array, int break2, int order3) {
         double[] h2;
         double[] h3;
+        int order2 = 3;
         int break1 = estart;
         double[] time = ArrayOps.makeTimeArray(dtime, array.length);
         
