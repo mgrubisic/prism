@@ -31,6 +31,7 @@ public class COSMOScontentFormat {
     protected String channel; // channel number for this record 
     protected String rcrdId; // record id extracted from the cosmos file 
     protected String SCNLauth; // SCNL authorization tag from the cosmos file
+    protected String SCNLcode; // just the SCNL code from the SCNLauth line
     protected String eventID; // event id for this record 
     protected int noIntVal;  // NoData value for integer header array 
     protected double noRealVal;  // NoData value for real header array 
@@ -53,6 +54,7 @@ public class COSMOScontentFormat {
         this.channel = "";
         this.rcrdId = "";
         this.SCNLauth = "";
+        this.SCNLcode = "";
         this.eventID = "";
         this.fileName = "";
         this.stationDir = null;
@@ -314,6 +316,7 @@ public class COSMOScontentFormat {
         if ((!SCNLauth.isEmpty()) && (channel.isEmpty())) {
             m = scnlfield.matcher( SCNLauth );
             if (m.find()) {
+                this.SCNLcode = m.group(2).trim();
                 segments = m.group(2).split("\\.");
                 this.setChannel(segments[1] + "." + segments[3]);
             }

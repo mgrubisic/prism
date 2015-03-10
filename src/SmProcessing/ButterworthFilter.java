@@ -172,16 +172,12 @@ public class ButterworthFilter {
         double[] filteredS;
         double x1; double x2; double y1; double y2; double xp; double yp;
 
-//        int taperlength = (int)(2.0 / dtime); // 2 seconds worth of samples
-//        int taperlength= (int)(((2.0/f1) + 1.0)/dtime);
         //Calculate the length of the cosine taper.  Put a lower limit of the
         //taperlength time specified in the configuration file, and an upper
-        //limit of 5% of array length.
+        //limit of 5% of array length.  Remove any initial offset between the
+        //start of the array and the first zero crossing.
         int maxtaper = (int)(arrayS.length * 0.05);
-        taperlength = ArrayOps.findZeroCrossing(arrayS, eventOnsetIndex, 0);
-        if ((taperlength <= 0) || ((taperlength*dtime) < taplengthtime)) {
-            taperlength = (int)(taplengthtime / dtime);
-        }
+        taperlength = (int)(taplengthtime / dtime);
         taperlength = (taperlength > maxtaper) ? maxtaper : taperlength;
         
         //Copy the input array into a return array.  If the filter was configured

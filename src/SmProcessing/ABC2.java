@@ -198,6 +198,7 @@ public class ABC2 {
                     //fit a baseline function to each segment and make correction
                     velocity = makeCorrection(velstart, t2, order3);
                     //filter velocity
+                    ArrayOps.makeZCrossCorrection(velocity, 0, estart);
                     paddedvelocity = filter.applyFilter(velocity, taplength, estart);
                      //remove any mean value
                     ArrayStats velmean = new ArrayStats( paddedvelocity );
@@ -261,6 +262,7 @@ public class ABC2 {
                                 (eachrun[1] <= qcchecker.getResDisplaceQCval());
             if (success) {
                 velocity = makeCorrection(velstart,(int)eachrun[5],(int)eachrun[7]);
+                ArrayOps.makeZCrossCorrection(velocity, 0, estart);
                 paddedvelocity = filter.applyFilter(velocity, taplength, estart);
                 taplength_calculated = filter.getTaperlength();
                 ArrayStats velmean = new ArrayStats( paddedvelocity );
@@ -280,7 +282,8 @@ public class ABC2 {
             solution = 0;
             eachrun = params.get(solution);
             velocity = makeCorrection(velstart,(int)eachrun[5],(int)eachrun[7]);
-             paddedvelocity = filter.applyFilter(velocity, taplength, estart);
+            ArrayOps.makeZCrossCorrection(velocity, 0, estart);
+            paddedvelocity = filter.applyFilter(velocity, taplength, estart);
             taplength_calculated = filter.getTaperlength();
             ArrayStats velmean = new ArrayStats( paddedvelocity );
             ArrayOps.removeValue(paddedvelocity, velmean.getMean());

@@ -161,8 +161,9 @@ public class SmQueue {
                     //processing produces 1  V3 object: response spectra.
                     V3Process v3val = new V3Process(V2acc, V2vel, V2dis);
                     v3val.processV3Data();
-                    V3Component V3rec = new V3Component( SPECTRA, V2acc);
+                    V3Component V3rec = new V3Component( SPECTRA, V2acc, V2vel, V2dis);
                     V3rec.buildV3(v3val);
+                    V3rec.updateUploadParms();
                     Vprod.addProduct(V3rec, "V3");
                 }
             }

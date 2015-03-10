@@ -19,7 +19,9 @@ import SmUtilities.ConfigReader;
 import static SmUtilities.SmConfigConstants.OUT_ARRAY_FORMAT;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_ABBREV;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_CODE;
+import SmUtilities.SmDebugLogger;
 import SmUtilities.SmTimeFormatter;
+import java.io.IOException;
 import java.util.ArrayList;
 
 /**
@@ -34,6 +36,8 @@ public class V3Component extends COSMOScontentFormat {
     private ArrayList<VRealArray> V3Data; // a list of VRealArray objects for all the different data sections
     private final V1Component parentV1; // link back to the parent V1 record 
     private final V2Component parentV2; // link back to the parent V2 record
+    private final V2Component parentV2vel;
+    private final V2Component parentV2dis;
     /** 
      * Use this constructor when the V3 component is read in from a file and
      * filled in with the loadComponent method.  In this case, there is no parentV2
@@ -44,6 +48,8 @@ public class V3Component extends COSMOScontentFormat {
         super(procType);
         this.parentV1 = null;
         this.parentV2 = null;
+        this.parentV2vel = null;
+        this.parentV2dis = null;
     }
     /**
      * Use this constructor when the V3 component is created from processing
@@ -52,10 +58,13 @@ public class V3Component extends COSMOScontentFormat {
      * @param procType process level indicator (i.e. "V3")
      * @param pV2 reference to the parent V2Component
      */
-    public V3Component( String procType, V2Component pV2) {
+    public V3Component( String procType, V2Component pV2, V2Component pV2vel,
+                                                            V2Component pV2dis) {
         super( procType );
         this.parentV1 = pV2.getParent();
         this.parentV2 = pV2;
+        this.parentV2vel = pV2vel;
+        this.parentV2dis = pV2dis;
         //Load the text header with parent V1 values.  Leave the update to the V2
         //values to the buildV2 method.
         this.noIntVal = pV2.noIntVal;
@@ -360,5 +369,53 @@ public class V3Component extends COSMOScontentFormat {
         V3DataText.clear();
         outText[totalLength-1] = this.endOfData;
         return outText;
+    }
+    public void updateUploadParms() throws IOException {
+        SmDebugLogger elog = SmDebugLogger.INSTANCE;
+        String[] headerline = {"SCNL","STATION_TYPE","STATION_NAME","LAT","LON",
+            "EPIC","FAULT","PGAV1","PGAV2","PGV","PGD","SA0P3","SA1P0","SA3P0"};
+        ArrayList<String> data = new ArrayList<>();
+        //SCNL code
+        data.add(super.SCNLcode);
+        //station type
+        int stationtype = this.intHeader.getIntValue(COSMOS_STATION_TYPE);
+        data.add(String.format("%d", stationtype));
+        //station name
+        String stationname = super.textHeader[4].substring(40);
+        data.add(stationname);
+        //station latitude
+        double lat = this.realHeader.getRealValue(COSMOS_LATITUDE);
+        data.add(String.format("%6.3f",lat));
+        //station longitude
+        double lon = this.realHeader.getRealValue(COSMOS_LONGITUDE);
+        data.add(String.format("%6.3f",lon));
+        //epicentral distance
+        double epic = this.realHeader.getRealValue(COSMOS_EPICENTRALDIST);
+        data.add(String.format("%6.1f",epic));
+        //fault
+        data.add("( -- )");
+        //PGAv1
+        int units = parentV1.intHeader.getIntValue(V_UNITS_INDEX);
+        double pgav1 = parentV1.realHeader.getRealValue(PEAK_VAL);
+        pgav1 = (units == 2) ? pgav1 : (pgav1 * TO_G_CONVERSION);
+        data.add(String.format("%6.3f",pgav1));
+        //PGSv2
+        units = parentV2.intHeader.getIntValue(V_UNITS_INDEX);
+        double pgav2 = parentV2.realHeader.getRealValue(PEAK_VAL);
+        pgav2 = (units == 2) ? pgav2 : (pgav2 * TO_G_CONVERSION);
+        data.add(String.format("%6.3f",pgav2));
+        //PGV
+        double pgv = parentV2vel.realHeader.getRealValue(PEAK_VAL);
+        data.add(String.format("%6.3f",pgv));
+        //PGD
+        double pgd = parentV2dis.realHeader.getRealValue(PEAK_VAL);
+        data.add(String.format("%6.3f",pgd));
+        //Sa at period 0.3 sec, 1 sec, 3 sec
+        data.add(String.format("%6.3f",this.realHeader.getRealValue(VALUE_SA_0P3)));
+        data.add(String.format("%6.3f",this.realHeader.getRealValue(VALUE_SA_1P0)));
+        data.add(String.format("%6.3f",this.realHeader.getRealValue(VALUE_SA_3P0)));
+        
+        elog.writeToCSV(data, headerline, "apktable.csv");
+        data.clear();
     }
 }

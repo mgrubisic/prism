@@ -458,4 +458,30 @@ public class ArrayOps {
         }
         return cross;
     }
+    /**
+     * Finds the first zero crossing within the specified interval, then finds the
+     * mean of this interval and <b><i>removes the mean from only this interval within
+     * the original array</i></b>.
+     * @param array the array to make correction in, this array is modified
+     * @param start the starting index to look for zero crossing
+     * @param stop the ending index to look for zero crossing
+     * @return the index of the first zero crossing found within the interval, or
+     * -2 if the input parameters are invalid.
+     */
+    public static int makeZCrossCorrection( double[] inArray, int start, int stop) {
+        if ((inArray == null) || (inArray.length == 0) || (start < 0) || 
+            (start > inArray.length) || (stop < 0) || (stop > inArray.length)
+                                                            || (start == stop)) {
+            return -2;
+        }
+        int firstzero = findZeroCrossing(inArray, start, stop);
+        if (firstzero > 0) {
+            double[] zmean = new double[firstzero];
+            System.arraycopy( inArray, 0, zmean, 0, firstzero);
+            ArrayStats zstat = new ArrayStats(zmean);
+            removeValue(zmean, zstat.getMean());
+            System.arraycopy( zmean, 0, inArray, 0, firstzero);
+        }
+        return firstzero;
+    }
 }

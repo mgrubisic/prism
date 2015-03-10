@@ -561,6 +561,7 @@ public class V2Process {
         boolean valid = filter.calculateCoefficients(lowcutadj, highcutadj, 
                                             dtime, DEFAULT_NUM_POLES, true);
         if (valid) {
+            ArrayOps.makeZCrossCorrection(velocity, 0, startIndex);
             paddedvelocity = filter.applyFilter(velocity, taperlength, pickIndex);
         } else {
             throw new SmException("Invalid bandpass filter calculated parameters");
@@ -589,8 +590,20 @@ public class V2Process {
         }
         
         // Differentiate velocity to corrected acceleration
-        accel = ArrayOps.Differentiate(velocity, dtime);
+        double[] paddedaccel;
+        accel = new double[velocity.length];
+        paddedaccel = ArrayOps.Differentiate(paddedvelocity, dtime);
+        System.arraycopy(paddedaccel, filter.getPadLength(), accel, 0, accel.length);
         errorlog.add("Velocity differentiated to corrected acceleration");
+        if (writeDebug) {
+           elog.writeOutArray(paddedvelocity, V0name.getName() + "_" + channel + "_paddedVelocityAfterFiltering.txt");
+        }
+        if (writeDebug) {
+           elog.writeOutArray(paddeddisplace, V0name.getName() + "_" + channel + "_paddedDisplaceAfterIntegrate.txt");
+        }
+        if (writeDebug) {
+           elog.writeOutArray(paddedaccel, V0name.getName() + "_" + channel + "_paddedAccelAfterFiltering.txt");
+        }
     }
     /**
      * Calls adaptive baseline correction and extracts the results

@@ -106,6 +106,10 @@ public final class VFileConstants {
     public static final int DATA_PHYSICAL_PARAM_CODE = 1;
     public static final int V_UNITS_INDEX = 2;
     public static final int PROCESSING_AGENCY = 13;
+    public static final int COSMOS_STATION_TYPE = 18;
+    public static final int COSMOS_LATITUDE = 0;
+    public static final int COSMOS_LONGITUDE = 1;
+    public static final int COSMOS_EPICENTRALDIST = 16;
     
     //real header index values
     public static final int MEAN_ZERO = 35;
