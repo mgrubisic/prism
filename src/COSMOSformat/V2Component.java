@@ -75,6 +75,7 @@ public class V2Component extends COSMOScontentFormat {
         this.rcrdId = pV1.getRcrdId();
         this.SCNLauth = pV1.getSCNLauth();
         this.eventID = pV1.getEventID();
+        this.SCNLcode = pV1.getSCNLcode();
         
         //The buildV2 method fills in these data values, the format line, and
         //the individual params for the real arrays.

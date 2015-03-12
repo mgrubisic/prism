@@ -323,6 +323,37 @@ public class COSMOScontentFormat {
         }
     }
     /**
+     * Looks for the station name in either the header or the comments and
+     * returns the name.
+     * @return the text station name
+     */
+    public String checkForStationName() {
+        String stationname = "";
+        String line = this.textHeader[4].substring(40);
+       if (line.isEmpty()) {
+            return stationname;
+        }
+        Matcher m;
+        String matchRegex = "(Station Name:)";
+        Pattern regField = Pattern.compile(matchRegex);
+        
+        String findRegex = "(?i)(see comment)";
+        Pattern findField = Pattern.compile(findRegex);
+        Matcher f = findField.matcher( line );
+        if (f.find()) {
+            for (String each : this.comments) {
+                m = regField.matcher( each);
+                if (m.find()) {
+                    stationname = each.substring(m.end()).trim();
+                    break;
+                }
+            }
+        } else {
+            stationname = line;
+        }
+        return stationname;
+    }
+    /**
      * This method updates the End-of-data line to match the current processing
      * type.
      * @param dtype the data type to update the End-of-data line with, such as
@@ -416,7 +447,6 @@ public class COSMOScontentFormat {
      */
     public String getEventDateTime() {
         StringBuilder sb = new StringBuilder(MAX_LINE_LENGTH);
-//        StringBuilder ab = new StringBuilder(MAX_LINE_LENGTH);
         
         String year = String.format("%04d",intHeader.getIntValue(START_TIME_YEAR));
         String month = String.format("%02d",intHeader.getIntValue(START_TIME_MONTH));
@@ -431,10 +461,6 @@ public class COSMOScontentFormat {
                              .append("_").append(hour)
                              .append("_").append(min)
                              .append("_").append(sec).toString();
-//        String altdisp =   ab.append("UT_").append(year).append("_J").append(day)
-//                             .append("_H").append(hour).append("_M").append(min)
-//                             .append("_S").append(sec).toString();
-//        System.out.println("alt event time: " + altdisp);
         return eventtime;
     }
     /**
@@ -582,6 +608,13 @@ public class COSMOScontentFormat {
      */
     public String getSCNLauth() {
         return SCNLauth;
+    }
+    /**
+     * Getter for the SCNL code from the comments
+     * @return the SCNL as a String
+     */
+    public String getSCNLcode() {
+        return SCNLcode;
     }
     /**
      * Getter for the event ID from either the text header or the comments

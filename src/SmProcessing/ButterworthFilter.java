@@ -174,8 +174,7 @@ public class ButterworthFilter {
 
         //Calculate the length of the cosine taper.  Put a lower limit of the
         //taperlength time specified in the configuration file, and an upper
-        //limit of 5% of array length.  Remove any initial offset between the
-        //start of the array and the first zero crossing.
+        //limit of 5% of array length.
         int maxtaper = (int)(arrayS.length * 0.05);
         taperlength = (int)(taplengthtime / dtime);
         taperlength = (taperlength > maxtaper) ? maxtaper : taperlength;

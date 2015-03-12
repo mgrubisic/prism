@@ -77,7 +77,7 @@ public class V2Process {
     private int startIndex;
     private double ebuffer;
     private EventOnsetType emethod;
-    protected int numpoles;  // the filter order is numpoles*2
+    protected int numpoles;  // the filter order is rolloff*2
     protected double taperlength;
     private double preEventMean;
     private int trendRemovalOrder;
@@ -314,7 +314,7 @@ public class V2Process {
             makeDebugCSV();
             return procStatus;
         }
-        stepRec.addEventOnset(pickIndex * dtime);
+        stepRec.addEventOnset(startIndex * dtime);
         // Update Butterworth filter low and high cutoff thresholds for later
         updateThresholds();
         
@@ -344,9 +344,12 @@ public class V2Process {
         //Integrate the acceleration to get velocity, using 0 as first value estimate
         velocity = ArrayOps.Integrate( accraw, dtime, 0.0);
         //Now correct for unknown initial value by removing preevent mean (minus first val.)
-        double[] velset = Arrays.copyOfRange( velocity, 1, startIndex );
-        ArrayStats velsub = new ArrayStats( velset );
-        ArrayOps.removeValue(velocity, velsub.getMean());
+        int intzero = ArrayOps.findZeroCrossing(velocity, startIndex, 0);
+        if (intzero > 1) {
+            double[] velset = Arrays.copyOfRange( velocity, 1, intzero );
+            ArrayStats velsub = new ArrayStats( velset );
+            ArrayOps.removeValue(velocity, velsub.getMean());
+        }
         
         errorlog.add("acceleration integrated to velocity");
         if (writeBaseline) {
@@ -372,7 +375,7 @@ public class V2Process {
         // First QC Test
         //
         ///////////////////////////////
-        qcchecker.findWindow(lowcutadj, samplerate, pickIndex);
+        qcchecker.findWindow(lowcutadj, samplerate, startIndex);
         boolean passedQC = qcchecker.qcVelocity(veltest);
         if ( !passedQC ){
             trendRemovalOrder = -1;
@@ -561,8 +564,8 @@ public class V2Process {
         boolean valid = filter.calculateCoefficients(lowcutadj, highcutadj, 
                                             dtime, DEFAULT_NUM_POLES, true);
         if (valid) {
-            ArrayOps.makeZCrossCorrection(velocity, 0, startIndex);
-            paddedvelocity = filter.applyFilter(velocity, taperlength, pickIndex);
+//            ArrayOps.makeZCrossCorrection(velocity, 0, startIndex);
+            paddedvelocity = filter.applyFilter(velocity, taperlength, startIndex);
         } else {
             throw new SmException("Invalid bandpass filter calculated parameters");
         }
@@ -612,7 +615,7 @@ public class V2Process {
      */
     private double[] adaptiveCorrection() throws SmException {
         ABC2 adapt = new ABC2(
-            dtime,velocity,lowcutadj,highcutadj,numpoles,pickIndex,taperlength);
+            dtime,velocity,lowcutadj,highcutadj,numpoles,startIndex,taperlength);
         procStatus = adapt.findFit();
 //        System.out.println("procstatus: " + procStatus.name());
         basetype = BaselineType.ABC;
@@ -692,8 +695,8 @@ public class V2Process {
         data.add(channel);                                  //channel number
         data.add(String.format("%d",inArrayLength));      //length of array
         data.add(String.format("%5.3f",dtime));             //sample interval
-        data.add(String.format("%d",pickIndex));            //event onset index
-        data.add(String.format("%8.3f", pickIndex*dtime));  //event onset time
+        data.add(String.format("%d",startIndex));            //event onset index
+        data.add(String.format("%8.3f", startIndex*dtime));  //event onset time
         data.add(String.format("%8.5f",VpeakVal));          //peak velocity
         data.add(String.format("%d",calculated_taper));     //filter taperlength
         data.add(String.format("%8.6f",preEventMean));      //preevent mean removed

@@ -78,6 +78,7 @@ public class V3Component extends COSMOScontentFormat {
         this.fileName = pV2.getFileName();
         this.rcrdId = pV2.getRcrdId();
         this.SCNLauth = pV2.getSCNLauth();
+        this.SCNLcode = pV2.getSCNLcode();
         
         //The buildV2 method fills in these data values, the format line, and
         //the individual params for the real arrays.
@@ -376,44 +377,44 @@ public class V3Component extends COSMOScontentFormat {
             "EPIC","FAULT","PGAV1","PGAV2","PGV","PGD","SA0P3","SA1P0","SA3P0"};
         ArrayList<String> data = new ArrayList<>();
         //SCNL code
-        data.add(super.SCNLcode);
+        data.add(this.SCNLcode);
         //station type
         int stationtype = this.intHeader.getIntValue(COSMOS_STATION_TYPE);
         data.add(String.format("%d", stationtype));
         //station name
-        String stationname = super.textHeader[4].substring(40);
-        data.add(stationname);
+        String stationname = checkForStationName();
+        data.add(stationname.replace(",", " "));
         //station latitude
         double lat = this.realHeader.getRealValue(COSMOS_LATITUDE);
-        data.add(String.format("%6.3f",lat));
+        data.add(String.format("%10.5f",lat));
         //station longitude
         double lon = this.realHeader.getRealValue(COSMOS_LONGITUDE);
-        data.add(String.format("%6.3f",lon));
+        data.add(String.format("%10.5f",lon));
         //epicentral distance
         double epic = this.realHeader.getRealValue(COSMOS_EPICENTRALDIST);
-        data.add(String.format("%6.1f",epic));
+        data.add(String.format("%10.5f",epic));
         //fault
         data.add("( -- )");
         //PGAv1
         int units = parentV1.intHeader.getIntValue(V_UNITS_INDEX);
         double pgav1 = parentV1.realHeader.getRealValue(PEAK_VAL);
         pgav1 = (units == 2) ? pgav1 : (pgav1 * TO_G_CONVERSION);
-        data.add(String.format("%6.3f",pgav1));
+        data.add(String.format("%15.6f",pgav1));
         //PGSv2
         units = parentV2.intHeader.getIntValue(V_UNITS_INDEX);
         double pgav2 = parentV2.realHeader.getRealValue(PEAK_VAL);
         pgav2 = (units == 2) ? pgav2 : (pgav2 * TO_G_CONVERSION);
-        data.add(String.format("%6.3f",pgav2));
+        data.add(String.format("%15.6f",pgav2));
         //PGV
         double pgv = parentV2vel.realHeader.getRealValue(PEAK_VAL);
-        data.add(String.format("%6.3f",pgv));
+        data.add(String.format("%15.6f",pgv));
         //PGD
         double pgd = parentV2dis.realHeader.getRealValue(PEAK_VAL);
-        data.add(String.format("%6.3f",pgd));
+        data.add(String.format("%15.6f",pgd));
         //Sa at period 0.3 sec, 1 sec, 3 sec
-        data.add(String.format("%6.3f",this.realHeader.getRealValue(VALUE_SA_0P3)));
-        data.add(String.format("%6.3f",this.realHeader.getRealValue(VALUE_SA_1P0)));
-        data.add(String.format("%6.3f",this.realHeader.getRealValue(VALUE_SA_3P0)));
+        data.add(String.format("%15.6f",this.realHeader.getRealValue(VALUE_SA_0P3)));
+        data.add(String.format("%15.6f",this.realHeader.getRealValue(VALUE_SA_1P0)));
+        data.add(String.format("%15.6f",this.realHeader.getRealValue(VALUE_SA_3P0)));
         
         elog.writeToCSV(data, headerline, "apktable.csv");
         data.clear();
