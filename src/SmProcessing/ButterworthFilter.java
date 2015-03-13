@@ -176,7 +176,10 @@ public class ButterworthFilter {
         //taperlength time specified in the configuration file, and an upper
         //limit of 5% of array length.
         int maxtaper = (int)(arrayS.length * 0.05);
-        taperlength = (int)(taplengthtime / dtime);
+        taperlength = ArrayOps.findZeroCrossing(arrayS, eventOnsetIndex, 0);
+        if ((taperlength <= 0) || ((taperlength*dtime) < taplengthtime)) {
+            taperlength = (int)(taplengthtime / dtime);
+        }
         taperlength = (taperlength > maxtaper) ? maxtaper : taperlength;
         
         //Copy the input array into a return array.  If the filter was configured

@@ -56,6 +56,8 @@ public class ABC2 {
     private final double[] velstart;
     private double[] displace;
     private double[] accel;
+    private double []paddedaccel;
+    ButterworthFilter filter;
     private final int degreeP1lo;
     private final int degreeP1hi;
     private final int degreeP3lo;
@@ -164,14 +166,9 @@ public class ABC2 {
         int vlen = velstart.length;
         int endval = (int)(0.8 * vlen);
         int startval = estart + MOVING_WINDOW;
-        double[] v1poly = new double[estart];
-        double[] paddedvelocity;
-        double[] paddeddisplace;
         boolean success = false;
-        ButterworthFilter filter;
         params = new ArrayList<>();
         double[] onerun;
-        boolean pass = false;
         VFileConstants.V2Status status = V2Status.NOABC;
         QCcheck qcchecker = new QCcheck();
         qcchecker.validateQCvalues();
@@ -195,20 +192,7 @@ public class ABC2 {
         for (int order3 = degreeP3lo; order3 <= degreeP3hi; order3++) {
             for (int t2 = startval; t2 <= endval; t2 += MOVING_WINDOW) {
                 if (((t2-estart)*dtime) >= ((int)1.0/lowcut)) {
-                    //fit a baseline function to each segment and make correction
-                    velocity = makeCorrection(velstart, t2, order3);
-                    //filter velocity
-                    ArrayOps.makeZCrossCorrection(velocity, 0, estart);
-                    paddedvelocity = filter.applyFilter(velocity, taplength, estart);
-                     //remove any mean value
-                    ArrayStats velmean = new ArrayStats( paddedvelocity );
-                    ArrayOps.removeValue(paddedvelocity, velmean.getMean());
-                    //integrate to get displacement, differentiate for acceleration
-                    paddeddisplace = ArrayOps.Integrate( paddedvelocity, dtime, 0.0);
-                    displace = new double[velocity.length];
-                    System.arraycopy(paddedvelocity, filter.getPadLength(), velocity, 0, velocity.length);
-                    System.arraycopy(paddeddisplace, filter.getPadLength(), displace, 0, displace.length);
-                    accel = ArrayOps.Differentiate(velocity, dtime);
+                    processTheArrays( t2, order3);
                     qcchecker.qcVelocity(velocity);
                     qcchecker.qcDisplacement(displace);
                     //store the results in an array for comparison
@@ -261,18 +245,7 @@ public class ABC2 {
                           (eachrun[3] <= qcchecker.getResVelocityQCval()) && 
                                 (eachrun[1] <= qcchecker.getResDisplaceQCval());
             if (success) {
-                velocity = makeCorrection(velstart,(int)eachrun[5],(int)eachrun[7]);
-                ArrayOps.makeZCrossCorrection(velocity, 0, estart);
-                paddedvelocity = filter.applyFilter(velocity, taplength, estart);
-                taplength_calculated = filter.getTaperlength();
-                ArrayStats velmean = new ArrayStats( paddedvelocity );
-                ArrayOps.removeValue(paddedvelocity, velmean.getMean());
-                paddeddisplace = ArrayOps.Integrate( paddedvelocity, dtime, 0.0);
-                displace = new double[velocity.length];
-                System.arraycopy(paddedvelocity, filter.getPadLength(), velocity, 0, velocity.length);
-                System.arraycopy(paddeddisplace, filter.getPadLength(), displace, 0, displace.length);
-                accel = ArrayOps.Differentiate(velocity, dtime);
-
+                processTheArrays((int)eachrun[5],(int)eachrun[7]);
                 status = V2Status.GOOD;
                 solution = idx;
                 break;
@@ -281,21 +254,33 @@ public class ABC2 {
         if (status != V2Status.GOOD) { //just pick the lowest rms run to return
             solution = 0;
             eachrun = params.get(solution);
-            velocity = makeCorrection(velstart,(int)eachrun[5],(int)eachrun[7]);
-            ArrayOps.makeZCrossCorrection(velocity, 0, estart);
-            paddedvelocity = filter.applyFilter(velocity, taplength, estart);
-            taplength_calculated = filter.getTaperlength();
-            ArrayStats velmean = new ArrayStats( paddedvelocity );
-            ArrayOps.removeValue(paddedvelocity, velmean.getMean());
-            paddeddisplace = ArrayOps.Integrate( paddedvelocity, dtime, 0.0);
-            displace = new double[velocity.length];
-            System.arraycopy(paddedvelocity, filter.getPadLength(), velocity, 0, velocity.length);
-            System.arraycopy(paddeddisplace, filter.getPadLength(), displace, 0, displace.length);
-            accel = ArrayOps.Differentiate(velocity, dtime);
+            processTheArrays((int)eachrun[5],(int)eachrun[7]);
             status = V2Status.FAILQC;
         }
         return status;
-    }/**
+    }
+    private void processTheArrays( int firstb, int secondb) {
+        double[] paddedvelocity;
+        double[] paddeddisplace;
+        
+        //fit a baseline function to each segment and make correction
+        velocity = makeCorrection(velstart,firstb,secondb);
+        //filter velocity
+        paddedvelocity = filter.applyFilter(velocity, taplength, estart);
+        taplength_calculated = filter.getTaperlength();
+        //remove any mean value
+        ArrayStats velmean = new ArrayStats( paddedvelocity );
+        ArrayOps.removeValue(paddedvelocity, velmean.getMean());
+        //integrate to get displacement, differentiate for acceleration
+        paddeddisplace = ArrayOps.Integrate( paddedvelocity, dtime, 0.0);
+        displace = new double[velocity.length];
+        System.arraycopy(paddedvelocity, filter.getPadLength(), velocity, 0, velocity.length);
+        System.arraycopy(paddeddisplace, filter.getPadLength(), displace, 0, displace.length);
+        paddedaccel = ArrayOps.Differentiate(paddedvelocity, dtime);
+        accel = new double[velocity.length];
+        System.arraycopy(paddedaccel, filter.getPadLength(), accel, 0, accel.length);
+    }
+    /**
      * Finds the best fit for the first segment (from 0 to event onset) by
      * iterating over the different polynomial orders and choosing the order that
      * produces a fit with the lowest rms error compared to the original segment.
@@ -542,6 +527,13 @@ public class ABC2 {
      */
     public double[] getABCacceleration() {
         return accel;
+    }
+    /**
+     * Getter for the corrected padded acceleration array
+     * @return the padded acceleration
+     */
+    public double[] getABCpaddedacceleration() {
+        return paddedaccel;
     }
     /**
      * Getter for the calculated taper length used during filtering

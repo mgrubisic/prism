@@ -8,6 +8,7 @@
 
 package SmProcessing;
 
+import static SmConstants.VFileConstants.FROM_G_CONVERSION;
 import static SmConstants.VFileConstants.TO_G_CONVERSION;
 import static SmProcessing.ArrayOps.convertArrayUnits;
 import java.util.Arrays;
@@ -23,8 +24,6 @@ public class ComputedParams {
     private final double[] acc;
     private final double[] gaccsq;
     private double[] gacc;
-    private double t1;
-    private double t2;
     private final double dt;
     private int brackstart;
     private int brackend;
@@ -54,8 +53,6 @@ public class ComputedParams {
         this.len = inAcc.length;
         this.gacc = new double[len];
         this.gaccsq = new double[len];
-        this.t1 = 0.0;
-        this.t2 = 0.0;
         this.bracketedDuration = 0.0;
         this.ariasIntensity = 0.0;
         this.housnerIntensity = 0.0;
@@ -75,7 +72,7 @@ public class ComputedParams {
         for (int i = 0; i < len; i++) {
             gaccsq[i] = Math.pow(gacc[i],2);
         }
-        //Get sum/integration of gaccsq
+        //Get sum/integration of gaccsq, which is Ea
         this.sumGaccsq = 0.5 * (gaccsq[0] + gaccsq[len-1]) * dt;
         for (int i = 1; i < len-1; i++) {
             sumGaccsq = sumGaccsq + gaccsq[i]*dt;
@@ -100,8 +97,8 @@ public class ComputedParams {
         //Duration interval, (sec at 75% Arias I. - sec at 5% Arias I.)
         calculateDurationInterval();
         
-        // Arias Intensity, units of g, damping = 0.05
-        ariasIntensity = sumGaccsq * Math.PI / 2.0;
+        // Arias Intensity, units of m/sec, damping = 0.05
+        ariasIntensity = (sumGaccsq * Math.PI / 2.0) * FROM_G_CONVERSION * 0.01;
 
         // Housner Intensity, units of g*g
         calculateHousnerIntensity();
@@ -141,7 +138,7 @@ public class ComputedParams {
 //        System.out.println("bracketed start: " + brackstart);
         
         //Now find the index where the last value < threshold
-        for (int j = len-1; j > t1; j--) {
+        for (int j = len-1; j >= brackstart; j--) {
             if (Math.abs(gacc[j]) > threshold) {
                 brackend = j;
                 break;
@@ -257,13 +254,11 @@ public class ComputedParams {
         double sum = 0.0;
         for (int k = 0; k < len; k = k + step) {
             if (intervals[ctr]) {
-//                System.out.println("step: " + ctr);
                 upperlim = ((k+step) <= len) ? k+step : len;
                 sum = 0.5 * Math.abs(acc[k] + acc[upperlim-1]) * 0.01 * dt;
                 for (int i = k+1; i < upperlim-1; i++) {
                     sum = sum + Math.abs(acc[i]) * 0.01 * dt;
                 }
-//                System.out.println("ctr: " + ctr + " sum: " + sum);
                 CAV = CAV + sum;
                 sum = 0;
             }

@@ -34,7 +34,7 @@ public class V3Process {
     private double dtime;
     private double samplerate;
     private final double noRealVal;
-    private double[] accel;
+    private double[] paccel;
     private double peakVal;
     private double peakIndex;
     private double peakTime;
@@ -49,19 +49,17 @@ public class V3Process {
      * The constructor reads in the coefficient files and the period file and
      * stores them for use during the calculations.
      * @param v2acc the V2 component with corrected acceleration
-     * @param v2vel the V2 component with velocity
-     * @param v2dis the V2 component with displacement
+     * @param v2val the V2 process object holding the padded acceleration array
      * @throws IOException if unable to read in the coefficient files
      * @throws SmException if the sampling interval in the real header is invalid
      * @throws FormatException if unable to parse the values in the coefficient files
      */
-    public V3Process(final V2Component v2acc, final V2Component v2vel,
-                      final V2Component v2dis) throws IOException, SmException, 
+    public V3Process(final V2Component v2acc, V2Process v2val) throws IOException, SmException, 
                                                                 FormatException {
 
         this.elog = SmDebugLogger.INSTANCE;
         writeArrays = false;
-        this.accel = v2acc.getDataArray();
+        this.paccel = v2val.getPaddedAccel();
         this.peakVal = 0.0;
         this.peakIndex = 0;
         this.Sa_0p2 = 0.0;
@@ -69,8 +67,8 @@ public class V3Process {
         this.Sa_1p0 = 0.0;
         this.Sa_3p0 = 0.0;
         this.V3Data = new ArrayList<>();
-        this.noRealVal = v2vel.getNoRealVal();
-        double delta_t = v2vel.getRealHeaderValue(DELTA_T);
+        this.noRealVal = v2acc.getNoRealVal();
+        double delta_t = v2acc.getRealHeaderValue(DELTA_T);
         if ((Math.abs(delta_t - noRealVal) < EPSILON) || (delta_t < 0.0)){
             throw new SmException("Real header #62, delta t, is invalid: " + 
                                                                        delta_t);
@@ -101,7 +99,7 @@ public class V3Process {
         double lval;
         double scale;
         FFourierTransform fft = new FFourierTransform();
-        double[] accspec = fft.calculateFFT(accel);
+        double[] accspec = fft.calculateFFT(paccel);
         double delta_f = 1.0 / (fft.getPowerLength() * dtime);
         
         if (writeArrays) {
@@ -141,7 +139,7 @@ public class V3Process {
         
         //Calculate the spectra for each damping value
         double omega;
-        int len = accel.length;
+        int len = paccel.length;
         double[] sd;
         double[] sv;
         double[] sa;
@@ -168,9 +166,9 @@ public class V3Process {
                 
                 for(int k = 1; k < len; k++) {
                     y[0][k] = coef_a * y[0][k-1] + coef_b * y[1][k-1] + 
-                                                              coef_e * accel[k];
+                                                              coef_e * paccel[k];
                     y[1][k] = coef_c * y[0][k-1] + coef_d * y[1][k-1] + 
-                                                              coef_f * accel[k];
+                                                              coef_f * paccel[k];
                 }
         
                 //Get the relative displacement (cm)

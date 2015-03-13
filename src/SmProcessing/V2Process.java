@@ -56,6 +56,7 @@ public class V2Process {
     private double initialDis;
     
     private int inArrayLength;
+    private double[] paddedaccel;
     protected final V1Component inV1;
     protected int data_unit_code;
     protected double dtime;
@@ -564,7 +565,6 @@ public class V2Process {
         boolean valid = filter.calculateCoefficients(lowcutadj, highcutadj, 
                                             dtime, DEFAULT_NUM_POLES, true);
         if (valid) {
-//            ArrayOps.makeZCrossCorrection(velocity, 0, startIndex);
             paddedvelocity = filter.applyFilter(velocity, taperlength, startIndex);
         } else {
             throw new SmException("Invalid bandpass filter calculated parameters");
@@ -593,7 +593,6 @@ public class V2Process {
         }
         
         // Differentiate velocity to corrected acceleration
-        double[] paddedaccel;
         accel = new double[velocity.length];
         paddedaccel = ArrayOps.Differentiate(paddedvelocity, dtime);
         System.arraycopy(paddedaccel, filter.getPadLength(), accel, 0, accel.length);
@@ -629,6 +628,7 @@ public class V2Process {
         accel = adapt.getABCacceleration();
         velocity = adapt.getABCvelocity();
         displace = adapt.getABCdisplacement();
+        paddedaccel = adapt.getABCpaddedacceleration();
         initialVel = velocity[0];
         initialDis = displace[0];
         if (writeBaseline) { 
@@ -929,5 +929,12 @@ public class V2Process {
      */
     public double getInitialDisplace() {
         return initialDis;
+    }
+    /**
+     * Getter for the padded acceleration array for V3 processing
+     * @return reference to the padded acceleration array
+     */
+    public double[] getPaddedAccel() {
+        return paddedaccel;
     }
 }
