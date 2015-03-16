@@ -6,7 +6,7 @@
  * Date: first release date Feb. 2015
  ******************************************************************************/
 
-package SMCOSMOScontrol;
+package SmControl;
 
 import COSMOSformat.COSMOScontentFormat;
 import COSMOSformat.V0Component;

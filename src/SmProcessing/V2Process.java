@@ -52,8 +52,8 @@ public class V2Process {
     protected final int dis_unit_code;
     protected final String dis_units;
     
-    private double initialVel;
-    private double initialDis;
+    protected double initialVel;
+    protected double initialDis;
     
     private int inArrayLength;
     private double[] paddedaccel;
@@ -75,7 +75,7 @@ public class V2Process {
     protected BaselineType basetype;
     
     private int pickIndex;
-    private int startIndex;
+    protected int startIndex;
     private double ebuffer;
     private EventOnsetType emethod;
     protected int numpoles;  // the filter order is rolloff*2
@@ -109,12 +109,12 @@ public class V2Process {
     private int ABCbreak1;
     private int ABCbreak2;
     
-    private double bracketedDuration;
-    private double AriasIntensity;
-    private double HousnerIntensity;
-    private double channelRMS;
-    private double durationInterval;
-    private double cumulativeAbsVelocity;
+    protected double bracketedDuration;
+    protected double AriasIntensity;
+    protected double HousnerIntensity;
+    protected double channelRMS;
+    protected double durationInterval;
+    protected double cumulativeAbsVelocity;
     
     ProcessStepsRecorder stepRec;
     /**
@@ -873,6 +873,13 @@ public class V2Process {
      */
     public int getStartIndex() {
         return this.startIndex;
+    }
+    /**
+     * Setter for the start index
+     * @param instartindex 
+     */
+    public void setStartIndex(int instartindex) {
+        this.startIndex = instartindex;
     }
     /**
      * Getter for the Bracketed Duration for the real header

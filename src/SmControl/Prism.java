@@ -6,7 +6,7 @@
  * Date: first release date Feb. 2015
  ******************************************************************************/
 
-package SMCOSMOScontrol;
+package SmControl;
 
 import SmConstants.VFileConstants;
 import static SmConstants.VFileConstants.RAWACC;
