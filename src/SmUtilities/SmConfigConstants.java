@@ -44,8 +44,6 @@ public class SmConfigConstants {
     
     public static final String FIRST_POLY_ORDER_LOWER  = "PRISM/AdaptiveBaselineCorrection/FirstPolyOrder/LowerLimit";
     public static final String FIRST_POLY_ORDER_UPPER  = "PRISM/AdaptiveBaselineCorrection/FirstPolyOrder/UpperLimit";
-    public static final String SPLINE_ORDER_LOWER  = "PRISM/AdaptiveBaselineCorrection/SplineOrder/LowerLimit";
-    public static final String SPLINE_ORDER_UPPER  = "PRISM/AdaptiveBaselineCorrection/SplineOrder/UpperLimit";
-    public static final String THIRD_POLY_ORDER_LOWER = "PRISM/AdaptiveBaselineCorrection/SecondPolyOrder/LowerLimit";
-    public static final String THIRD_POLY_ORDER_UPPER = "PRISM/AdaptiveBaselineCorrection/SecondPolyOrder/LowerLimit";
+    public static final String THIRD_POLY_ORDER_LOWER = "PRISM/AdaptiveBaselineCorrection/ThirdPolyOrder/LowerLimit";
+    public static final String THIRD_POLY_ORDER_UPPER = "PRISM/AdaptiveBaselineCorrection/ThirdPolyOrder/UpperLimit";
 }

@@ -56,7 +56,7 @@ public class V2Process {
     protected double initialDis;
     
     private int inArrayLength;
-    private double[] paddedaccel;
+    protected double[] paddedaccel;
     protected final V1Component inV1;
     protected int data_unit_code;
     protected double dtime;

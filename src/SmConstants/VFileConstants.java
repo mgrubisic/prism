@@ -177,8 +177,6 @@ public final class VFileConstants {
     //adaptive baseline correction constants
     public static final int DEFAULT_1ST_POLY_ORD_LOWER = 1;
     public static final int DEFAULT_1ST_POLY_ORD_UPPER = 2;
-    public static final int DEFAULT_SPLINE_ORD_LOWER = 2;
-    public static final int DEFAULT_SPLINE_ORD_UPPER = 3;
     public static final int DEFAULT_3RD_POLY_ORD_LOWER = 1;
     public static final int DEFAULT_3RD_POLY_ORD_UPPER = 3;
     
