@@ -876,7 +876,7 @@ public class V2Process {
     }
     /**
      * Setter for the start index
-     * @param instartindex 
+     * @param instartindex the event start index
      */
     public void setStartIndex(int instartindex) {
         this.startIndex = instartindex;

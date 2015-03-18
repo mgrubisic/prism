@@ -57,6 +57,8 @@ public class V3Component extends COSMOScontentFormat {
      * to the V2 values and updated during the processing.
      * @param procType process level indicator (i.e. "V3")
      * @param pV2 reference to the parent V2Component
+     * @param pV2vel reference to the parent V2Component holding velocity
+     * @param pV2dis reference to the parent V2Component holding displacement
      */
     public V3Component( String procType, V2Component pV2, V2Component pV2vel,
                                                             V2Component pV2dis) {

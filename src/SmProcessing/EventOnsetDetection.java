@@ -91,7 +91,7 @@ public class EventOnsetDetection {
      * damping energy is binned by a histogram to determine when its state
      * begins to change from 0.  The nearest zero crossing before this time
      * is determined to be the event onset.
-     * @param acc the input acceleration array
+     * @param accTotal the input acceleration array
      * @return the event onset index
      */
     public int findEventOnset( final double[] accTotal) {

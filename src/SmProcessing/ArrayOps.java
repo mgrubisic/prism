@@ -462,7 +462,7 @@ public class ArrayOps {
      * Finds the first zero crossing within the specified interval, then finds the
      * mean of this interval and <b><i>removes the mean from only this interval within
      * the original array</i></b>.
-     * @param array the array to make correction in, this array is modified
+     * @param inArray the array to make correction in, this array is modified
      * @param start the starting index to look for zero crossing
      * @param stop the ending index to look for zero crossing
      * @return the index of the first zero crossing found within the interval, or
