@@ -597,15 +597,15 @@ public class V2Process {
         paddedaccel = ArrayOps.Differentiate(paddedvelocity, dtime);
         System.arraycopy(paddedaccel, filter.getPadLength(), accel, 0, accel.length);
         errorlog.add("Velocity differentiated to corrected acceleration");
-        if (writeDebug) {
-           elog.writeOutArray(paddedvelocity, V0name.getName() + "_" + channel + "_paddedVelocityAfterFiltering.txt");
-        }
-        if (writeDebug) {
-           elog.writeOutArray(paddeddisplace, V0name.getName() + "_" + channel + "_paddedDisplaceAfterIntegrate.txt");
-        }
-        if (writeDebug) {
-           elog.writeOutArray(paddedaccel, V0name.getName() + "_" + channel + "_paddedAccelAfterFiltering.txt");
-        }
+//        if (writeDebug) {
+//           elog.writeOutArray(paddedvelocity, V0name.getName() + "_" + channel + "_paddedVelocityAfterFiltering.txt");
+//        }
+//        if (writeDebug) {
+//           elog.writeOutArray(paddeddisplace, V0name.getName() + "_" + channel + "_paddedDisplaceAfterIntegrate.txt");
+//        }
+//        if (writeDebug) {
+//           elog.writeOutArray(paddedaccel, V0name.getName() + "_" + channel + "_paddedAccelAfterFiltering.txt");
+//        }
     }
     /**
      * Calls adaptive baseline correction and extracts the results
@@ -725,7 +725,7 @@ public class V2Process {
             data.add((ABCnumparams > 0) ? String.format("%d",ABCnumparams) : "");
             data.add((ABCwinrank > 0) ? String.format("%d",ABCwinrank) : "");
         }
-        elog.writeToCSV(data, headerline, "parameterLog.csv");
+        elog.writeToCSV(data, headerline, "ParameterLog.csv");
         data.clear();
     }
     /**

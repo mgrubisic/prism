@@ -372,12 +372,11 @@ public class V2Component extends COSMOScontentFormat {
         text.clear();
         return comments;
     }
-    public int extractEONSETfromComments() throws SmException {
+    public double extractEONSETfromComments() throws SmException {
         String matchRegex = "(<EONSET>)";
-        int eonset = 0;
         double etime = 0.0;
         if (this.comments.length < 2) {
-            return eonset;
+            return etime;
         }
         try {
             for (String each : this.comments) {
@@ -386,13 +385,12 @@ public class V2Component extends COSMOScontentFormat {
                 if (m.find()) {
                     String[] vals = each.split(" ");
                     etime = Double.parseDouble(vals[vals.length-1]);
-                    eonset = (int)(etime / (this.getRealHeaderValue(DELTA_T) * MSEC_TO_SEC));
                     break;
                 }
             }
         } catch (NumberFormatException err) {
-            return eonset;
+            return 0.0;
         }
-        return eonset;
+        return etime;
     }
 }
