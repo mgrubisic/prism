@@ -49,7 +49,7 @@ public class ABC2 {
     private final double dtime;
     private final double lowcut;
     private final double highcut;
-    private final int numpoles;
+    private final int numroll;
     private final int estart;
     private final double taplength;
     private double[] velocity;
@@ -80,12 +80,12 @@ public class ABC2 {
      * @param invel velocity array to find the baseline function for
      * @param lowcut lowcut filter value to use
      * @param highcut high cut filter value
-     * @param numpoles filter order
+     * @param numroll filter order / 2
      * @param ppick event onset index
      * @param taplengthtime minimum number of seconds for the filter taper length
      */
     public ABC2(double delttime, double[] invel, 
-                                      double lowcut,double highcut, int numpoles,
+                                      double lowcut,double highcut, int numroll,
                                       int ppick, double taplengthtime) {
         this.dtime = delttime;
         this.estart = ppick;
@@ -93,7 +93,7 @@ public class ABC2 {
         this.velstart = invel;
         this.lowcut = lowcut;
         this.highcut = highcut;
-        this.numpoles = numpoles;
+        this.numroll = numroll;
         this.rms = new double[NUM_SEGMENTS];
         this.taplength_calculated = 0;
         this.solution = 0;
@@ -174,7 +174,7 @@ public class ABC2 {
         qcchecker.validateQCvalues();
         qcchecker.findWindow(lowcut, (1.0/dtime), estart);
         filter = new ButterworthFilter();
-        boolean valid = filter.calculateCoefficients(lowcut,highcut,dtime,numpoles, true);
+        boolean valid = filter.calculateCoefficients(lowcut,highcut,dtime,numroll, true);
         if (!valid) {
             throw new SmException("ABC: Invalid bandpass filter input parameters");
         }

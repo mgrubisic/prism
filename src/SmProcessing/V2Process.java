@@ -78,7 +78,7 @@ public class V2Process {
     protected int startIndex;
     private double ebuffer;
     private EventOnsetType emethod;
-    protected int numpoles;  // the filter order is rolloff*2
+    protected int numroll;  // the filter order is rolloff*2
     protected double taperlength;
     private double preEventMean;
     private int trendRemovalOrder;
@@ -228,7 +228,7 @@ public class V2Process {
 
             //The Butterworth filter implementation requires an even number for rolloff
             String filorder = config.getConfigValue(BP_FILTER_ORDER);
-            this.numpoles = (filorder == null) ? DEFAULT_NUM_POLES : Integer.parseInt(filorder)/2;
+            this.numroll = (filorder == null) ? DEFAULT_NUM_ROLL : Integer.parseInt(filorder)/2;
 
             //The Butterworth filter taper length for the half cosine taper
             //this taperlength is the value in seconds from the configuration file
@@ -508,7 +508,7 @@ public class V2Process {
         //set up the filter coefficients and run
         ButterworthFilter filter = new ButterworthFilter();
         boolean valid = filter.calculateCoefficients(lowcutoff, highcutoff, 
-                                                        dtime, numpoles, true);
+                                                        dtime, numroll, true);
         if (valid) {
             int calcSec = (int)(taperlength * dtime);
             filter.applyFilter(acc, taperlength, calcSec);  //filtered values are returned in acc
@@ -563,7 +563,7 @@ public class V2Process {
         errorlog.add(String.format("  adjusted lowcut: %4.2f and adjusted highcut: %4.2f Hz",
                                                 lowcutadj, highcutadj));
         boolean valid = filter.calculateCoefficients(lowcutadj, highcutadj, 
-                                            dtime, DEFAULT_NUM_POLES, true);
+                                            dtime, DEFAULT_NUM_ROLL, true);
         if (valid) {
             paddedvelocity = filter.applyFilter(velocity, taperlength, startIndex);
         } else {
@@ -614,7 +614,7 @@ public class V2Process {
      */
     private double[] adaptiveCorrection() throws SmException {
         ABC2 adapt = new ABC2(
-            dtime,velocity,lowcutadj,highcutadj,numpoles,startIndex,taperlength);
+            dtime,velocity,lowcutadj,highcutadj,numroll,startIndex,taperlength);
         procStatus = adapt.findFit();
 //        System.out.println("procstatus: " + procStatus.name());
         basetype = BaselineType.ABC;

@@ -169,7 +169,7 @@ public final class VFileConstants {
     public static final EventOnsetType DEFAULT_EVENT_ONSET_METHOD = EventOnsetType.PWD;
 
     //filtering constants
-    public static final int DEFAULT_NUM_POLES = 2;
+    public static final int DEFAULT_NUM_ROLL = 2;
     public static final double DEFAULT_HIGHCUT = 20.0;
     public static final double DEFAULT_LOWCUT = 0.1;
     public static final double DEFAULT_TAPER_LENGTH = 2.0;

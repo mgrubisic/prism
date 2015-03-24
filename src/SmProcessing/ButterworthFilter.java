@@ -104,7 +104,7 @@ public class ButterworthFilter {
         
         //Check input parameters for valid values
         if ((Math.abs(f1 - 0.0) < epsilon) || (Math.abs(f2 - f1) < epsilon) ||
-                                           (rolloff < 2) || (rolloff > MAXROLL)){
+                                           (rolloff < 1) || (rolloff > MAXROLL)){
             return false;
         }
         double nyquist = (1.0 / dtime) / 2.0;
@@ -175,12 +175,12 @@ public class ButterworthFilter {
         //Calculate the length of the cosine taper.  Put a lower limit of the
         //taperlength time specified in the configuration file, and an upper
         //limit of 5% of array length.
-        int maxtaper = (int)(arrayS.length * 0.05);
+//        int maxtaper = (int)(arrayS.length * 0.05);
         taperlength = ArrayOps.findZeroCrossing(arrayS, eventOnsetIndex, 0);
         if ((taperlength <= 0) || ((taperlength*dtime) < taplengthtime)) {
             taperlength = (int)(taplengthtime / dtime);
         }
-        taperlength = (taperlength > maxtaper) ? maxtaper : taperlength;
+//        taperlength = (taperlength > maxtaper) ? maxtaper : taperlength;
         
         //Copy the input array into a return array.  If the filter was configured
         //as acausal, then pad the length of the array by the value calculated below.
