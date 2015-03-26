@@ -70,6 +70,8 @@ public class ButterworthFilter {
      * Default constructor
      */
     public ButterworthFilter() {
+        this.npad = 0;
+        this.taperlength = 0;
     }
     /**
      * This method calculates the filter coefficients based on the corner frequencies,
@@ -95,8 +97,6 @@ public class ButterworthFilter {
         fact = new double[2*MAXROLL];
         b1 = new double[2*MAXROLL];
         b2 = new double[2*MAXROLL];
-        this.npad = 0;
-        this.taperlength = 0;
         
         double pre; double pim; double argre; double argim; double rho; double theta;
         double sjre; double sjim; double bj; double cj; double con;

@@ -16,6 +16,7 @@ package SmProcessing;
  * @author jmjones
  */
 public class RawTraceConversion {
+    private static final double MICRO_TO_VOLT = 1.0e-6;
     /**
      * Private constructor for this static factory class
      */
@@ -29,7 +30,6 @@ public class RawTraceConversion {
      * @return conversion value
      */
     public static double countToG(final double inlsb, final double inSensitivity) {
-        double MICRO_TO_VOLT = 1.0e-6;
         double result = ( inlsb * MICRO_TO_VOLT) / inSensitivity;
         return result;        
     }
@@ -46,7 +46,6 @@ public class RawTraceConversion {
         //sensor calculation of volts per count and cm per sq. sec per volt
         //countToCMS units are cm per sq. sec per count
         //This is multiplied by each count to get the sensor value in cm per sq. sec
-        double MICRO_TO_VOLT = 1.0e-6;
         double result = (( inlsb * MICRO_TO_VOLT) / inSensitivity) * conversion;
         return result;
     }
