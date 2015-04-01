@@ -100,7 +100,7 @@ public class ProcessStepsRecorder {
         outlist.add(String.format("|<PREMEAN> Pre-event mean removed (cm/sq.sec) %1$12s",
                                         String.format(meanformat, preEventMean)));
         for (blcorrect blc : blist) {
-            outlist.add(String.format("|<BLCORRECT> start(sec): %1$8s, stop(sec): %2$8s, order: %3$s",
+            outlist.add(String.format("|<VBLCORRECT> start(sec): %1$8s, stop(sec): %2$8s, order: %3$s",
                     String.format(timeformat,blc.getStart()),
                     String.format(timeformat,blc.getStop()),blc.getOrder().name()));
         }

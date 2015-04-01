@@ -173,8 +173,7 @@ public class ButterworthFilter {
         double x1; double x2; double y1; double y2; double xp; double yp;
 
         //Calculate the length of the cosine taper.  Put a lower limit of the
-        //taperlength time specified in the configuration file, and an upper
-        //limit of 5% of array length.
+        //taperlength time specified in the configuration file.
 //        int maxtaper = (int)(arrayS.length * 0.05);
         taperlength = ArrayOps.findZeroCrossing(arrayS, eventOnsetIndex, 0);
         if ((taperlength <= 0) || ((taperlength*dtime) < taplengthtime)) {

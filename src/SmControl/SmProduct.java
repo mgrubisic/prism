@@ -43,7 +43,6 @@ public class SmProduct {
     private final Charset ENCODING = StandardCharsets.UTF_8;
     private File stationDir;
     private File eventDir;
-    private File finalDir;
     private File logDir;
     private ArrayList<String> loglist;
     
@@ -60,7 +59,6 @@ public class SmProduct {
         this.V3List = new ArrayList<>();
         this.outFolder = newFolder;
         this.stationDir = new File( newFolder );
-        this.finalDir = new File( newFolder );
         this.eventDir = new File( newFolder );
         this.logDir = new File( newFolder );
         this.loglist = new ArrayList<>(); 
@@ -156,7 +154,7 @@ public class SmProduct {
         if (!V1Id.isDirectory()) {
             V1Id.mkdir();
         }
-        if (V2result != V2Status.NOEVENT) {
+        if ((V2result == V2Status.GOOD) || (V2result == V2Status.FAILQC)) {
             File V2Id = Paths.get(stationId.toString(), "V2").toFile();
             if (!V2Id.isDirectory()) {
                 V2Id.mkdir();
@@ -349,5 +347,11 @@ public class SmProduct {
             trouble.clear();
         }
         return outlist;
+    }
+    public File getStationDir() {
+        return this.stationDir;
+    }
+    public void setStationDir(File stationid) {
+        this.stationDir = stationid;
     }
 }
