@@ -284,7 +284,8 @@ public class COSMOScontentFormat {
         Matcher m = regField.matcher( line );
         rcrdId = (m.find()) ? line.substring(m.end()) : "";
         
-        String findRegex = "(?i)(comment)";
+        String findRegex = "(?i)(see co??m??me??nt)";
+//        String findRegex = "(?i)(see comment)";
         Pattern findField = Pattern.compile(findRegex);
         Matcher f = findField.matcher( rcrdId );
         if (f.find()) {
@@ -313,12 +314,14 @@ public class COSMOScontentFormat {
         //Get the channel code if no channel number defined
         String scnlRegex = "(<SCNL>)(\\S+)";
         Pattern scnlfield = Pattern.compile(scnlRegex);
-        if ((!SCNLauth.isEmpty()) && (channel.isEmpty())) {
+        if (!SCNLauth.isEmpty()) {
             m = scnlfield.matcher( SCNLauth );
             if (m.find()) {
                 this.SCNLcode = m.group(2).trim();
-                segments = m.group(2).split("\\.");
-                this.setChannel(segments[1] + "." + segments[3]);
+                if (channel.isEmpty()) {
+                    segments = m.group(2).split("\\.");
+                    this.setChannel(segments[1] + "." + segments[3]);
+                }
             }
         }
     }
@@ -337,7 +340,8 @@ public class COSMOScontentFormat {
         String matchRegex = "(Station Name:)";
         Pattern regField = Pattern.compile(matchRegex);
         
-        String findRegex = "(?i)(see comment)";
+        String findRegex = "(?i)(see co??m??me??nt)";
+//        String findRegex = "(?i)(see comment)";
         Pattern findField = Pattern.compile(findRegex);
         Matcher f = findField.matcher( line );
         if (f.find()) {
