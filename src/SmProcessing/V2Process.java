@@ -318,6 +318,11 @@ public class V2Process {
         stepRec.addEventOnset(startIndex * dtime);
         // Update Butterworth filter low and high cutoff thresholds for later
         updateThresholds();
+        errorlog.add("Acausal bandpass filter:");
+        errorlog.add(String.format("  earthquake magnitude is %4.2f and M used is %s",
+                                                    magnitude,magtype));
+        errorlog.add(String.format("  adjusted lowcut: %4.2f and adjusted highcut: %4.2f Hz",
+                                                lowcutadj, highcutadj));
         
         ///////////////////////////////
         //
@@ -547,7 +552,6 @@ public class V2Process {
         lowcutadj = threshold.getLowCutOff();
         highcutadj = threshold.getHighCutOff();
         magnitude = threshold.getMagnitude();
-        errorlog.add(String.format("earthquake magnitude: %3.2f",magnitude));
     }
     /**
      * Steps for filtering velocity, integrating to displacement, and differentiating
@@ -557,11 +561,6 @@ public class V2Process {
     private void filterIntegrateDiff() throws SmException {
         double[] paddedvelocity;
         ButterworthFilter filter = new ButterworthFilter();
-        errorlog.add("Acausal bandpass filter:");
-        errorlog.add(String.format("  earthquake magnitude is %4.2f and M used is %s",
-                                                    magnitude,magtype));
-        errorlog.add(String.format("  adjusted lowcut: %4.2f and adjusted highcut: %4.2f Hz",
-                                                lowcutadj, highcutadj));
         boolean valid = filter.calculateCoefficients(lowcutadj, highcutadj, 
                                             dtime, DEFAULT_NUM_ROLL, true);
         if (valid) {
