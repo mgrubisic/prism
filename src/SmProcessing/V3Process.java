@@ -4,6 +4,7 @@
  * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
  * 
  * Date: first release date Feb. 2015
+ *       updated Apr. 2015, normalize fft and handle end cases during smoothing
  ******************************************************************************/
 
 package SmProcessing;
@@ -102,12 +103,21 @@ public class V3Process {
         double[] accspec = fft.calculateFFT(paccel);
         double delta_f = 1.0 / (fft.getPowerLength() * dtime);
         
+        double[] accnorm = new double[accspec.length];
+        for (int i = 0; i < accnorm.length; i++) {
+            accnorm[i] = accspec[i] * dtime;
+        }
         if (writeArrays) {
-            elog.writeOutArray(accspec, "V3accelFFT.txt");
+            elog.writeOutArray(accnorm, "V3accelFFTnorm.txt");
         } 
         //Now use 3-point smoothing to smooth out the frequency response
-        double[] accsmooth = ArrayOps.perform3PtSmoothing(accspec);
+        double[] accsmooth = ArrayOps.perform3PtSmoothing(accnorm);
+        
+        //Adjust endpoints of smoothing for frequency wrap-around
         int acclen = accsmooth.length;
+        accsmooth[0] = 0.5 * accsmooth[0] + 0.5 * accsmooth[1];
+        accsmooth[acclen-1] = 0.5 * accsmooth[acclen-1] + 0.5 * accsmooth[acclen-2];
+        
         if (writeArrays) {
             elog.writeOutArray(accsmooth, "V3accsmoothFFT.txt");
         } 

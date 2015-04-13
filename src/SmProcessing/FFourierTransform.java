@@ -35,7 +35,7 @@ public class FFourierTransform {
     /**
      * Performs the FFT calculations by padding the input array to the closest
      * power of 2 gt or eq to the current length, calling the FFT transform method,
-     * extracting only the first half of the complex array returned and coverting
+     * extracting only the first half of the complex array returned and converting
      * these values to magnitudes.
      * @param array input array for calculating the transform
      * @return the magnitudes of the transformed array
