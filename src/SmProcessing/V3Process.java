@@ -46,6 +46,9 @@ public class V3Process {
     private double Sa_0p3;
     private double Sa_1p0;
     private double Sa_3p0;
+    private boolean strongMotion;
+    private double housnerIntensity;
+    private double channelRMS;
     /**
      * The constructor reads in the coefficient files and the period file and
      * stores them for use during the calculations.
@@ -61,6 +64,9 @@ public class V3Process {
         this.elog = SmDebugLogger.INSTANCE;
         writeArrays = false;
         this.paccel = v2val.getPaddedAccel();
+        this.strongMotion = v2val.getStrongMotion();
+        this.housnerIntensity = 0.0;
+        this.channelRMS = 0.0;
         this.peakVal = 0.0;
         this.peakIndex = 0;
         this.Sa_0p2 = 0.0;
@@ -195,6 +201,11 @@ public class V3Process {
             }
             //get the max value for 5% damping
             if (Math.abs(V3_DAMPING_VALUES[d] - 0.05) < EPSILON) {
+                if (strongMotion) {
+                    ComputedParams hi = new ComputedParams();
+                    housnerIntensity = hi.calculateHousnerIntensity(sv, T_periods);
+                    channelRMS = Math.sqrt(housnerIntensity);
+                }
                 ArrayStats stat = new ArrayStats( sa );
                 peakVal = stat.getPeakVal();
                 int index = stat.getPeakValIndex();
@@ -291,5 +302,27 @@ public class V3Process {
      */
     public String getDataUnits() {
         return CMSQSECT;
+    }
+    /**
+     * Getter for the Strong Motion indicator
+     * @return true if current record exceeded the strong motion threshold
+     * set in the configuration file, false if not
+     */
+    public boolean getStrongMotion() {
+        return strongMotion;
+    }
+    /**
+     * Getter for the Housner Intensity value for the real header
+     * @return the Housner Intensity
+     */
+    public double getHousnerIntensity() {
+        return housnerIntensity;
+    }
+    /**
+     * Getter for the channel RMS for the real header
+     * @return the channel RMS
+     */
+    public double getChannelRMS() {
+        return channelRMS;
     }
 }

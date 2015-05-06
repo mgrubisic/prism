@@ -11,6 +11,7 @@ package SmProcessing;
 import static SmConstants.VFileConstants.FROM_G_CONVERSION;
 import static SmConstants.VFileConstants.TO_G_CONVERSION;
 import static SmProcessing.ArrayOps.convertArrayUnits;
+import SmUtilities.SmDebugLogger;
 import java.util.Arrays;
 
 /**
@@ -27,8 +28,6 @@ public class ComputedParams {
     private final double dt;
     private int brackstart;
     private int brackend;
-    private int durstart;
-    private int durend;
     private final int len;
     private final double threshold;
     
@@ -61,8 +60,6 @@ public class ComputedParams {
         this.CAV = 0.0;
         this.brackstart = 0;
         this.brackend = 0;
-        this.durstart = 0;
-        this.durend = 0;
         this.threshold = inThreshold / 100.0; //change from % to value
         
         //Get the acceleration in g for calculations
@@ -78,6 +75,30 @@ public class ComputedParams {
             sumGaccsq = sumGaccsq + gaccsq[i]*dt;
         }
 //        System.out.println("Ea: " + sumGaccsq);
+    }
+    /**
+     * This is an alternate constructor for use when calculating Housner intensity.
+     * This computed parameter is calculated during V3 processing and uses the
+     * velocity spectrum at 5% damping for its input array.  There is no check
+     * here for the computed parameters threshold, and it's assumed that Housner 
+     * intensity will only be calculated on records that met the computed parameters
+     * threshold.
+     */
+    public ComputedParams() {
+        this.dt = -1;
+        this.acc = new double[0];
+        this.len = 0;
+        this.gacc = new double[0];
+        this.gaccsq = new double[0];
+        this.bracketedDuration = 0.0;
+        this.ariasIntensity = 0.0;
+        this.housnerIntensity = 0.0;
+        this.channelRMS = 0.0;
+        this.durationInterval = 0.0;
+        this.CAV = 0.0;
+        this.brackstart = 0;
+        this.brackend = 0;
+        this.threshold = 0;
     }
     /**
      * This method performs the calculations for the computed parameters.  It 
@@ -101,10 +122,12 @@ public class ComputedParams {
         ariasIntensity = (sumGaccsq * Math.PI / 2.0) * FROM_G_CONVERSION * 0.01;
 
         // Housner Intensity, units of g*g
-        calculateHousnerIntensity();
+        //Housner intensity now has a separate calculation using velocity
+        //spectrum at 5% damping, and is meant to be called during V3 processing
+//        calculateHousnerIntensity();
         
         // RMS of channel, units of g
-        channelRMS = Math.sqrt(housnerIntensity);
+        //channel RMS depends on Housner, so its calculation is also moved to V3
         
         //Cumulative absolute velocity, CAV (m/s)
         calculateCumulativeAbsVelocity();
@@ -149,76 +172,107 @@ public class ComputedParams {
         return true;
     }
     /**
-     * Calculates the duration interval between 5-75% of Arias intensity.  Uses
+     * Calculates the duration interval between 5-95% of Arias intensity.  Uses
      * the integral of the squared acceleration in g over the whole time period
      * for Arias intensity.  Finds the moment when the Arias intensity is 5% of
-     * the total and the moment when the Arias intensity is 75% of the total.
-     * The time intervals for duration start and end are saved for use in the
-     * Housner intensity calculations.
+     * the total and the moment when the Arias intensity is 95% of the total.
      */
     private void calculateDurationInterval() {
-        double IA75 = 0.75 * sumGaccsq;
+        double IA95 = 0.95 * sumGaccsq;
         double IA05 = 0.05 * sumGaccsq;
         boolean found05 = false;
-        boolean found75 = false;
+        boolean found95 = false;
         double t05 = 0.0;
-        double t75 = 0.0;
+        double t95 = 0.0;
         
         //Walk through the array calculating the running integral at each sample.
         //This is done by starting with 1/2 of the first value and adding in the
         //whole second value as the initial integral.  Now, for each remaining sample
         //in the array, first add 1/2 of the value (integral at that point) and 
-        //check if the 5% or 75% value has been reached.  If not, add in another 
+        //check if the 5% or 95% value has been reached.  If not, add in another 
         //half of the current value and move to the next value.
         //When the integral reaches 5% of total and again when it reaches 
-        //75% of the total set a flag and mark the value.
+        //95% of the total set a flag and mark the value.
         double dsum = 0.5 * gaccsq[0] * dt + gaccsq[1] * dt;
         for (int i = 2; i < len; i++) {
             dsum = dsum + 0.5*gaccsq[i]*dt;
             if ((!found05) && (Math.abs(dsum - IA05) < (0.01*IA05))) {
                 found05 = true;
                 t05 = i * dt;
-                durstart = i;
 //                System.out.println("Ia1: " + i);
             } else if ((!found05) && (dsum > IA05)) {
                 found05 = true;
                 t05 = i * dt;
-                durstart = i;
 //                System.out.println("Ia1, condition 2: " + i);
             }
-            if ((!found75) && (Math.abs(dsum - IA75) < (0.01*IA75))) {
-                found75 = true;
-                t75 = i * dt;
-                durend = i;
+            if ((!found95) && (Math.abs(dsum - IA95) < (0.01*IA95))) {
+                found95 = true;
+                t95 = i * dt;
 //                System.out.println("Ia2: " + i);
-            } else if ((!found75) && (dsum > IA75)) {
-                found75 = true;
-                t75 = i * dt;
-                durend = i;
+            } else if ((!found95) && (dsum > IA95)) {
+                found95 = true;
+                t95 = i * dt;
 //                System.out.println("Ia2, condition 2: " + i);
             }
-            if (found05 && found75) {
+            if (found05 && found95) {
                 break;
             } else {
                 dsum = dsum + 0.5*gaccsq[i]*dt;      
             }
         }
-        durationInterval = t75 - t05;
+        durationInterval = t95 - t05;
     }
     /**
-     * Calculate Housner Intensity, using the start and end values determined
-     * from the duration interval calculations.
+     * Calculate Housner Intensity, using the 5% damping velocity spectrum created
+     * during V3 processing.  The calculation is over the interval from 1 to 2.5
+     * seconds.  Since the sv is calculated only at 91 separate periods, the
+     * integration is performed on this abbreviated set of values.  The 91 periods
+     * includes a value at 1 second but no 2.5 second value, so the 2.4 and 2.6
+     * second values are averaged to get a value at 2.5 seconds.
+     * @param sv the velocity spectrum at 5% damping
+     * @param T the 91 period values as index into the sv array
+     * @return the calculated Housner intensity value
      */
-    private void calculateHousnerIntensity() {
-        double hsum = 0.5 * (gaccsq[durstart] + gaccsq[durend]) * dt;
-        for (int i = durstart+1; i < durend; i++) {
-            hsum = hsum + gaccsq[i]*dt;
+    public double calculateHousnerIntensity(final double[] sv, final double[]T) {
+        int index_p1_sec = 15;
+        int index_2p4_sec = 62;
+        int index_2p6_sec = 63;
+        int length = index_2p6_sec - index_p1_sec + 1;
+        double[] period = new double[length];
+        double[] psv = new double[length];
+        double[] hi = new double[length];
+        double dtt;
+        SmDebugLogger elog = SmDebugLogger.INSTANCE;
+        
+        //pick up only the values between the 2 time periods for the integration
+        for (int i = 0; i < length; i++) {
+            psv[i] = sv[i + index_p1_sec];
+            period[i] = T[i + index_p1_sec];
         }
-        if (durend > durstart) {
-            housnerIntensity = hsum / ((durend-durstart)*dt);
-        } else {
-            housnerIntensity = 0.0;
+        //set the starting value at 0 and average to get a final value of 2.5,
+        //updating the ends of the arrays with the final value
+        hi[0] = 0.0;
+        period[length-1] = 2.5;
+        psv[length-1] = (sv[index_2p6_sec] + sv[index_2p4_sec]) / 2.0;
+        
+        //sum up the area under the velocity spectrum
+        for (int i = 1; i < length; i++) {
+            dtt = period[i] - period[i-1];
+            hi[i] = hi[i-1] + ((psv[i-1] + psv[i])/2.0) * dtt;
         }
+        elog.writeOutArray(hi, "housner.txt");
+        housnerIntensity = hi[length-1];
+        return housnerIntensity;
+    }
+    /**
+     * Calculate the channel RMS, which is just the square root of the Housner
+     * intensity.  The method calculateHousnerIntensity needs to be called before
+     * this one.
+     * @return the channel RMS
+     */
+    public double calculateChannelRMS() {
+        channelRMS = Math.sqrt(housnerIntensity);
+        return channelRMS;
     }
     /**
      * Calculate the cumulative absolute velocity, using only the 1-second intervals

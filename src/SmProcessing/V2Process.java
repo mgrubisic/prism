@@ -895,18 +895,12 @@ public class V2Process {
         return AriasIntensity;
     }
     /**
-     * Getter for the Housner Intensity value for the real header
-     * @return the Housner Intensity
+     * Getter for the Strong Motion indicator
+     * @return true if current record exceeded the strong motion threshold
+     * set in the configuration file, false if not
      */
-    public double getHousnerIntensity() {
-        return HousnerIntensity;
-    }
-    /**
-     * Getter for the channel RMS for the real header
-     * @return the channel RMS
-     */
-    public double getChannelRMS() {
-        return channelRMS;
+    public boolean getStrongMotion() {
+        return strongMotion;
     }
     /**
      * Getter for the duration interval for the real header

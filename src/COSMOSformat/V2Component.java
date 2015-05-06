@@ -260,9 +260,9 @@ public class V2Component extends COSMOScontentFormat {
         this.realHeader.setRealValue(INITIAL_DISPLACE_VAL, inVvals.getInitialDisplace());
         this.realHeader.setRealValue(BRACKETED_DURATION, inVvals.getBracketedDuration());
         this.realHeader.setRealValue(DURATION_INTERVAL, inVvals.getDurationInterval());
-        this.realHeader.setRealValue(CHANNEL_RMS, inVvals.getChannelRMS());
         this.realHeader.setRealValue(CUMULATIVE_ABS_VEL, inVvals.getCumulativeAbsVelocity());
-        this.realHeader.setRealValue(HOUSNER_INTENSITY, inVvals.getHousnerIntensity());
+        //Housner intensity is calculated during V3 processing and appears in V3 product
+        //ChannelRMS is also calculated during V3 processing
         this.realHeader.setRealValue(ARIAS_INTENSITY, inVvals.getAriasIntensity());
         
         this.endOfData = this.parentV1.endOfData;
