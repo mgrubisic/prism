@@ -15,7 +15,7 @@ import SmException.FormatException;
 import SmException.SmException;
 import SmProcessing.V2Process;
 import SmUtilities.ConfigReader;
-import SmUtilities.ProcessStepsRecorder;
+import SmUtilities.ProcessStepsRecorder2;
 import static SmUtilities.SmConfigConstants.OUT_ARRAY_FORMAT;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_ABBREV;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_CODE;
@@ -147,7 +147,7 @@ public class V2Component extends COSMOScontentFormat {
 
         SmTimeFormatter proctime = new SmTimeFormatter();
         ConfigReader config = ConfigReader.INSTANCE;
-        ProcessStepsRecorder stepRec = ProcessStepsRecorder.INSTANCE;
+        ProcessStepsRecorder2 stepRec = ProcessStepsRecorder2.INSTANCE;
         
         //verify that real header value delta t is defined and valid
         double delta_t = this.realHeader.getRealValue(DELTA_T);

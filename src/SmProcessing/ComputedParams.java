@@ -77,12 +77,13 @@ public class ComputedParams {
 //        System.out.println("Ea: " + sumGaccsq);
     }
     /**
-     * This is an alternate constructor for use when calculating Housner intensity.
-     * This computed parameter is calculated during V3 processing and uses the
+     * This is an alternate constructor for use when calculating Housner intensity
+     * and channel RMS.
+     * These computed parameters are calculated during V3 processing and uses the
      * velocity spectrum at 5% damping for its input array.  There is no check
      * here for the computed parameters threshold, and it's assumed that Housner 
-     * intensity will only be calculated on records that met the computed parameters
-     * threshold.
+     * intensity and channel RMS will only be calculated on records that met the 
+     * computed parameters threshold.
      */
     public ComputedParams() {
         this.dt = -1;
@@ -101,7 +102,8 @@ public class ComputedParams {
         this.threshold = 0;
     }
     /**
-     * This method performs the calculations for the computed parameters.  It 
+     * This method performs the calculations for all computed parameters except
+     * Housner Intensity and ChannelRMS.  It 
      * returns true if the bracketed duration calculation found at least one
      * value greater than the input threshold (5%g default), which indicates that 
      * the calculations were performed.  If
@@ -115,7 +117,7 @@ public class ComputedParams {
         if (!strongMotion) {
             return false;
         }       
-        //Duration interval, (sec at 75% Arias I. - sec at 5% Arias I.)
+        //Duration interval, (sec at 95% Arias I. - sec at 5% Arias I.)
         calculateDurationInterval();
         
         // Arias Intensity, units of m/sec, damping = 0.05
@@ -242,7 +244,7 @@ public class ComputedParams {
         double[] psv = new double[length];
         double[] hi = new double[length];
         double dtt;
-        SmDebugLogger elog = SmDebugLogger.INSTANCE;
+//        SmDebugLogger elog = SmDebugLogger.INSTANCE;
         
         //pick up only the values between the 2 time periods for the integration
         for (int i = 0; i < length; i++) {
@@ -260,7 +262,7 @@ public class ComputedParams {
             dtt = period[i] - period[i-1];
             hi[i] = hi[i-1] + ((psv[i-1] + psv[i])/2.0) * dtt;
         }
-        elog.writeOutArray(hi, "housner.txt");
+//        elog.writeOutArray(hi, "housner.txt");
         housnerIntensity = hi[length-1];
         return housnerIntensity;
     }

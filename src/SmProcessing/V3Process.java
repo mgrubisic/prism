@@ -105,10 +105,13 @@ public class V3Process {
         double uval;
         double lval;
         double scale;
+        
+        //Calculate the FFT of the padded acceleration
         FFourierTransform fft = new FFourierTransform();
         double[] accspec = fft.calculateFFT(paccel);
         double delta_f = 1.0 / (fft.getPowerLength() * dtime);
         
+        //Normalize the values
         double[] accnorm = new double[accspec.length];
         for (int i = 0; i < accnorm.length; i++) {
             accnorm[i] = accspec[i] * dtime;

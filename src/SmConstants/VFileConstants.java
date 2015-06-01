@@ -161,7 +161,7 @@ public final class VFileConstants {
     
     public enum EventOnsetType{ AIC, PWD };
     public enum BaselineType{ BESTFIT, ABC };
-    public enum CorrectionType{ AUTO, AUTO_W_REVIEW, MANUAL };
+    public enum CorrectionType{ AUTO, MANUAL };
     public enum CorrectionOrder{ MEAN, ORDER1, ORDER2, ORDER3, SPLINE };
     
     //event onset constants

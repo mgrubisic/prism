@@ -15,7 +15,7 @@ import SmConstants.VFileConstants.MagnitudeType;
 import SmConstants.VFileConstants.V2DataType;
 import SmException.SmException;
 import SmUtilities.ConfigReader;
-import SmUtilities.ProcessStepsRecorder;
+import SmUtilities.ProcessStepsRecorder2;
 import static SmUtilities.SmConfigConstants.*;
 import SmUtilities.SmDebugLogger;
 import java.io.File;
@@ -116,7 +116,7 @@ public class V2Process {
     protected double durationInterval;
     protected double cumulativeAbsVelocity;
     
-    ProcessStepsRecorder stepRec;
+    ProcessStepsRecorder2 stepRec;
     /**
      * Constructor gets the necessary header and configuration file parameters
      * and validates them.
@@ -132,7 +132,7 @@ public class V2Process {
         this.inV1 = v1rec;
         this.lowcutadj = 0.0;
         this.highcutadj = 0.0;
-        stepRec = ProcessStepsRecorder.INSTANCE;
+        stepRec = ProcessStepsRecorder2.INSTANCE;
         this.V0name = inName;
         this.channel = inV1.getChannel();
         this.eventID = inV1.getEventID();
@@ -335,7 +335,8 @@ public class V2Process {
             ArrayStats accsub = new ArrayStats( subset );
             preEventMean = accsub.getMean();
             ArrayOps.removeValue(accraw, preEventMean);
-            stepRec.addPreEventMean(preEventMean);
+            stepRec.addBaselineStep(0, startIndex*dtime, 0, inArrayLength*dtime,
+                    V2DataType.ACC, BaselineType.BESTFIT, CorrectionOrder.MEAN, 0);
             errorlog.add(String.format("Pre-event mean of %10.6e removed from uncorrected acceleration",preEventMean));
         }
 //        if (writeDebug) {
@@ -417,9 +418,15 @@ public class V2Process {
             ///////////////////////////////
             errorlog.add(String.format("Best fit trend of order %d removed from velocity", trendRemovalOrder));
             if (trendRemovalOrder == 1) {
-                stepRec.addBaselineStep(0.0, (velocity.length*dtime), CorrectionOrder.ORDER1);
+                stepRec.addBaselineStep(0.0, (velocity.length*dtime),
+                                        0.0, (velocity.length*dtime), 
+                                        V2DataType.VEL, BaselineType.BESTFIT,
+                                        CorrectionOrder.ORDER1, 0);
             } else {
-                stepRec.addBaselineStep(0.0, (velocity.length*dtime), CorrectionOrder.ORDER2);
+                stepRec.addBaselineStep(0.0, (velocity.length*dtime),
+                                        0.0, (velocity.length*dtime), 
+                                        V2DataType.VEL, BaselineType.BESTFIT,
+                                        CorrectionOrder.ORDER2, 0);
             }
             velocity = veltest;
             filterIntegrateDiff();
@@ -648,17 +655,35 @@ public class V2Process {
         ABCbreak1 = (int)goodrun[4];
         ABCbreak2 = (int)goodrun[5];
         if (ABCpoly1 == 1) {
-            stepRec.addBaselineStep(0.0, (ABCbreak1*dtime), CorrectionOrder.ORDER1);
+            stepRec.addBaselineStep(0.0, (ABCbreak1*dtime),
+                                    0.0, (ABCbreak1*dtime),
+                                    V2DataType.VEL, BaselineType.ABC,
+                                    CorrectionOrder.ORDER1,1);
         } else {
-            stepRec.addBaselineStep(0.0, (ABCbreak1*dtime), CorrectionOrder.ORDER2);
+            stepRec.addBaselineStep(0.0, (ABCbreak1*dtime),
+                                    0.0, (ABCbreak1*dtime),
+                                    V2DataType.VEL, BaselineType.ABC,
+                                    CorrectionOrder.ORDER2,1);
         }
-        stepRec.addBaselineStep((ABCbreak1*dtime), (ABCbreak2*dtime), CorrectionOrder.SPLINE);
+        stepRec.addBaselineStep((ABCbreak1*dtime), (ABCbreak2*dtime),
+                                (ABCbreak1*dtime), (ABCbreak2*dtime),
+                                V2DataType.VEL, BaselineType.ABC,
+                                CorrectionOrder.SPLINE, 2);
         if (ABCpoly2 == 1) {
-            stepRec.addBaselineStep((ABCbreak2*dtime), (velocity.length*dtime), CorrectionOrder.ORDER1);
+            stepRec.addBaselineStep((ABCbreak2*dtime), (velocity.length*dtime),
+                                    (ABCbreak2*dtime), (velocity.length*dtime),
+                                    V2DataType.VEL, BaselineType.ABC,
+                                    CorrectionOrder.ORDER1, 3);
         } else if (ABCpoly2 == 2) {
-            stepRec.addBaselineStep((ABCbreak2*dtime), (velocity.length*dtime), CorrectionOrder.ORDER2);
+            stepRec.addBaselineStep((ABCbreak2*dtime), (velocity.length*dtime),
+                                    (ABCbreak2*dtime), (velocity.length*dtime),
+                                    V2DataType.VEL, BaselineType.ABC,
+                                    CorrectionOrder.ORDER2, 3);
         } else {
-            stepRec.addBaselineStep((ABCbreak2*dtime), (velocity.length*dtime), CorrectionOrder.ORDER3);
+            stepRec.addBaselineStep((ABCbreak2*dtime), (velocity.length*dtime),
+                                    (ABCbreak2*dtime), (velocity.length*dtime),
+                                    V2DataType.VEL, BaselineType.ABC,
+                                    CorrectionOrder.ORDER3, 3);
         }
         errorlog.add("    length of ABC params: " + ABCnumparams);
         errorlog.add("    ABC: final status: " + procStatus.name());
