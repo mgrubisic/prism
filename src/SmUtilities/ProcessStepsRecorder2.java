@@ -2,10 +2,8 @@
  * Name: Java class ProcessStepsRecorder.java
  * Project: PRISM strong motion record processing using COSMOS data format
  * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
- * Update by: Peter Ng, USGS, png@usgs.gov
  * 
  * Date: first release date Feb. 2015
- *       update May 2015 to incorporate tags for manual processing
  ******************************************************************************/
 
 package SmUtilities;
@@ -59,7 +57,7 @@ public class ProcessStepsRecorder2 {
      * baseline correction was applied.  The function itself is identified by its 
      * polynomial order of 1,2, or 3, or by SPLINE if the spline algorithm was used 
      * in adaptive baseline correction.
-     * @param fstart start time for baseline function, in seconds
+     * @param fstart start time for baseline function
      * @param fstop stop time for baseline function
      * @param astart start time of application interval baseline correction was applied to
      * @param astop stop time of application interval for baseline correction was applied to
@@ -91,18 +89,17 @@ public class ProcessStepsRecorder2 {
      */
     public ArrayList<String> formatSteps() {
         String timeformat = "%9.4f";
-        String lineToAdd;
-        int len = blist.size();
         ArrayList<String> outlist = new ArrayList<>();
         outlist.add(String.format("|<PROCESS> %1$s", ctype.name()));
-        outlist.add(String.format("|<EONSET> event onset(sec)=%1$8s",
+        outlist.add(String.format("|<EONSET> event onset(sec)=%1s",
             String.format(timeformat,eventOnsetTime)));
         for (blcorrect blc : blist) {
+            String dType = blc.getV2DataType().toString().substring(0,1);
             String blTag = (blc.getBaselineType().equals(BaselineType.ABC)) ?
-                "VBLADAPT"+blc.getBaselineStep() :
-                blc.getV2DataType().toString().substring(0, 1)+"BLCORR";
+                dType+"BLABC"+blc.getBaselineStep() :
+                dType+"BLC";
             
-            outlist.add(String.format("|<%1s>SF: %2$8s, EF: %3$8s, SA: %4$8s, EA: %5$8s, ORDER: %6$s",
+            outlist.add(String.format("|<%1s>SF:%2s, EF:%3s, SA:%4s, EA:%5s, ORDER:%6s",
                 blTag,
                 String.format(timeformat,blc.getFunctionStart()),
                 String.format(timeformat,blc.getFunctionStop()),

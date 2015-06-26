@@ -277,7 +277,6 @@ public class V3Component extends COSMOScontentFormat {
         this.realHeader.setRealValue(PERIOD_OF_MAX, inVvals.getPeakPeriod());
         this.realHeader.setRealValue(TIME_OF_MAX, inVvals.getPeakTime());
         this.realHeader.setRealValue(HOUSNER_INTENSITY, inVvals.getHousnerIntensity());        
-        this.realHeader.setRealValue(CHANNEL_RMS, inVvals.getChannelRMS());
         
         //Update the end-of-data line with the new data type
         this.endOfData = this.parentV2.endOfData;

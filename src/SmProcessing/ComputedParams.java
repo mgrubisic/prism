@@ -35,9 +35,11 @@ public class ComputedParams {
     private double bracketedDuration;
     private double ariasIntensity;
     private double housnerIntensity;
-    private double channelRMS;
+    private double RMSacceleration;
     private double durationInterval;
     private double CAV;
+    private double durstart;
+    private double durend;
     /**
      * Constructor for the Computed Parameters class - this method initializes
      * variables and calculates arrays for acceleration in g, squared acceleration
@@ -55,12 +57,14 @@ public class ComputedParams {
         this.bracketedDuration = 0.0;
         this.ariasIntensity = 0.0;
         this.housnerIntensity = 0.0;
-        this.channelRMS = 0.0;
+        this.RMSacceleration = 0.0;
         this.durationInterval = 0.0;
         this.CAV = 0.0;
         this.brackstart = 0;
         this.brackend = 0;
         this.threshold = inThreshold / 100.0; //change from % to value
+        this.durstart = 0.0;
+        this.durend = 0.0;
         
         //Get the acceleration in g for calculations
         gacc = convertArrayUnits(acc, TO_G_CONVERSION);
@@ -77,12 +81,11 @@ public class ComputedParams {
 //        System.out.println("Ea: " + sumGaccsq);
     }
     /**
-     * This is an alternate constructor for use when calculating Housner intensity
-     * and channel RMS.
+     * This is an alternate constructor for use when calculating Housner intensity.
      * These computed parameters are calculated during V3 processing and uses the
      * velocity spectrum at 5% damping for its input array.  There is no check
      * here for the computed parameters threshold, and it's assumed that Housner 
-     * intensity and channel RMS will only be calculated on records that met the 
+     * intensity will only be calculated on records that met the 
      * computed parameters threshold.
      */
     public ComputedParams() {
@@ -94,16 +97,18 @@ public class ComputedParams {
         this.bracketedDuration = 0.0;
         this.ariasIntensity = 0.0;
         this.housnerIntensity = 0.0;
-        this.channelRMS = 0.0;
+        this.RMSacceleration = 0.0;
         this.durationInterval = 0.0;
         this.CAV = 0.0;
         this.brackstart = 0;
         this.brackend = 0;
         this.threshold = 0;
+        this.durstart = 0.0;
+        this.durend = 0.0;
     }
     /**
      * This method performs the calculations for all computed parameters except
-     * Housner Intensity and ChannelRMS.  It 
+     * Housner Intensity.  It 
      * returns true if the bracketed duration calculation found at least one
      * value greater than the input threshold (5%g default), which indicates that 
      * the calculations were performed.  If
@@ -129,7 +134,7 @@ public class ComputedParams {
 //        calculateHousnerIntensity();
         
         // RMS of channel, units of g
-        //channel RMS depends on Housner, so its calculation is also moved to V3
+        calculateRMSacceleration();
         
         //Cumulative absolute velocity, CAV (m/s)
         calculateCumulativeAbsVelocity();
@@ -201,6 +206,7 @@ public class ComputedParams {
             if ((!found05) && (Math.abs(dsum - IA05) < (0.01*IA05))) {
                 found05 = true;
                 t05 = i * dt;
+                durstart = t05;
 //                System.out.println("Ia1: " + i);
             } else if ((!found05) && (dsum > IA05)) {
                 found05 = true;
@@ -210,6 +216,7 @@ public class ComputedParams {
             if ((!found95) && (Math.abs(dsum - IA95) < (0.01*IA95))) {
                 found95 = true;
                 t95 = i * dt;
+                durend = t95;
 //                System.out.println("Ia2: " + i);
             } else if ((!found95) && (dsum > IA95)) {
                 found95 = true;
@@ -267,14 +274,22 @@ public class ComputedParams {
         return housnerIntensity;
     }
     /**
-     * Calculate the channel RMS, which is just the square root of the Housner
-     * intensity.  The method calculateHousnerIntensity needs to be called before
-     * this one.
-     * @return the channel RMS
+     * Calculate the RMS acceleration.
+     * @return the RMS acceleration
      */
-    public double calculateChannelRMS() {
-        channelRMS = Math.sqrt(housnerIntensity);
-        return channelRMS;
+    public double calculateRMSacceleration() {
+        double interval = durend - durstart;
+        double[] gaccint = new double[acc.length];
+        double total = 0.0;
+        int startd = (int)(durstart/dt);
+        int endd = (int)(durend/dt);
+        for (int i = startd; i <= endd; i++) {
+            gaccint[i] = Math.pow((acc[i]/100.0),2);
+            total = total + gaccint[i];
+        }
+        total = Math.sqrt((1/interval) * total);
+        RMSacceleration = total / 10;
+        return RMSacceleration;
     }
     /**
      * Calculate the cumulative absolute velocity, using only the 1-second intervals
@@ -282,8 +297,8 @@ public class ComputedParams {
      * interval.
      */
     private void calculateCumulativeAbsVelocity() {
-        int step = (int)(1.0 / dt);
-        int numsecs = (int)Math.ceil(dt*len);
+        int step = (int)Math.round(1.0 / dt);
+        int numsecs = (int)Math.round(dt*len);
         int upperlim;
         int ctr = 0;
         boolean[] intervals = new boolean[numsecs];
@@ -305,7 +320,7 @@ public class ComputedParams {
         //Now go through the array again and for each interval where the flag
         //is true, sum/integrate the abs. acceleration to get the velocity total
         //for that interval.  Add the velocity total to the running cumulative
-        //total.
+        //total.  Multiplying by 0.01 converts from cm/sq.sec to m/sq.sec.
         ctr = 0;
         double sum = 0.0;
         for (int k = 0; k < len; k = k + step) {
@@ -316,6 +331,7 @@ public class ComputedParams {
                     sum = sum + Math.abs(acc[i]) * 0.01 * dt;
                 }
                 CAV = CAV + sum;
+//                System.out.println("k: " + k + "     upperlim: " + upperlim + "    CAVsum: " + CAV);
                 sum = 0;
             }
             ctr++;            
@@ -343,11 +359,11 @@ public class ComputedParams {
         return this.housnerIntensity;
     }
     /**
-     * Getter for the channel RMS
-     * @return the channel RMS
+     * Getter for the RMS acceleration
+     * @return the RMS accel.
      */
-    public double getChannelRMS() {
-        return this.channelRMS;
+    public double getRMSacceleration() {
+        return this.RMSacceleration;
     }
     /**
      * Getter for the duration interval

@@ -1,4 +1,4 @@
-/*******************************************************************************
+/******************************************************************************
  * Name: Java class VFileConstants.java
  * Project: PRISM strong motion record processing using COSMOS data format
  * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
@@ -131,7 +131,7 @@ public final class VFileConstants {
     //V2 computed parameters codes and default value
     public static final int BRACKETED_DURATION = 79;
     public static final int DURATION_INTERVAL = 80;
-    public static final int CHANNEL_RMS = 81;
+    public static final int RMS_ACCELERATION = 81;
     public static final int CUMULATIVE_ABS_VEL = 82;
     public static final int HOUSNER_INTENSITY = 83;
     public static final int ARIAS_INTENSITY = 84;

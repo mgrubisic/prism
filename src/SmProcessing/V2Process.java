@@ -112,11 +112,11 @@ public class V2Process {
     protected double bracketedDuration;
     protected double AriasIntensity;
     protected double HousnerIntensity;
-    protected double channelRMS;
+    protected double RMSacceleration;
     protected double durationInterval;
     protected double cumulativeAbsVelocity;
     
-    ProcessStepsRecorder2 stepRec;
+    protected ProcessStepsRecorder2 stepRec;
     /**
      * Constructor gets the necessary header and configuration file parameters
      * and validates them.
@@ -158,7 +158,7 @@ public class V2Process {
         this.bracketedDuration = 0.0;
         this.AriasIntensity = 0.0;
         this.HousnerIntensity = 0.0;
-        this.channelRMS = 0.0;
+        this.RMSacceleration = 0.0;
         this.durationInterval = 0.0;
         this.cumulativeAbsVelocity = 0.0;
         this.initialVel = 0.0;
@@ -484,7 +484,7 @@ public class V2Process {
                 bracketedDuration = cp.getBracketedDuration();
                 AriasIntensity = cp.getAriasIntensity();
                 HousnerIntensity = cp.getHousnerIntensity();
-                channelRMS = cp.getChannelRMS();
+                RMSacceleration = cp.getRMSacceleration();
                 durationInterval = cp.getDurationInterval();
                 cumulativeAbsVelocity = cp.getCumulativeAbsVelocity();
                 errorlog.add("Strong motion record");
@@ -940,6 +940,13 @@ public class V2Process {
      */
     public double getCumulativeAbsVelocity() {
         return cumulativeAbsVelocity;
+    }
+    /**
+     * Getter for the RMS acceleration for the real header
+     * @return the RMS acceleration
+     */
+    public double getRMSacceleration() {
+        return RMSacceleration;
     }
     /**
      * Getter for the initial velocity value for the real header

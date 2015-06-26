@@ -73,20 +73,24 @@ public class COSMOScontentFormat {
     public int loadComponent (int start, String[] infile) 
                                 throws FormatException, SmException {
         int current = start;
-        int channelNum;
+        int channelNum;  //this is no longer used now that the SCNL code is in
+                        //place in the comments, so channel will be set to the empty
+                        //string in order to have channel info picked up from
+                        //the SCNL tag instead.
         
         //Read in text header, look for number of lines and int, real NoData vals
         current = parseTextHeader(current, infile);
          
-        //get integer header values
+        //get integer header values !!channelNum no longer used, just set channel to ""
+        channel = "";
         intHeader = new VIntArray();    
         current = intHeader.parseValues( current, infile);
-        channelNum = intHeader.getIntValue(STATION_CHANNEL_NUMBER);
-        if (channelNum != noIntVal) {
-            channel = String.valueOf(channelNum);
-        } else {
-            channel = "";            
-        }
+//        channelNum = intHeader.getIntValue(STATION_CHANNEL_NUMBER);
+//        if (channelNum != noIntVal) {
+//            channel = String.valueOf(channelNum);
+//        } else {
+//            channel = "";            
+//        }
         //get real header values
         realHeader = new VRealArray();     
         current = realHeader.parseValues( current, infile);

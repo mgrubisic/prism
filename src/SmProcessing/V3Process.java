@@ -48,7 +48,6 @@ public class V3Process {
     private double Sa_3p0;
     private boolean strongMotion;
     private double housnerIntensity;
-    private double channelRMS;
     /**
      * The constructor reads in the coefficient files and the period file and
      * stores them for use during the calculations.
@@ -66,7 +65,6 @@ public class V3Process {
         this.paccel = v2val.getPaddedAccel();
         this.strongMotion = v2val.getStrongMotion();
         this.housnerIntensity = 0.0;
-        this.channelRMS = 0.0;
         this.peakVal = 0.0;
         this.peakIndex = 0;
         this.Sa_0p2 = 0.0;
@@ -207,7 +205,6 @@ public class V3Process {
                 if (strongMotion) {
                     ComputedParams hi = new ComputedParams();
                     housnerIntensity = hi.calculateHousnerIntensity(sv, T_periods);
-                    channelRMS = Math.sqrt(housnerIntensity);
                 }
                 ArrayStats stat = new ArrayStats( sa );
                 peakVal = stat.getPeakVal();
@@ -320,12 +317,5 @@ public class V3Process {
      */
     public double getHousnerIntensity() {
         return housnerIntensity;
-    }
-    /**
-     * Getter for the channel RMS for the real header
-     * @return the channel RMS
-     */
-    public double getChannelRMS() {
-        return channelRMS;
     }
 }
