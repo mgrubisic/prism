@@ -202,8 +202,8 @@ public class Prism {
         for (Field cf : scc.getDeclaredFields()) {
             if (!cf.getName().equals("CONFIG_XSD_VALIDATOR")) { // don't want this name
                 StringBuilder sb = new StringBuilder();
-                sb.append(scc.getDeclaredField(cf.getName()).getName())
-                        .append(": ").append(config.getConfigValue((String)cf.get(scc)));
+                sb.append(cf.getName()).append(": ")
+                        .append(config.getConfigValue((String)cf.get(scc)));
                 cflist.add(sb.toString());
             }
         }

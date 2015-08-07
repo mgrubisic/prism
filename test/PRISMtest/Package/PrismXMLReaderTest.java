@@ -21,7 +21,6 @@ import SmUtilities.ConfigReader;
 import SmUtilities.PrismXMLReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import javax.xml.parsers.ParserConfigurationException;
 import org.junit.Rule;
 import org.junit.Test;
