@@ -67,7 +67,6 @@ public class ABC2 {
     private int bestfirstdegree;
     private int bestthirddegree;
     private ArrayList<double[]> params;
-    private int[] breaks;
     private double[] rms;
     private int[] ranking;
     private int solution;
@@ -86,7 +85,7 @@ public class ABC2 {
      */
     public ABC2(double delttime, double[] invel, 
                                       double lowcut,double highcut, int numroll,
-                                      int ppick, double taplengthtime) {
+                                      int ppick, double taplengthtime) throws SmException {
         this.dtime = delttime;
         this.estart = ppick;
         this.taplength = taplengthtime;
@@ -102,7 +101,7 @@ public class ABC2 {
         this.bestthirddegree = 0;
         
         //Get the values out of the configuration file and screen for correctness.
-        //First polynomial order
+        //First polynomial order        
         this.degreeP1lo = validateConfigParam(FIRST_POLY_ORDER_LOWER, 
                                                 DEFAULT_1ST_POLY_ORD_LOWER,
                                                 DEFAULT_1ST_POLY_ORD_LOWER,
@@ -121,16 +120,27 @@ public class ABC2 {
                                                 degreeP3lo,
                                                 DEFAULT_3RD_POLY_ORD_UPPER);
         
+        // xml is validated by xsd, but this also does a final check for validity
+        if ((this.degreeP1lo < 1) || (this.degreeP1hi < 1) || 
+                (this.degreeP3lo < 1) || (this.degreeP3hi < 1)) {
+            throw new SmException("Unable to parse the adaptive baseline polynomial"
+                    + " order values.");
+        }
+         if ((this.degreeP1lo > this.degreeP1hi) || (this.degreeP3lo > this.degreeP3hi)) {
+            throw new SmException("Adaptive baseline polynomial order values "
+                    + "are invalid");
+        }
     }
     /**
      * Validates the input configuration parameter against the acceptable upper
-     * and lower limits.  If input parm is out of range, it is set to the 
-     * default value.
+     * and lower limits and other value.  If input parm is out of range, it is 
+     * flagged as an error.
      * @param configparm configuration parameter to validate
      * @param defval the default value for this parameter
      * @param lower the acceptable lower limit
      * @param upper the acceptable upper limit
-     * @return a valid value for the configuration parameter
+     * @return a valid value for the configuration parameter, or 0 if unable to 
+     * parse, or -1 if out of range
      */
     public final int validateConfigParam( String configparm, int defval, int lower,
                                                                     int upper) {
@@ -142,9 +152,9 @@ public class ABC2 {
         } else {
             try {
                 outval = Integer.parseInt(inval);
-                outval = ((outval < lower) || (outval > upper)) ? defval : outval;
+                outval = ((outval < lower) || (outval > upper)) ? -1 : outval;
             } catch (NumberFormatException e) {
-                outval = defval;
+                outval = 0;
             }
         }
         return outval;

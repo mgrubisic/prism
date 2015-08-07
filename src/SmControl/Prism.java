@@ -12,16 +12,20 @@ import SmConstants.VFileConstants;
 import static SmConstants.VFileConstants.RAWACC;
 import SmException.FormatException;
 import SmException.SmException;
+import SmUtilities.ConfigReader;
 import SmUtilities.PrismLogger;
 import SmUtilities.PrismXMLReader;
+import SmUtilities.SmConfigConstants;
 import SmUtilities.SmDebugLogger;
 import SmUtilities.SmTimeFormatter;
 import java.io.*;
+import java.lang.reflect.Field;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.List;
 import javax.xml.parsers.ParserConfigurationException;
 import org.xml.sax.SAXException;
 
@@ -115,6 +119,12 @@ public class Prism {
             //get the configuration file
             if ( !smc.configFile.isEmpty()  ) {
                 smc.readConfigFile( smc.configFile );
+                try {
+                    smc.logConfigValues( log );
+                }
+                catch (NoSuchFieldException | IllegalAccessException | IllegalArgumentException err) {
+                    throw new SmException("Unable to access configuration file parameters for logging");
+                }
             }
             //Get each filename, read in, parse, process, write it out. When  
             //going through the list of input files, report any problems 
@@ -165,8 +175,41 @@ public class Prism {
         } catch (ParserConfigurationException | SAXException err) {
             throw new SmException("Unable to parse configuration file " + filename);
         } catch (IOException err) {
-            throw new SmException("Unable to read configuration file " + filename);
+            throw new SmException("Configuration file error: " + err.getMessage());
         }
+    }
+    /**
+     * This method writes a record of the current configuration file parameters
+     * into the prism log, using the SmConfigConstant names for each parameter.
+     * @param log the logger for writing
+     * @throws IOException if unable to read the configuration file
+     * @throws NoSuchFieldException if unable to find a specific parameter name
+     * @throws IllegalArgumentException if unable to access a class value
+     * @throws IllegalAccessException if unable to access a specific parameter
+     */
+    public void logConfigValues( PrismLogger log ) throws IOException, NoSuchFieldException, 
+                                                IllegalArgumentException, IllegalAccessException {
+        ConfigReader config = ConfigReader.INSTANCE;
+        
+        // Get a class object for the configuration file constants 
+        Class<SmConfigConstants> scc = SmConfigConstants.class;
+        List<String> cflist = new ArrayList<>();
+        cflist.add(" ");
+        cflist.add("Configuration file parameters:");
+        
+        // Pick up the publicly declared field names in the class
+        // Add both the name of the field and its string value to the list
+        for (Field cf : scc.getDeclaredFields()) {
+            if (!cf.getName().equals("CONFIG_XSD_VALIDATOR")) { // don't want this name
+                StringBuilder sb = new StringBuilder();
+                sb.append(scc.getDeclaredField(cf.getName()).getName())
+                        .append(": ").append(config.getConfigValue((String)cf.get(scc)));
+                cflist.add(sb.toString());
+            }
+        }
+        cflist.add(" ");
+        String[] cfarr = new String[cflist.size()];
+        log.writeToLog(cflist.toArray(cfarr));
     }
     /**
      * Gets the list of v0 files in the input folder and returns an array of

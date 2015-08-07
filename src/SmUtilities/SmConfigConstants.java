@@ -13,6 +13,8 @@ package SmUtilities;
  * @author jmjones
  */
 public class SmConfigConstants {
+    public static final String CONFIG_XSD_VALIDATOR = "xsd/prism_config.xsd";
+    
     public static final String PROC_AGENCY_CODE = "PRISM/ProcessingAgency/StrongMotionNetworkCode/AgencyCode";
     public static final String PROC_AGENCY_NAME = "PRISM/ProcessingAgency/StrongMotionNetworkCode/AgencyFullName";
     public static final String PROC_AGENCY_ABBREV = "PRISM/ProcessingAgency/StrongMotionNetworkCode/AgencyAbbreviation";
@@ -23,9 +25,9 @@ public class SmConfigConstants {
     public static final String DATA_UNITS_CODE = "PRISM/DataUnitsForCountConversion/DataUnitCodes/DataUnitCode";
     public static final String DATA_UNITS_NAME = "PRISM/DataUnitsForCountConversion/DataUnitCodes/DataUnitName";
     
-    public static final String QC_INITIAL_VELOCITY = "QCparameters/InitialVelocity";
-    public static final String QC_RESIDUAL_VELOCITY = "QCparameters/ResidualVelocity";
-    public static final String QC_RESIDUAL_DISPLACE = "QCparameters/ResidualDisplacement";
+    public static final String QC_INITIAL_VELOCITY = "PRISM/QCparameters/InitialVelocity";
+    public static final String QC_RESIDUAL_VELOCITY = "PRISM/QCparameters/ResidualVelocity";
+    public static final String QC_RESIDUAL_DISPLACE = "PRISM/QCparameters/ResidualDisplacement";
     
     public static final String STATION_FILTER_TABLE = "PRISM/StationFilterTable";
     
@@ -39,6 +41,7 @@ public class SmConfigConstants {
     public static final String EVENT_ONSET_BUFFER = "PRISM/EventOnsetBufferAmount";
     public static final String EVENT_ONSET_METHOD = "PRISM/EventDetectionMethod";
     
+    public static final String DELETE_V0 = "PRISM/DeleteInputV0";
     public static final String DEBUG_TO_LOG = "PRISM/DebugToLog";
     public static final String WRITE_BASELINE_FUNCTION = "PRISM/WriteBaselineFunction";
     

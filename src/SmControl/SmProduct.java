@@ -13,8 +13,11 @@ import COSMOSformat.V0Component;
 import COSMOSformat.V1Component;
 import COSMOSformat.V2Component;
 import COSMOSformat.V3Component;
+import static SmConstants.VFileConstants.DELETE_INPUT_V0;
 import static SmConstants.VFileConstants.MAX_LINE_LENGTH;
 import SmConstants.VFileConstants.V2Status;
+import SmUtilities.ConfigReader;
+import static SmUtilities.SmConfigConstants.DELETE_V0;
 import SmUtilities.TextFileWriter;
 import java.io.File;
 import java.io.IOException;
@@ -45,6 +48,7 @@ public class SmProduct {
     private File eventDir;
     private File logDir;
     private ArrayList<String> loglist;
+    private boolean deleteInputFiles;
     
     /**
      * Constructor for the product class.
@@ -63,6 +67,10 @@ public class SmProduct {
         this.logDir = new File( newFolder );
         this.loglist = new ArrayList<>(); 
 //        this.loglist.add(inFileName.toString());       
+        ConfigReader config = ConfigReader.INSTANCE;
+        String deleteV0 = config.getConfigValue(DELETE_V0);
+        this.deleteInputFiles = (deleteV0 == null) ? false : 
+                                    deleteV0.equalsIgnoreCase(DELETE_INPUT_V0);
     }
     /**
      * Method to add a product to the product queue for later writing out to a file.
@@ -317,14 +325,18 @@ public class SmProduct {
         return m.matches();
     }
     /**
-     * Removes the input file from the input directory, if it exists
+     * Removes the input file from the input directory, if it exists, and if the
+     * Delete Input Files flag in the configuration file is set to .Yes'. If the
+     * configuration file is set to 'No', the file is not deleted.
      * @param source the input file
      * @throws IOException if unable to delete the file
      */
     public void deleteV0AfterProcessing(File source) throws IOException {
 //        System.out.println("filename: " + this.fileName.getName());
-        Path infile = source.toPath();
-        Files.deleteIfExists(infile);
+        if (deleteInputFiles) {
+            Path infile = source.toPath();
+            Files.deleteIfExists(infile);
+        }
     }
     /**
      * Builds a trouble log from the list of all log files.  If there are no

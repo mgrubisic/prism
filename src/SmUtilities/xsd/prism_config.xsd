@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+      <xs:element name="PRISM">
+            <xs:complexType>
+                  <xs:sequence>
+                        <xs:element name="ProcessingAgency">
+                              <xs:complexType>
+                                    <xs:sequence>
+                                          <xs:element name="StrongMotionNetworkCode">
+                                                <xs:complexType>
+                                                      <xs:sequence>
+                                                            <xs:element name="AgencyFullName" type="xs:string"></xs:element>
+                                                            <xs:element name="AgencyAbbreviation" type="xs:string"></xs:element>
+                                                            <xs:element name="AgencyCode" type="xs:int"></xs:element>
+                                                            <xs:element name="AgencyIRISCode" type="xs:string"></xs:element>
+                                                      </xs:sequence>
+                                                </xs:complexType>
+                                          </xs:element>
+                                    </xs:sequence>
+                              </xs:complexType>
+                        </xs:element>
+                        <xs:element name="DataUnitsForCountConversion">
+                              <xs:complexType>
+                                    <xs:sequence>
+                                          <xs:element name="DataUnitCodes">
+                                                <xs:complexType>
+                                                      <xs:sequence>
+                                                            <xs:element name="DataUnitCode" type="xs:int"></xs:element>
+                                                            <xs:element name="DataUnitName" type="xs:string"></xs:element>
+                                                      </xs:sequence>
+                                                </xs:complexType>
+                                          </xs:element>
+                                    </xs:sequence>
+                              </xs:complexType>
+                        </xs:element>
+                        <xs:element name="EventDetectionMethod">
+                            <xs:simpleType>
+                                <xs:restriction base="xs:string">
+                                    <xs:enumeration value="PWD"/>
+                                    <xs:enumeration value="AIC"/>
+                                </xs:restriction>
+                            </xs:simpleType>
+                        </xs:element>
+                        <xs:element name="EventOnsetBufferAmount">
+                            <xs:simpleType>
+                                <xs:restriction base="xs:double">
+                                    <xs:minInclusive value="0.0"/>
+                                </xs:restriction>
+                            </xs:simpleType>
+                       </xs:element>
+                        <xs:element name="QCparameters">
+                              <xs:complexType>
+                                    <xs:sequence>
+                                          <xs:element name="InitialVelocity">
+                                            <xs:simpleType>
+                                                <xs:restriction base="xs:double">
+                                                    <xs:minInclusive value="0.0"/>
+                                                </xs:restriction>
+                                            </xs:simpleType>
+                                         </xs:element>
+                                          <xs:element name="ResidualVelocity">
+                                            <xs:simpleType>
+                                                <xs:restriction base="xs:double">
+                                                    <xs:minInclusive value="0.0"/>
+                                                </xs:restriction>
+                                            </xs:simpleType>
+                                         </xs:element>
+                                          <xs:element name="ResidualDisplacement">
+                                            <xs:simpleType>
+                                                <xs:restriction base="xs:double">
+                                                    <xs:minInclusive value="0.0"/>
+                                                </xs:restriction>
+                                            </xs:simpleType>
+                                          </xs:element>
+                                    </xs:sequence>
+                              </xs:complexType>
+                        </xs:element>
+                        <xs:element name="BandPassFilterParameters">
+                              <xs:complexType>
+                                    <xs:sequence>
+                                          <xs:element name="BandPassFilterOrder">
+                                            <xs:simpleType>
+                                                <xs:restriction base="xs:int">
+                                                    <xs:minInclusive value="4"/>
+                                                    <xs:maxInclusive value="16"/>
+                                                </xs:restriction>
+                                            </xs:simpleType>                                                                                           
+                                          </xs:element>
+                                          <xs:element name="BandPassTaperLength">
+                                            <xs:simpleType>
+                                                <xs:restriction base="xs:double">
+                                                    <xs:minInclusive value="0.0"/>
+                                                </xs:restriction>
+                                            </xs:simpleType>
+                                          </xs:element>
+                                          <xs:element name="BandPassFilterCutoff">
+                                                <xs:complexType>
+                                                      <xs:sequence>
+                                                            <xs:element name="CutoffLow">
+                                                                <xs:simpleType>
+                                                                    <xs:restriction base="xs:double">
+                                                                        <xs:minInclusive value="0.0"/>
+                                                                    </xs:restriction>
+                                                                </xs:simpleType>
+                                                           </xs:element>
+                                                            <xs:element name="CutoffHigh">
+                                                                <xs:simpleType>
+                                                                    <xs:restriction base="xs:double">
+                                                                        <xs:minInclusive value="0.0"/>
+                                                                    </xs:restriction>
+                                                                </xs:simpleType>
+                                                            </xs:element>
+                                                      </xs:sequence>
+                                                </xs:complexType>
+                                          </xs:element>
+                                    </xs:sequence>
+                              </xs:complexType>
+                        </xs:element>
+                        <xs:element name="StructuresFilterTable"></xs:element>
+                        <xs:element name="AdaptiveBaselineCorrection">
+                              <xs:complexType>
+                                    <xs:sequence>
+                                          <xs:element name="FirstPolyOrder">
+                                                <xs:complexType>
+                                                      <xs:sequence>
+                                                            <xs:element name="LowerLimit">
+                                                                <xs:simpleType>
+                                                                    <xs:restriction base="xs:int">
+                                                                        <xs:minInclusive value="1"/>
+                                                                        <xs:maxInclusive value="2"/>
+                                                                    </xs:restriction>
+                                                                </xs:simpleType>
+                                                            </xs:element>
+                                                            <xs:element name="UpperLimit">
+                                                                <xs:simpleType>
+                                                                    <xs:restriction base="xs:int">
+                                                                        <xs:minInclusive value="1"/>
+                                                                        <xs:maxInclusive value="2"/>
+                                                                    </xs:restriction>
+                                                                </xs:simpleType>                                                                
+                                                            </xs:element>
+                                                      </xs:sequence>
+                                                </xs:complexType>
+                                          </xs:element>
+                                          <xs:element name="ThirdPolyOrder">
+                                                <xs:complexType>
+                                                      <xs:sequence>
+                                                            <xs:element name="LowerLimit">
+                                                                <xs:simpleType>
+                                                                    <xs:restriction base="xs:int">
+                                                                        <xs:minInclusive value="1"/>
+                                                                        <xs:maxInclusive value="3"/>
+                                                                    </xs:restriction>
+                                                                </xs:simpleType>                                                                
+                                                            </xs:element>
+                                                            <xs:element name="UpperLimit">
+                                                                <xs:simpleType>
+                                                                    <xs:restriction base="xs:int">
+                                                                        <xs:minInclusive value="1"/>
+                                                                        <xs:maxInclusive value="3"/>
+                                                                    </xs:restriction>
+                                                                </xs:simpleType>                                                                
+                                                           </xs:element>
+                                                      </xs:sequence>
+                                                </xs:complexType>
+                                          </xs:element>
+                                    </xs:sequence>
+                              </xs:complexType>
+                        </xs:element>
+                        <xs:element name="StrongMotionThreshold">
+                            <xs:simpleType>
+                                <xs:restriction base="xs:double">
+                                    <xs:minInclusive value="0.0"/>
+                                    <xs:maxInclusive value="100.0"/>
+                                </xs:restriction>
+                            </xs:simpleType>
+                        </xs:element>
+                        <xs:element name="OutputArrayFormat">
+                            <xs:simpleType>
+                                <xs:restriction base="xs:string">
+                                    <xs:enumeration value="SingleColumn"/>
+                                    <xs:enumeration value="Packed"/>
+                                </xs:restriction>
+                            </xs:simpleType>
+                        </xs:element>
+                        <xs:element name="DeleteInputV0">
+                            <xs:simpleType>
+                                <xs:restriction base="xs:string">
+                                    <xs:enumeration value="Yes"/>
+                                    <xs:enumeration value="No"/>
+                                </xs:restriction>
+                            </xs:simpleType>
+                        </xs:element>
+                        <xs:element name="DebugToLog">
+                              <xs:simpleType>
+                                <xs:restriction base="xs:string">
+                                    <xs:enumeration value="On"/>
+                                    <xs:enumeration value="Off"/>
+                                </xs:restriction>
+                              </xs:simpleType>
+                        </xs:element>
+                        <xs:element name="WriteBaselineFunction">
+                              <xs:simpleType>
+                                <xs:restriction base="xs:string">
+                                    <xs:enumeration value="On"/>
+                                    <xs:enumeration value="Off"/>
+                                </xs:restriction>
+                              </xs:simpleType>
+                        </xs:element>
+                  </xs:sequence>
+            </xs:complexType>
+      </xs:element>
+   </xs:schema>

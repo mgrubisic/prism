@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--	Entries taken from Table 4. Strong Motion Network Codes, in the
+			COSMOS Strong Motion Data Format spec. -->
+	<ProcessingAgency>
+		<StrongMotionNetworkCode>
+			<AgencyFullName>U.S. Geological Survey</AgencyFullName>
+			<AgencyAbbreviation>USGS</AgencyAbbreviation>
+			<AgencyCode>2</AgencyCode>
+			<AgencyIRISCode>NP</AgencyIRISCode>			
+		</StrongMotionNetworkCode>
+	</ProcessingAgency>
+<!--	Tags for output file format are Single or Bundled. Single will write
+			out one channel per file on bundled input files.
+			Bundled  will write out bundled input channels together -->
+	<OutputFileFormat>Single</OutputFileFormat>
+<!--  Units to use for conversion from counts in V1 processing.  Entries
+			taken from Table 2. Data Units Codes, in the COSMOS Strong Motion
+			Data Format spec.  Currently supported are cm/sec/sec and g. -->
+	<DataUnitsForCountConversion>
+		<DataUnitCodes>
+			<DataUnitCode>04</DataUnitCode>
+			<DataUnitName>cm/sec/sec</DataUnitName>
+		</DataUnitCodes>
+	</DataUnitsForCountConversion>
+</PRISM>
+

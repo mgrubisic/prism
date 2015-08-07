@@ -326,8 +326,9 @@ public class ComputedParams {
         for (int k = 0; k < len; k = k + step) {
             if (intervals[ctr]) {
                 upperlim = ((k+step) <= len) ? k+step : len;
-                sum = 0.5 * (Math.abs(acc[k]) + Math.abs(acc[upperlim-1])) * 0.01 * dt;
-                for (int i = k+1; i < upperlim-1; i++) {
+//                sum = 0.5 * (Math.abs(acc[k]) + Math.abs(acc[upperlim-1])) * 0.01 * dt;
+//                for (int i = k+1; i < upperlim-1; i++) {
+                for (int i = k; i < upperlim; i++) {
                     sum = sum + Math.abs(acc[i]) * 0.01 * dt;
                 }
                 CAV = CAV + sum;

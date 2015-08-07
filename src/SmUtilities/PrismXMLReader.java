@@ -7,12 +7,20 @@
  ******************************************************************************/
 package SmUtilities;
 
+import static SmUtilities.SmConfigConstants.CONFIG_XSD_VALIDATOR;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -58,7 +66,7 @@ public class PrismXMLReader {
         dBuilder = dbFactory.newDocumentBuilder();
     }
 /**
- * This method reads in the xml file given in the filename, pulls out the unique
+ * This method reads in the xml file given in the filename AS STRING, pulls out the unique
  * paths to each text node, and enters each key-value pair in the config reader
  * object.
  * @param filename The xml file to read and parse
@@ -73,6 +81,39 @@ public class PrismXMLReader {
         
         //Parse the xml document directly from the file
         Document doc = dBuilder.parse(new File(filename));
+        validateXMLSchema(CONFIG_XSD_VALIDATOR, doc);
+        Element top = doc.getDocumentElement();
+        String home = top.getTagName();
+        
+        //Walk the paths until each text node is reached
+        findSubNode(home, top, tagtrail);
+        
+        //Separate each tag trail into a key, value pair and enter into the 
+        //config reader
+        ConfigReader config = ConfigReader.INSTANCE;
+        for (String each : tagtrail) {
+            keyvalue = each.split("///");
+            config.setConfigValue(keyvalue[0], keyvalue[1]);
+        }
+    }
+/**
+ * This method reads in the xml file given in the filename AS INPUTSTREAM, pulls 
+ * out the unique
+ * paths to each text node, and enters each key-value pair in the config reader
+ * object.
+ * @param ins The xml file to read and parse, as input stream
+ * @throws IOException if unable to read in the file
+ * @throws ParserConfigurationException if parser configuration is incorrect
+ * @throws SAXException if unable to correctly parse the xml
+ */
+    public void readFile( InputStream ins ) throws IOException, 
+                                    ParserConfigurationException,SAXException {
+        ArrayList<String> tagtrail = new ArrayList<>();
+        String[] keyvalue;
+        
+        //Parse the xml document directly from the file
+        Document doc = dBuilder.parse(ins);
+        validateXMLSchema(CONFIG_XSD_VALIDATOR, doc);
         Element top = doc.getDocumentElement();
         String home = top.getTagName();
         
@@ -126,5 +167,26 @@ public class PrismXMLReader {
                 }
             }
         }
+    }
+/**
+ * Performs validation on the configuration xml file using an xsd file
+ * @param xsdname the name of the xsd file for validation
+ * @param domdoc the configuration file, parsed into a document object
+ * @return true if xml validated successfully
+ * @throws IOException if a validation error occurred
+ */
+    public boolean validateXMLSchema(String xsdname, Document domdoc) throws IOException  {
+            boolean test = true;
+            try {
+                URL xsdurl = PrismXMLReader.class.getResource(xsdname);
+                SchemaFactory factory = SchemaFactory.newInstance(
+                                            XMLConstants.W3C_XML_SCHEMA_NS_URI);
+                Schema schema = factory.newSchema(xsdurl);
+                Validator validator = schema.newValidator();
+                validator.validate(new DOMSource(domdoc));
+            } catch (IOException | SAXException e) {
+                throw new IOException("Invalid XML schema: " + e.getMessage());
+            }
+            return test;
     }
 }

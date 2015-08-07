@@ -374,6 +374,12 @@ public class V3Component extends COSMOScontentFormat {
         outText[totalLength-1] = this.endOfData;
         return outText;
     }
+    /**
+     * updateUploadParms picks up the values needed for the apktable and writes
+     * them to a csv file along with the table headers.  Currently the file is
+     * written into the logs folder.
+     * @throws IOException if unable to write to the file
+     */
     public void updateUploadParms() throws IOException {
         SmDebugLogger elog = SmDebugLogger.INSTANCE;
         String[] headerline = {"SCNL","STATION_TYPE","STATION_NAME","LAT","LON",

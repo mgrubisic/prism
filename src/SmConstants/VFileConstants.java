@@ -187,6 +187,7 @@ public final class VFileConstants {
     
     public static final String DEBUG_TO_LOG_ON = "On";
     public static final String BASELINE_WRITE_ON = "On";
+    public static final String DELETE_INPUT_V0 = "Yes";
     
     //V3 processing
     public static final int NUM_COEF_VALS = 6;
