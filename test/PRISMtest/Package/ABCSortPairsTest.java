@@ -1,29 +1,20 @@
-/*
- * Copyright (C) 2014 jmjones
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+/*******************************************************************************
+ * Name: Java class ABCSortPairsTest.java
+ * Project: PRISM strong motion record processing using COSMOS data format
+ * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
+ * 
+ * This software is in the public domain because it contains materials that 
+ * originally came from the United States Geological Survey, an agency of the 
+ * United States Department of Interior. For more information, see the official 
+ * USGS copyright policy at 
+ * http://www.usgs.gov/visual-id/credit_usgs.html#copyright
+ * 
+ * Date: first release date Feb. 2015
+ ******************************************************************************/
 
 package PRISMtest.Package;
 
 import SmUtilities.ABCSortPairs;
-import java.util.ArrayList;
-import org.junit.After;
-import org.junit.AfterClass;
-import static org.junit.Assert.*;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**

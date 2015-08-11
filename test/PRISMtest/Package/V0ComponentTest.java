@@ -1,19 +1,16 @@
-/*
- * Copyright (C) 2014 jmjones
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+/*******************************************************************************
+ * Name: Java class V0ComponentTest.java
+ * Project: PRISM strong motion record processing using COSMOS data format
+ * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
+ * 
+ * This software is in the public domain because it contains materials that 
+ * originally came from the United States Geological Survey, an agency of the 
+ * United States Department of Interior. For more information, see the official 
+ * USGS copyright policy at 
+ * http://www.usgs.gov/visual-id/credit_usgs.html#copyright
+ * 
+ * Date: first release date Feb. 2015
+ ******************************************************************************/
 
 package PRISMtest.Package;
 
@@ -110,7 +107,7 @@ public class V0ComponentTest {
     public void testLoadComponent() throws FormatException, SmException {
         int lineNum = v0.loadComponent(0, infile);
         org.junit.Assert.assertEquals(48, lineNum);
-        org.junit.Assert.assertEquals("76", v0.getChannel());
+        org.junit.Assert.assertEquals("", v0.getChannel());
     }
     @Test
     public void testParseHeader() throws FormatException, SmException {
@@ -259,62 +256,62 @@ public class V0ComponentTest {
 //        System.out.println("event date time: " + actual);
         org.junit.Assert.assertEquals(expected, actual);
     }
-    @Test
-    public void testEODupdate() throws FormatException, SmException {
-        v0.loadComponent(0, infile);
-        v0.updateEndOfDataLine(UNCORACC, v0.getChannel());
-        System.out.println("EOD: " + v0.getEndOfData());
-        v0.updateEndOfDataLine(CORACC, v0.getChannel());
-        System.out.println("EOD: " + v0.getEndOfData());
-        v0.updateEndOfDataLine(VELOCITY, v0.getChannel());
-        System.out.println("EOD: " + v0.getEndOfData());
-        v0.updateEndOfDataLine(DISPLACE, v0.getChannel());
-        System.out.println("EOD: " + v0.getEndOfData());
-        v0.updateEndOfDataLine(SPECTRA, v0.getChannel());
-        System.out.println("EOD: " + v0.getEndOfData());
-        
-        System.out.println("\nraw accel.");
-        infile[47]= "End-of-data for Chan  1 raw. accel";        
-        v0.loadComponent(0, infile);
-        v0.updateEndOfDataLine(UNCORACC, v0.getChannel());
-        System.out.println("EOD: " + v0.getEndOfData());
-        v0.updateEndOfDataLine(CORACC, v0.getChannel());
-        System.out.println("EOD: " + v0.getEndOfData());
-        v0.updateEndOfDataLine(VELOCITY, v0.getChannel());
-        System.out.println("EOD: " + v0.getEndOfData());
-        v0.updateEndOfDataLine(DISPLACE, v0.getChannel());
-        System.out.println("EOD: " + v0.getEndOfData());
-        v0.updateEndOfDataLine(SPECTRA, v0.getChannel());
-        System.out.println("EOD: " + v0.getEndOfData());
-        
-        System.out.println("\nSNCL code");
-        infile[47]= "End-of-data for HAST.HNE.BK.00 acceleration";        
-        v0.loadComponent(0, infile);
-        v0.updateEndOfDataLine(UNCORACC, v0.getChannel());
-        System.out.println("EOD: " + v0.getEndOfData());
-        v0.updateEndOfDataLine(CORACC, v0.getChannel());
-        System.out.println("EOD: " + v0.getEndOfData());
-        v0.updateEndOfDataLine(VELOCITY, v0.getChannel());
-        System.out.println("EOD: " + v0.getEndOfData());
-        v0.updateEndOfDataLine(DISPLACE, v0.getChannel());
-        System.out.println("EOD: " + v0.getEndOfData());
-        v0.updateEndOfDataLine(SPECTRA, v0.getChannel());
-        System.out.println("EOD: " + v0.getEndOfData());
-        
-        System.out.println("\n???");
-        infile[47]= "End-of-data";        
-        v0.loadComponent(0, infile);
-        v0.updateEndOfDataLine(UNCORACC, v0.getChannel());
-        System.out.println("EOD: " + v0.getEndOfData());
-        v0.updateEndOfDataLine(CORACC, v0.getChannel());
-        System.out.println("EOD: " + v0.getEndOfData());
-        v0.updateEndOfDataLine(VELOCITY, v0.getChannel());
-        System.out.println("EOD: " + v0.getEndOfData());
-        v0.updateEndOfDataLine(DISPLACE, v0.getChannel());
-        System.out.println("EOD: " + v0.getEndOfData());
-        v0.updateEndOfDataLine(SPECTRA, v0.getChannel());
-        System.out.println("EOD: " + v0.getEndOfData());
-    }
+//    @Test
+//    public void testEODupdate() throws FormatException, SmException {
+//        v0.loadComponent(0, infile);
+//        v0.updateEndOfDataLine(UNCORACC, v0.getChannel());
+//        System.out.println("EOD: " + v0.getEndOfData());
+//        v0.updateEndOfDataLine(CORACC, v0.getChannel());
+//        System.out.println("EOD: " + v0.getEndOfData());
+//        v0.updateEndOfDataLine(VELOCITY, v0.getChannel());
+//        System.out.println("EOD: " + v0.getEndOfData());
+//        v0.updateEndOfDataLine(DISPLACE, v0.getChannel());
+//        System.out.println("EOD: " + v0.getEndOfData());
+//        v0.updateEndOfDataLine(SPECTRA, v0.getChannel());
+//        System.out.println("EOD: " + v0.getEndOfData());
+//        
+//        System.out.println("\nraw accel.");
+//        infile[47]= "End-of-data for Chan  1 raw. accel";        
+//        v0.loadComponent(0, infile);
+//        v0.updateEndOfDataLine(UNCORACC, v0.getChannel());
+//        System.out.println("EOD: " + v0.getEndOfData());
+//        v0.updateEndOfDataLine(CORACC, v0.getChannel());
+//        System.out.println("EOD: " + v0.getEndOfData());
+//        v0.updateEndOfDataLine(VELOCITY, v0.getChannel());
+//        System.out.println("EOD: " + v0.getEndOfData());
+//        v0.updateEndOfDataLine(DISPLACE, v0.getChannel());
+//        System.out.println("EOD: " + v0.getEndOfData());
+//        v0.updateEndOfDataLine(SPECTRA, v0.getChannel());
+//        System.out.println("EOD: " + v0.getEndOfData());
+//        
+//        System.out.println("\nSNCL code");
+//        infile[47]= "End-of-data for HAST.HNE.BK.00 acceleration";        
+//        v0.loadComponent(0, infile);
+//        v0.updateEndOfDataLine(UNCORACC, v0.getChannel());
+//        System.out.println("EOD: " + v0.getEndOfData());
+//        v0.updateEndOfDataLine(CORACC, v0.getChannel());
+//        System.out.println("EOD: " + v0.getEndOfData());
+//        v0.updateEndOfDataLine(VELOCITY, v0.getChannel());
+//        System.out.println("EOD: " + v0.getEndOfData());
+//        v0.updateEndOfDataLine(DISPLACE, v0.getChannel());
+//        System.out.println("EOD: " + v0.getEndOfData());
+//        v0.updateEndOfDataLine(SPECTRA, v0.getChannel());
+//        System.out.println("EOD: " + v0.getEndOfData());
+//        
+//        System.out.println("\n???");
+//        infile[47]= "End-of-data";        
+//        v0.loadComponent(0, infile);
+//        v0.updateEndOfDataLine(UNCORACC, v0.getChannel());
+//        System.out.println("EOD: " + v0.getEndOfData());
+//        v0.updateEndOfDataLine(CORACC, v0.getChannel());
+//        System.out.println("EOD: " + v0.getEndOfData());
+//        v0.updateEndOfDataLine(VELOCITY, v0.getChannel());
+//        System.out.println("EOD: " + v0.getEndOfData());
+//        v0.updateEndOfDataLine(DISPLACE, v0.getChannel());
+//        System.out.println("EOD: " + v0.getEndOfData());
+//        v0.updateEndOfDataLine(SPECTRA, v0.getChannel());
+//        System.out.println("EOD: " + v0.getEndOfData());
+//    }
     @Test
     public void testSCNLandRcrdid() throws FormatException, SmException {
         v0.loadComponent(0, infile);

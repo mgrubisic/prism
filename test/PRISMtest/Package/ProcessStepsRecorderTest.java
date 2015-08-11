@@ -3,6 +3,12 @@
  * Project: PRISM strong motion record processing using COSMOS data format
  * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
  * 
+ * This software is in the public domain because it contains materials that 
+ * originally came from the United States Geological Survey, an agency of the 
+ * United States Department of Interior. For more information, see the official 
+ * USGS copyright policy at 
+ * http://www.usgs.gov/visual-id/credit_usgs.html#copyright
+ * 
  * Date: first release date Feb. 2015
  ******************************************************************************/
 
@@ -26,8 +32,8 @@ public class ProcessStepsRecorderTest {
         test1 = new String[4];
         test1[0] = "|<PROCESS> MANUAL";
         test1[1] = "|<EONSET> event onset(sec)=  31.9800";
-        test1[2] = "|<ABLCORR>SF:    0.0000, EF:   31.9800, SA:    0.0000, EA:  132.0000, ORDER: MEAN";
-        test1[3] = "|<VBLCORR>SF:    0.0000, EF:  132.0000, SA:    0.0000, EA:  132.0000, ORDER: ORDER2";
+        test1[2] = "|<ABLC>SF:   0.0000, EF:  31.9800, SA:   0.0000, EA: 132.0000, ORDER:  MEAN";
+        test1[3] = "|<VBLC>SF:   0.0000, EF: 132.0000, SA:   0.0000, EA: 132.0000, ORDER:ORDER2";
         
         empty = new String[2];
         empty[0] = "|<PROCESS> AUTO";
@@ -36,10 +42,10 @@ public class ProcessStepsRecorderTest {
         test2 = new String[6];
         test2[0] = "|<PROCESS> AUTO";
         test2[1] = "|<EONSET> event onset(sec)=   5.0000";
-        test2[2] = "|<ABLCORR>SF:    0.0000, EF:    5.0000, SA:    0.0000, EA:  124.0000, ORDER: MEAN";
-        test2[3] = "|<VBLADAPT1>SF:    0.0000, EF:   12.0000, SA:    0.0000, EA:   12.0000, ORDER: ORDER1";
-        test2[4] = "|<VBLADAPT2>SF:   12.0000, EF:   24.0000, SA:   12.0000, EA:   24.0000, ORDER: SPLINE";
-        test2[5] = "|<VBLADAPT3>SF:   24.0000, EF:  124.0000, SA:   24.0000, EA:  124.0000, ORDER: ORDER3";
+        test2[2] = "|<ABLC>SF:   0.0000, EF:   5.0000, SA:   0.0000, EA: 124.0000, ORDER:  MEAN";
+        test2[3] = "|<VBLABC1>SF:   0.0000, EF:  12.0000, SA:   0.0000, EA:  12.0000, ORDER:ORDER1";
+        test2[4] = "|<VBLABC2>SF:  12.0000, EF:  24.0000, SA:  12.0000, EA:  24.0000, ORDER:SPLINE";
+        test2[5] = "|<VBLABC3>SF:  24.0000, EF: 124.0000, SA:  24.0000, EA: 124.0000, ORDER:ORDER3";
     }
     
     @Test

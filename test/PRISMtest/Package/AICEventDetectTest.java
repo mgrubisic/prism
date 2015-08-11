@@ -1,26 +1,26 @@
-/*
- * Copyright (C) 2014 jmjones
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+/*******************************************************************************
+ * Name: Java class AICEventDetectTest.java
+ * Project: PRISM strong motion record processing using COSMOS data format
+ * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
+ * 
+ * This software is in the public domain because it contains materials that 
+ * originally came from the United States Geological Survey, an agency of the 
+ * United States Department of Interior. For more information, see the official 
+ * USGS copyright policy at 
+ * http://www.usgs.gov/visual-id/credit_usgs.html#copyright
+ * 
+ * Date: first release date Feb. 2015
+ ******************************************************************************/
 
 package PRISMtest.Package;
 
 import SmProcessing.AICEventDetect;
 import SmProcessing.ArrayStats;
 import SmUtilities.TextFileReader;
+import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import static org.junit.Assert.*;
@@ -37,11 +37,10 @@ public class AICEventDetectTest {
     AICEventDetect aicPeak;
     AICEventDetect aicWhole;
     
-    static final String picktest = "D:/PRISM/ppicktest/15481673.AZ.FRD.HNN.txt";
+    static final String picktest = "/PRISMtest/Data/15481673.AZ.FRD.HNN.txt";
     static String[] fileContents;
     
     static double[] hnn;    
-    String outdir = "D:/PRISM/filter_test/junit";
     
     public AICEventDetectTest() {
         aicPeak = new AICEventDetect();
@@ -49,23 +48,26 @@ public class AICEventDetectTest {
     }
     
     @BeforeClass
-    public static void setUpClass() throws IOException {
+    public static void setUpClass() throws IOException, URISyntaxException {
         int next = 0;
-        Path name = Paths.get( picktest );
-        TextFileReader infile = new TextFileReader( name.toFile() );
-        fileContents = infile.readInTextFile();
-        hnn = new double[fileContents.length];
-        for (String num : fileContents) {
-            hnn[next++] = Double.parseDouble(num);
+        URL url = AICEventDetectTest.class.getResource(picktest);
+        if (url != null) {
+            File name = new File(url.toURI());
+            TextFileReader infile = new TextFileReader( name );
+            fileContents = infile.readInTextFile();
+//            System.out.println("length: " + fileContents.length);
+            hnn = new double[fileContents.length];
+            for (String num : fileContents) {
+                hnn[next++] = Double.parseDouble(num);
+            }
+        } else {
+            System.out.println("url null");
         }
-        System.out.println("first hnn: " + hnn[0]);
     }
     
      @Test
      public void checkEventDetection() {
          int pick1 = aicPeak.calculateIndex(hnn, "topeak");
-//         int pick2 = aicPeak.calculateIndex(hnn, "whole");
          org.junit.Assert.assertEquals(1472, pick1);
-//         org.junit.Assert.assertEquals(1572, pick2);
      }
 }

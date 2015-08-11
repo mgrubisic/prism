@@ -1,19 +1,16 @@
-/*
- * Copyright (C) 2014 jmjones
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+/*******************************************************************************
+ * Name: Java class EventOnsetDetectionTest.java
+ * Project: PRISM strong motion record processing using COSMOS data format
+ * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
+ * 
+ * This software is in the public domain because it contains materials that 
+ * originally came from the United States Geological Survey, an agency of the 
+ * United States Department of Interior. For more information, see the official 
+ * USGS copyright policy at 
+ * http://www.usgs.gov/visual-id/credit_usgs.html#copyright
+ * 
+ * Date: first release date Feb. 2015
+ ******************************************************************************/
 
 package PRISMtest.Package;
 
@@ -21,12 +18,15 @@ import SmProcessing.EventOnsetCoefs;
 import SmProcessing.EventOnsetDetection;
 import SmUtilities.TextFileReader;
 import SmUtilities.TextFileWriter;
+import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import static org.junit.Assert.*;
-import org.junit.BeforeClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -40,50 +40,34 @@ public class EventOnsetDetectionTest {
     EventOnsetDetection e10;
     EventOnsetDetection e20;
     
-    static final String picktest = "D:/PRISM/ppicktest/15481673.AZ.FRD.HNN.txt";
+    static final String picktest = "/PRISMtest/Data/15481673.AZ.FRD.HNN.txt";
     static String[] fileContents;
     
-    double[] a1;
     static double[] hnn;
-    
     EventOnsetCoefs check = new EventOnsetCoefs();
-    String outdir = "D:/PRISM/filter_test/junit";
-
     
     public EventOnsetDetectionTest() {
         e5 = new EventOnsetDetection( 0.005 );
         e10 = new EventOnsetDetection( 0.01 );
         e20 = new EventOnsetDetection( 0.02 );
-        
-        a1 = new double[100];
     }
     
     @BeforeClass
-    public static void setUpClass() throws IOException {
+    public static void setUpClass() throws IOException, URISyntaxException {
         int next = 0;
-        Path name = Paths.get( picktest );
-        TextFileReader infile = new TextFileReader( name.toFile() );
-        fileContents = infile.readInTextFile();
-        hnn = new double[fileContents.length];
-        for (String num : fileContents) {
-            hnn[next++] = Double.parseDouble(num);
-        }
-        System.out.println("first hnn: " + hnn[0]);
-    }
-    
-    @Before
-    public void setUp() throws IOException {
-        for (int i = 0; i < a1.length; i++) {
-            if (i < 20) {
-                a1[i] = -1.0;
-            } else if ((i >= 20) && (i < 40)){
-                a1[i] = 1.0;
-            } else {
-                a1[i] = -1.0;
+        URL url = EventOnsetDetectionTest.class.getResource(picktest);
+        if (url != null) {
+            File name = new File(url.toURI());
+            TextFileReader infile = new TextFileReader( name );
+            fileContents = infile.readInTextFile();
+            hnn = new double[fileContents.length];
+            for (String num : fileContents) {
+                hnn[next++] = Double.parseDouble(num);
             }
+        } else {
+            System.out.println("url null");
         }
-    }
-    
+    }    
     @Test
     public void checkCoefficients() {
         double[] AeB = check.getAeBCoefs(0.005);
@@ -107,17 +91,9 @@ public class EventOnsetDetectionTest {
         System.arraycopy(AeB,0,combined,Ae.length, AeB.length);
         org.junit.Assert.assertArrayEquals(combined, e20.showCoefficients(), EPSILON);
     }
-    
-//    @Test
-//    public void checkOnset() {
-//        int pick = e10.findEventOnset(a1, 0.0);
-//        org.junit.Assert.assertEquals(19, pick);
-//    }
-    
-//    @Test
-//    public void check15481673AZFRDHNNOnset() {
-//        int pick = e10.findEventOnset(hnn);
-//        System.out.println("15481673");
-//        org.junit.Assert.assertEquals(1572, pick);
-//    }
+    @Test
+    public void check15481673AZFRDHNNOnset() {
+        int pick = e10.findEventOnset(hnn);
+        org.junit.Assert.assertEquals(1649, pick);
+    }
 }

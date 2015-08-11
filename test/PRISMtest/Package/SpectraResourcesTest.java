@@ -3,6 +3,12 @@
  * Project: PRISM strong motion record processing using COSMOS data format
  * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
  * 
+ * This software is in the public domain because it contains materials that 
+ * originally came from the United States Geological Survey, an agency of the 
+ * United States Department of Interior. For more information, see the official 
+ * USGS copyright policy at 
+ * http://www.usgs.gov/visual-id/credit_usgs.html#copyright
+ * 
  * Date: first release date Feb. 2015
  ******************************************************************************/
 
@@ -15,9 +21,10 @@ import static SmConstants.VFileConstants.V3_SAMPLING_RATES;
 import SmException.FormatException;
 import SmProcessing.SpectraResources;
 import SmUtilities.TextFileReader;
+import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.net.URISyntaxException;
+import java.net.URL;
 import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,7 +35,8 @@ import org.junit.Test;
  */
 public class SpectraResourcesTest {
     SpectraResources spec;
-    Path dirpath;
+    String periodfile = "/SmProcessing/spectra/T_periods.txt";
+    String dirloc = "/SmProcessing/spectra/";
     String[] PeriodsText;
     Double EPSILON = .000001;
     static final String[] spectraFileNames =  { "CoefTable_50_0.txt",
@@ -57,19 +65,27 @@ public class SpectraResourcesTest {
         spec = new SpectraResources();
     }
     @Before
-    public void setUp() throws IOException {
-        Path relpath = Paths.get("");
-        String abspath = relpath.toAbsolutePath().toString();
-        dirpath = Paths.get(abspath, "src/SmProcessing/spectra");
-        Path periodname = Paths.get(dirpath.toString(), "T_periods.txt");
-        TextFileReader reader = new TextFileReader(periodname.toFile());
-        PeriodsText = reader.readInTextFile();
-        Path coefname;
+    public void setUp() throws IOException, URISyntaxException {
+        File name;
+        TextFileReader reader;
+        URL url = SpectraResourcesTest.class.getResource(periodfile);
+        if (url != null) {
+            name = new File(url.toURI());
+            reader = new TextFileReader(name);
+            PeriodsText = reader.readInTextFile();
+        } else {
+            System.out.println("period url null");
+        }
         coeftext = new String[spectraFileNames.length][];
         for (int i = 0; i < spectraFileNames.length; i++) {
-            coefname = Paths.get(dirpath.toString(), spectraFileNames[i]);
-            reader = new TextFileReader(coefname.toFile());
-            coeftext[i] = reader.readInTextFile();
+            url = SpectraResourcesTest.class.getResource(dirloc + spectraFileNames[i]);
+            if (url != null) {
+                name = new File(url.toURI());
+                reader = new TextFileReader(name);
+                coeftext[i] = reader.readInTextFile();
+            } else {
+                System.out.println("coef url null");
+            }
         }
     }
     @Test

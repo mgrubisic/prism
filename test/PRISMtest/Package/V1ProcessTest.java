@@ -1,19 +1,16 @@
-/*
- * Copyright (C) 2014 jmjones
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+/*******************************************************************************
+ * Name: Java class V1ProcessTest.java
+ * Project: PRISM strong motion record processing using COSMOS data format
+ * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
+ * 
+ * This software is in the public domain because it contains materials that 
+ * originally came from the United States Geological Survey, an agency of the 
+ * United States Department of Interior. For more information, see the official 
+ * USGS copyright policy at 
+ * http://www.usgs.gov/visual-id/credit_usgs.html#copyright
+ * 
+ * Date: first release date Feb. 2015
+ ******************************************************************************/
 
 package PRISMtest.Package;
 
@@ -28,8 +25,10 @@ import SmProcessing.RawTraceConversion;
 import SmProcessing.V1Process;
 import SmUtilities.ConfigReader;
 import SmUtilities.PrismXMLReader;
+import static SmUtilities.SmConfigConstants.DATA_UNITS_CODE;
 import static SmUtilities.SmConfigConstants.DATA_UNITS_NAME;
 import java.io.IOException;
+import java.io.InputStream;
 import javax.xml.parsers.ParserConfigurationException;
 import org.junit.Before;
 import org.junit.Rule;
@@ -133,9 +132,10 @@ public class V1ProcessTest {
     @Test
     public void TestV1ProcessCMS() throws FormatException, SmException {
         try {
-            String filename = "D:/PRISM/config_files/prism_config.xml";
+            String filename = "/PRISMtest/Data/prism_config.xml";
+            InputStream ins = PrismXMLReaderTest.class.getResourceAsStream(filename);
             PrismXMLReader xml = new PrismXMLReader();
-            xml.readFile(filename);
+            xml.readFile(ins);
         } catch (ParserConfigurationException | SAXException | IOException err) {
             System.out.println("Unable to parse configuration file ");
         }
@@ -155,9 +155,12 @@ public class V1ProcessTest {
     @Test
     public void TestV1ProcessG() throws SmException, FormatException {
         try {
-            String filename = "D:/PRISM/config_files/prism_config_testV1.xml";
+            String filename = "/PRISMtest/Data/prism_config.xml";
+            InputStream ins = PrismXMLReaderTest.class.getResourceAsStream(filename);
             PrismXMLReader xml = new PrismXMLReader();
-            xml.readFile(filename);
+            xml.readFile(ins);
+            config.setConfigValue(DATA_UNITS_CODE, "02");
+            config.setConfigValue(DATA_UNITS_NAME, "g");
         } catch (ParserConfigurationException | SAXException | IOException err) {
             System.out.println("Unable to parse configuration file ");
         }
@@ -180,9 +183,10 @@ public class V1ProcessTest {
         expectedEx.expectMessage("Real header #22, recorder least sig. bit, is invalid: -999.0");
         infile[28]= "  -999.000000  -999.000000  -999.000000  -999.000000     2.500000    25.000000";
         try {
-            String filename = "D:/PRISM/config_files/prism_config.xml";
+            String filename = "/PRISMtest/Data/prism_config.xml";
+            InputStream ins = PrismXMLReaderTest.class.getResourceAsStream(filename);
             PrismXMLReader xml = new PrismXMLReader();
-            xml.readFile(filename);
+            xml.readFile(ins);
         } catch (ParserConfigurationException | SAXException | IOException err) {
             System.out.println("Unable to parse configuration file ");
         }
@@ -195,23 +199,10 @@ public class V1ProcessTest {
         expectedEx.expectMessage("Real header #42, sensor sensitivity, is invalid: 0.0");
         infile[31]= "  -999.000000  -999.000000  -999.000000   100.400000      .660000      .000000";
         try {
-            String filename = "D:/PRISM/config_files/prism_config.xml";
+            String filename = "/PRISMtest/Data/prism_config.xml";
+            InputStream ins = PrismXMLReaderTest.class.getResourceAsStream(filename);
             PrismXMLReader xml = new PrismXMLReader();
-            xml.readFile(filename);
-        } catch (ParserConfigurationException | SAXException | IOException err) {
-            System.out.println("Unable to parse configuration file ");
-        }
-        int count = v0.loadComponent(0, infile);
-        v3p = new V1Process(v0);
-    }
-    @Test
-    public void TestBadUnitCodeConfig() throws SmException, FormatException {
-        expectedEx.expect(SmException.class);
-        expectedEx.expectMessage("Error extracting numeric values from configuration file");
-        try {
-            String filename = "D:/PRISM/config_files/prism_config_testErrorV1.xml";
-            PrismXMLReader xml = new PrismXMLReader();
-            xml.readFile(filename);
+            xml.readFile(ins);
         } catch (ParserConfigurationException | SAXException | IOException err) {
             System.out.println("Unable to parse configuration file ");
         }

@@ -86,7 +86,7 @@
 	acceleration needs to meet or exceed to have computed parameters calculated and the
 	strong motion flag set.  This value should be a percentage, such as 5 for strong
 	motion records >= 5%g -->
-	<StrongMotionThreshold>0</StrongMotionThreshold>
+	<StrongMotionThreshold>5</StrongMotionThreshold>
 		
 	<!--	Tags for output data array format are SingleColumn and Packed.
 	SingleColumn will write one data value per line, and Packed will pack
@@ -113,5 +113,5 @@
 	processing.
 	-->
 	<DebugToLog>On</DebugToLog>
-	<WriteBaselineFunction>On</WriteBaselineFunction>
+	<WriteBaselineFunction>Off</WriteBaselineFunction>
 </PRISM>

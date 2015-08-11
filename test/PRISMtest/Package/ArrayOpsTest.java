@@ -1,33 +1,33 @@
-/*
- * Copyright (C) 2014 jmjones
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+/*******************************************************************************
+ * Name: Java class ArrayOpsTest.java
+ * Project: PRISM strong motion record processing using COSMOS data format
+ * Written by: Jeanne Jones, USGS, jmjones@usgs.gov
+ * 
+ * This software is in the public domain because it contains materials that 
+ * originally came from the United States Geological Survey, an agency of the 
+ * United States Department of Interior. For more information, see the official 
+ * USGS copyright policy at 
+ * http://www.usgs.gov/visual-id/credit_usgs.html#copyright
+ * 
+ * Date: first release date Feb. 2015
+ ******************************************************************************/
 
 package PRISMtest.Package;
 
-import static PRISMtest.Package.FFTtest.picktest;
 import SmProcessing.ArrayOps;
 import SmProcessing.ArrayStats;
 import SmUtilities.TextFileReader;
 import SmUtilities.TextFileWriter;
+import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import static org.junit.Assert.*;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -49,25 +49,26 @@ public class ArrayOpsTest {
     double[] poly3order;
     double[] time;
     int[] counter;
-    int LENGTH = 100;
-    double EPSILON = 0.1;
+    static int LENGTH = 100;
+    static double EPSILON = 0.1;
     double BIG_EPSILON = 1.0;
+    double SM_EPSILON = 0.001;
     double STEP = 1.0;
     double[] smooth;
-    double[] accel;
-    double[] vel;
-    double[] disp;
-    String[] filecontents;
+    static double[] accel;
+    static double[] vel;
+    static double[] disp;
+    static String[] filecontents;
     
-    String dirname = "D:\\PRISM\\test\\arrayops";
-    String accelfile = "D:\\PRISM\\test\\arrayops\\acceleration.txt";
-    String velfile = "D:\\PRISM\\test\\arrayops\\velocity.txt";
-    String dispfile = "D:\\PRISM\\test\\arrayops\\displacement.txt";
+//    String dirname = "D:/PRISM/test/test";
+    static String accelfile = "/PRISMtest/Data/acceleration.txt";
+    static String velfile = "/PRISMtest/Data/velocity.txt";
+    static String dispfile = "/PRISMtest/Data/displacement.txt";
     
-    ArrayStats centerstat;
-    ArrayStats posstat;
-    ArrayStats negstat;
-    ArrayStats polystat;
+    static ArrayStats centerstat;
+    static ArrayStats posstat;
+    static ArrayStats negstat;
+    static ArrayStats polystat;
     
     public ArrayOpsTest() {
         posconstant = new double[LENGTH];
@@ -85,7 +86,6 @@ public class ArrayOpsTest {
         time = new double[LENGTH];
         counter = new int[LENGTH];
         smooth = new double[LENGTH];
-        filecontents = new String[36199];
         
         Arrays.fill(posconstant, 2.0);
         Arrays.fill(zeroconstant, 0.0);
@@ -107,71 +107,84 @@ public class ArrayOpsTest {
         smooth[9] = 2.25;
         smooth[10] = 2.5;
         smooth[11] = 2.25;
-    }
-    
-    @Before
-    public void setUp() throws IOException {
+
         centerstat = new ArrayStats( linecentered );
         posstat = new ArrayStats( linepos );
         negstat = new ArrayStats( lineneg );
         polystat = new ArrayStats( polypos );
+    }
+    
+    @BeforeClass
+    public static void setUp() throws IOException, URISyntaxException {
+        File name;
+        TextFileReader infile;
 
         int next = 0;
-        Path name = Paths.get( accelfile );
-        TextFileReader infile = new TextFileReader( name.toFile() );
-        filecontents = infile.readInTextFile();
-        accel = new double[filecontents.length];
-        for (String num : filecontents) {
-            accel[next++] = Double.parseDouble(num);
+        URL url = ArrayOpsTest.class.getResource( accelfile );
+        if (url != null) {
+            name = new File(url.toURI());
+            infile = new TextFileReader( name );
+            filecontents = infile.readInTextFile();
+//            System.out.println("acclen: " + filecontents.length);
+            accel = new double[filecontents.length];
+            for (String num : filecontents) {
+                accel[next++] = Double.parseDouble(num);
+            }
         }
-
         next = 0;
-        name = Paths.get( velfile );
-        infile = new TextFileReader( name.toFile() );
-        filecontents = infile.readInTextFile();
-        vel = new double[filecontents.length];
-        for (String num : filecontents) {
-            vel[next++] = Double.parseDouble(num);
+        url = ArrayOpsTest.class.getResource( velfile );
+        if (url != null) {
+            name = new File(url.toURI());
+            infile = new TextFileReader( name );
+            filecontents = infile.readInTextFile();
+//            System.out.println("vellen: " + filecontents.length);
+            vel = new double[filecontents.length];
+            for (String num : filecontents) {
+                vel[next++] = Double.parseDouble(num);
+            }
         }
-
         next = 0;
-        name = Paths.get( dispfile );
-        infile = new TextFileReader( name.toFile() );
-        filecontents = infile.readInTextFile();
-        disp = new double[filecontents.length];
-        for (String num : filecontents) {
-            disp[next++] = Double.parseDouble(num);
+        url = ArrayOpsTest.class.getResource( dispfile );
+        if (url != null) {
+            name = new File(url.toURI());
+            infile = new TextFileReader( name );
+            filecontents = infile.readInTextFile();
+//            System.out.println("dislen: " + filecontents.length);
+            disp = new double[filecontents.length];
+            for (String num : filecontents) {
+                disp[next++] = Double.parseDouble(num);
+            }
         }
-}
+    }
     
      @Test
      public void testRemoveValue() throws IOException {
-        TextFileWriter writeout = new TextFileWriter(dirname, "time.txt",time);
-        writeout.writeOutArray();
-        writeout = new TextFileWriter(dirname, "linecentered.txt",linecentered);
-        writeout.writeOutArray();
-        writeout = new TextFileWriter(dirname, "linepos.txt",linepos);
-        writeout.writeOutArray();
-        writeout = new TextFileWriter(dirname, "lineneg.txt",lineneg);
-        writeout.writeOutArray();
-        writeout = new TextFileWriter(dirname, "lineinte.txt",lineinte);
-        writeout.writeOutArray();
-        writeout = new TextFileWriter(dirname, "poly.txt",poly);
-        writeout.writeOutArray();
-        writeout = new TextFileWriter(dirname, "polysin.txt",polysin);
-        writeout.writeOutArray();
-        writeout = new TextFileWriter(dirname, "polypos.txt",polypos);
-        writeout.writeOutArray();
-        writeout = new TextFileWriter(dirname, "polyline.txt",polyline);
-        writeout.writeOutArray();
-        writeout = new TextFileWriter(dirname, "zeroconstant.txt",zeroconstant);
-        writeout.writeOutArray();
-        writeout = new TextFileWriter(dirname, "posconstant.txt",posconstant);
-        writeout.writeOutArray();
-        writeout = new TextFileWriter(dirname, "negconstant.txt",negconstant);
-        writeout.writeOutArray();
-        writeout = new TextFileWriter(dirname, "poly3order.txt",poly3order);
-        writeout.writeOutArray();
+//        TextFileWriter writeout = new TextFileWriter(dirname, "time.txt",time);
+//        writeout.writeOutArray();
+//        writeout = new TextFileWriter(dirname, "linecentered.txt",linecentered);
+//        writeout.writeOutArray();
+//        writeout = new TextFileWriter(dirname, "linepos.txt",linepos);
+//        writeout.writeOutArray();
+//        writeout = new TextFileWriter(dirname, "lineneg.txt",lineneg);
+//        writeout.writeOutArray();
+//        writeout = new TextFileWriter(dirname, "lineinte.txt",lineinte);
+//        writeout.writeOutArray();
+//        writeout = new TextFileWriter(dirname, "poly.txt",poly);
+//        writeout.writeOutArray();
+//        writeout = new TextFileWriter(dirname, "polysin.txt",polysin);
+//        writeout.writeOutArray();
+//        writeout = new TextFileWriter(dirname, "polypos.txt",polypos);
+//        writeout.writeOutArray();
+//        writeout = new TextFileWriter(dirname, "polyline.txt",polyline);
+//        writeout.writeOutArray();
+//        writeout = new TextFileWriter(dirname, "zeroconstant.txt",zeroconstant);
+//        writeout.writeOutArray();
+//        writeout = new TextFileWriter(dirname, "posconstant.txt",posconstant);
+//        writeout.writeOutArray();
+//        writeout = new TextFileWriter(dirname, "negconstant.txt",negconstant);
+//        writeout.writeOutArray();
+//        writeout = new TextFileWriter(dirname, "poly3order.txt",poly3order);
+//        writeout.writeOutArray();
 
         double[] test = new double[LENGTH];
          System.arraycopy(zeroconstant, 0, test, 0, LENGTH);
@@ -255,7 +268,7 @@ public class ArrayOpsTest {
          System.arraycopy(polyline, 0, test, 0, LENGTH);
          result = ArrayOps.removeLinearTrend(test, 0.0);
          org.junit.Assert.assertEquals(false, result);
-}
+    }
      @Test
      public void testIntegrateDifferentiate() {
          double[] test = new double[0];
@@ -351,8 +364,8 @@ public class ArrayOpsTest {
          double[] test1 = null;
          double[] test2 = new double[0];
          org.junit.Assert.assertEquals(0.0, ArrayOps.rootMeanSquare(posconstant,posconstant),EPSILON);
-         org.junit.Assert.assertEquals(Double.MIN_VALUE, ArrayOps.rootMeanSquare(test1,test1),EPSILON);
-         org.junit.Assert.assertEquals(Double.MIN_VALUE, ArrayOps.rootMeanSquare(test2,test2),EPSILON);
+         org.junit.Assert.assertEquals(-1.0, ArrayOps.rootMeanSquare(test1,test1),EPSILON);
+         org.junit.Assert.assertEquals(-1.0, ArrayOps.rootMeanSquare(test2,test2),EPSILON);
      }
      @Test
      public void testCountsToPhysicalValues() {
@@ -419,9 +432,9 @@ public class ArrayOpsTest {
      public void testFindLinearTrend() {
          org.junit.Assert.assertArrayEquals(ArrayOps.findLinearTrend(polyline,STEP),linepos,EPSILON);
      }
-//     @Test
-//     public void testCompatibility() {
-//         org.junit.Assert.assertArrayEquals(ArrayOps.Integrate(accel,0.005),vel,EPSILON);
-//         org.junit.Assert.assertArrayEquals(ArrayOps.Integrate(vel,0.005),disp,EPSILON);
-//     }
+     @Test
+     public void testCompatibility() {
+         org.junit.Assert.assertArrayEquals(ArrayOps.Integrate(accel,0.005, 0.0007705),vel,SM_EPSILON);
+         org.junit.Assert.assertArrayEquals(ArrayOps.Integrate(vel,0.005, 0.00),disp,SM_EPSILON);
+     }
 }
