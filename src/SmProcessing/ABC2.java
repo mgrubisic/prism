@@ -88,6 +88,7 @@ public class ABC2 {
      * @param numroll filter order / 2
      * @param ppick event onset index
      * @param taplengthtime minimum number of seconds for the filter taper length
+     * @throws SmException if polynomial orders are invalid
      */
     public ABC2(double delttime, double[] invel, 
                                       double lowcut,double highcut, int numroll,
