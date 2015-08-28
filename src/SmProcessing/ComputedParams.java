@@ -304,8 +304,8 @@ public class ComputedParams {
      */
     private void calculateCumulativeAbsVelocity() {
         int step = (int)Math.round(1.0 / dt);
-        int numsecs = (int)Math.round(dt*len);
-        int upperlim;
+        int numsecs = (int)Math.floor(dt*len);
+        int length_secs = ((step*numsecs) <= len) ? (step*numsecs) : (step*(numsecs-1));
         int ctr = 0;
         boolean[] intervals = new boolean[numsecs];
         Arrays.fill(intervals, 0, numsecs, false);
@@ -313,9 +313,8 @@ public class ComputedParams {
         //First build an array of boolean flags for each 1-sec interval in the
         //acceleration array.  For each, 1-sec. step, if any value exceeds
         //0.025g, set the flag for that interval to true.
-        for (int k = 0; k < len; k = k + step) {
-            upperlim = ((k+step) <= len) ? k+step : len;
-            for (int i = k; i < upperlim; i++) {
+        for (int k = 0; k < length_secs; k = k + step) {
+            for (int i = k; i < k+step; i++) {
                 if (Math.abs(gacc[i]) > 0.025) {
                     intervals[ctr] = true;
                     break;
@@ -329,16 +328,12 @@ public class ComputedParams {
         //total.  Multiplying by 0.01 converts from cm/sq.sec to m/sq.sec.
         ctr = 0;
         double sum = 0.0;
-        for (int k = 0; k < len; k = k + step) {
+        for (int k = 0; k < length_secs; k = k + step) {
             if (intervals[ctr]) {
-                upperlim = ((k+step) <= len) ? k+step : len;
-//                sum = 0.5 * (Math.abs(acc[k]) + Math.abs(acc[upperlim-1])) * 0.01 * dt;
-//                for (int i = k+1; i < upperlim-1; i++) {
-                for (int i = k; i < upperlim; i++) {
+                for (int i = k; i < k+step; i++) {
                     sum = sum + Math.abs(acc[i]) * 0.01 * dt;
                 }
                 CAV = CAV + sum;
-//                System.out.println("k: " + k + "     upperlim: " + upperlim + "    CAVsum: " + CAV);
                 sum = 0;
             }
             ctr++;            
