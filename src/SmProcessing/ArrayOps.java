@@ -16,6 +16,11 @@ package SmProcessing;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+import org.apache.commons.math3.analysis.UnivariateFunction;
+import org.apache.commons.math3.analysis.interpolation.SplineInterpolator;
+import org.apache.commons.math3.analysis.interpolation.UnivariateInterpolator;
 import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
 import org.apache.commons.math3.fitting.PolynomialCurveFitter;
 import org.apache.commons.math3.fitting.WeightedObservedPoint;
@@ -489,5 +494,162 @@ public class ArrayOps {
             System.arraycopy( zmean, 0, inArray, 0, firstzero);
         }
         return firstzero;
+    }
+    /**
+     * Resamples an array to a finer resolution by interpolating between each
+     * pair of x,y values.  The sampling is done with the Apache Commons 
+     * Univariate Spline Interpolator, which expands the array from its original
+     * number of samples to a new array with the number of samples defined in
+     * the numsamp parameter.  For example, if numsamp = 4, there will be 3
+     * new samples interpolated between (x,y) and (x+1,y+1).  The total length 
+     * will increase to ((original_length-1) * numsamp) + 1, since no samples 
+     * are added after the last original sample.
+     * @param inArray the input array to be resampled
+     * @param numsamp the new sampling rate, such that between each original sample 
+     * there will be numsamp-1 interpolated samples.
+     * @return the newly sampled array.  Invalid input parameters will be flagged
+     * with a return of an array of length 0.  Invalid conditions: null input 
+     * array, input array with length less than 3 (minimum required for sampling),
+     * new sampling rate less than 2.
+     */
+    public static double[] resampleArray( double[] inArray, int numsamp ) {
+        if ((inArray == null) || (inArray.length < 3) || (numsamp < 2)) {
+            return new double[0];
+        }
+        double[] xval;
+        double[] yval;
+        UnivariateFunction function;
+        int newsamp = numsamp - 1;
+        int startlen = inArray.length;
+        int endlen = ((inArray.length-1) * numsamp) + 1;
+        double[] arrsamp = new double[endlen];
+        xval = new double[3]; yval = new double[3];
+         
+        //create an interpolating function to estimate values between each
+        //x and y
+        UnivariateInterpolator interpolator = new SplineInterpolator();
+         
+        //create numsamp-1 new values between each original x and y
+        //pre-fill the first value and the last 3 values to handle the
+        //array end cases
+        int loc = 1;
+        arrsamp[0] = inArray[0];
+        for (int x = 1; x < startlen-1; x=x+2){
+            xval[0] = (x-1) * numsamp; 
+            xval[1] = (x) * numsamp; 
+            xval[2] = (x+1) * numsamp;
+            yval[0] = inArray[x-1]; 
+            yval[1] = inArray[x]; 
+            yval[2] = inArray[x+1];
+            function = interpolator.interpolate( xval, yval);
+            for (int y = 0; y < newsamp; y++) {
+                arrsamp[loc] = function.value(loc); loc++;
+            }
+            arrsamp[loc++] = inArray[x];
+            for (int y = 0; y < newsamp; y++) {
+                arrsamp[loc] = function.value(loc); loc++;
+            }
+            arrsamp[loc++] = inArray[x+1];
+        }
+        //For even-numbered arrays, the final set of values needs to be filled
+        //in by interpolation over the last 3 points of the start array.  Only
+        //the last set of interpolated points needs to be filled in since the
+        //the first set was calculated above.
+        if ((startlen % 2) == 0) {
+            xval[0] = (startlen-3) * numsamp; 
+            xval[1] = (startlen-2) * numsamp; 
+            xval[2] = (startlen-1) * numsamp;
+            yval[0] = inArray[startlen-3]; 
+            yval[1] = inArray[startlen-2]; 
+            yval[2] = inArray[startlen-1];
+            function = interpolator.interpolate( xval, yval);
+            for (int y = 0; y < newsamp; y++) {
+                arrsamp[loc] = function.value(loc); loc++;
+            }
+            arrsamp[loc++] = inArray[startlen-1];
+        }
+        return arrsamp;        
+    }
+    /**
+     * Pulls out the original samples from an array that was sampled with the
+     * resampleArray function.
+     * @param inArray array to downsample
+     * @param origlen length of the array before sampling with resampleArray.
+     * This will be the length of the return array
+     * @param numsamp the rate at which the array was sampled in resampleArray.
+     * @return the downsampled array. Invalid input parameters will be flagged
+     * with a return of an array of length 0.  Invalid conditions: null input 
+     * array, input array with length less than 6 (minimum required for downsampling),
+     * new sampling rate less than 2, original array length less than 3.
+     */
+    public static double[] unsampleArray( double[] inArray, int origlen, int numsamp ) {
+        if ((inArray == null) || (inArray.length < 6) || (origlen < 3) ||
+                                                            (numsamp < 2)) {
+            return new double[0];
+        }
+        double[] endArray = new double[origlen];
+        for (int i = 0; i < origlen; i++) {
+            endArray[i] = inArray[i*numsamp];
+        }
+        return endArray;
+    }
+    /**
+     * Central difference, adapted from matlab, computes and n-point central
+     * difference with spacing dt, n is the order
+     * Differences for points near the edges are calculated with lower order.
+     * Differencing formulae from: http://www.holoborodko.com/pavel/numerical-methods/numerical-derivative/central-differences/
+     * @param inarr vector with evenly spaced points, this array is not modified
+     * @param dt time spacing between points in seconds
+     * @param order valid orders are 3,5,7,9
+     * @return a new differentiated array
+     */
+    public static double[] central_diff( double[] inarr, double dt, int order) {
+        Set<Integer> check = new HashSet<>(Arrays.asList(3,5,7,9));
+        if ((inarr == null) || (inarr.length < order) || (dt < 0.0) ||
+                                                    (!check.contains(order))) {
+            return new double[0];
+        }
+        int len = inarr.length;
+        double[] diffarr = new double[len];
+        
+        //calculate the first and last values with 2-pt difference
+        diffarr[0] = (inarr[1] - inarr[0]) / dt;
+        diffarr[len-1] = (inarr[len-1] - inarr[len-2]) / dt;  
+        //calculate 2nd and 2nd-to-last with 3-pt difference
+        diffarr[1] = (inarr[2] - inarr[0]) / (2*dt);
+        diffarr[len-2] = (inarr[len-1] - inarr[len-3]) / (2*dt);
+        
+        if (order == 3) {
+            //calculate 3-pt diff [2pt,3pt..3pt,2pt]
+            for (int i = 2; i < len-2; i++) {
+                diffarr[i] = (inarr[i+1] - inarr[i-1]) / (2*dt);
+            }
+        }
+        else { // calculate next 2 end values and check order
+            diffarr[2] = (inarr[0] - 8*inarr[1] + 8*inarr[3] - inarr[4])/(12*dt);
+            diffarr[len-3] = (inarr[len-5] - 8*inarr[len-4] + 8*inarr[len-2] - inarr[len-1])/(12*dt);
+            if (order == 5) { // run 5-pt  [2pt,3pt,5pt..5pt,3pt,2pt]
+                for (int i = 3; i < len-3; i++) {
+                    diffarr[i] = (inarr[i-2] - 8*inarr[i-1] + 8*inarr[i+1] - inarr[i+2])/(12*dt);
+                }
+            }
+            else { //calculate next 2 end values and check order
+                diffarr[3] = (inarr[1] - 8*inarr[2] + 8*inarr[4] - inarr[5])/(12*dt);
+                diffarr[len-4] = (inarr[len-6] - 8*inarr[len-5] + 8*inarr[len-3] - inarr[len-2])/(12*dt);                
+                if (order == 7) { //run 7-pt  [2pt,3pt,5pt,7pt..7pt,5pt,3pt,2pt]
+                    for (int i = 4; i < len-4; i++) {
+                        diffarr[i] = (inarr[i-2] - 8*inarr[i-1] + 8*inarr[i+1] - inarr[i+2])/(12*dt);
+                    }
+                }
+                else { // run 9-pt [2pt,3pt,5pt,7pt,9pt..9pt,7pt,5pt,3pt,2pt]
+                    for (int i = 4; i < len-4; i++) {
+                        diffarr[i] = 
+                           (3*inarr[i-4] - 32*inarr[i-3] + 168*inarr[i-2] - 672*inarr[i-1] 
+                            + 672*inarr[i+1] - 168*inarr[i+2] + 32*inarr[i+3] - 3*inarr[i+4])/(840*dt);
+                    } 
+                }
+            }
+        }
+        return diffarr;
     }
 }

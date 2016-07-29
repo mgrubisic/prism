@@ -87,6 +87,7 @@ public class V2Process {
     protected int numroll;  // the filter order is rolloff*2
     protected double taperlength;
     private double preEventMean;
+    private int diffOrder;
     private int trendRemovalOrder;
     private int calculated_taper;
     private boolean strongMotion;
@@ -226,6 +227,9 @@ public class V2Process {
             String unitcode = config.getConfigValue(DATA_UNITS_CODE);
             this.data_unit_code = (unitcode == null) ? CMSQSECN : Integer.parseInt(unitcode);
 
+            String diffcode = config.getConfigValue(DIFFERENTIATION_ORDER);
+            this.diffOrder = (diffcode == null) ? DEFAULT_DIFFORDER : Integer.parseInt(diffcode);
+
             String lowcut = config.getConfigValue(BP_FILTER_CUTOFFLOW);
             this.lowcutoff = (lowcut == null) ? DEFAULT_LOWCUT : Double.parseDouble(lowcut);
 
@@ -324,9 +328,9 @@ public class V2Process {
         stepRec.addEventOnset(startIndex * dtime);
         // Update Butterworth filter low and high cutoff thresholds for later
         updateThresholds();
-        errorlog.add("Acausal bandpass filter:");
         errorlog.add(String.format("  earthquake magnitude is %4.2f and M used is %s",
                                                     magnitude,magtype));
+        errorlog.add("Acausal bandpass filter:");
         errorlog.add(String.format("  adjusted lowcut: %4.2f and adjusted highcut: %4.2f Hz",
                                                 lowcutadj, highcutadj));
         
@@ -366,7 +370,7 @@ public class V2Process {
         
         errorlog.add("acceleration integrated to velocity");
         if (writeBaseline) {
-           elog.writeOutArray(velocity, V0name.getName() + "_" + channel + "_afterIntegrationToVel.txt");
+           elog.writeOutArray(velocity, V0name.getName() + "_" + channel + "_after1stIntegrationToVel.txt");
         }
         ///////////////////////////////
         //
@@ -402,7 +406,7 @@ public class V2Process {
             errorlog.add("Adaptive baseline correction beginning");
             ///////////////////////////////
             //
-            // Baseline Correction
+            // Adaptive Baseline Correction
             //
             ///////////////////////////////
             needsABC = true;            
@@ -419,7 +423,7 @@ public class V2Process {
         } else {
             ///////////////////////////////
             //
-            // Passed first QC, so filter velocity and integrate, differentiate
+            // Passed first QC, so differentiate to acc.,filter, and integrate
             //
             ///////////////////////////////
             errorlog.add(String.format("Best fit trend of order %d removed from velocity", trendRemovalOrder));
@@ -567,57 +571,53 @@ public class V2Process {
         magnitude = threshold.getMagnitude();
     }
     /**
-     * Steps for filtering velocity, integrating to displacement, and differentiating
-     * to corrected acceleration in the case where ABC is not needed
+     * Steps for differentiating to acceleration, filtering, and integrating to 
+     * velocity and displacement in the case where ABC is not needed
      * @throws SmException if unable to calculate the filter coefficients
      */
     private void filterIntegrateDiff() throws SmException {
-        double[] paddedvelocity;
         ButterworthFilter filter = new ButterworthFilter();
         boolean valid = filter.calculateCoefficients(lowcutadj, highcutadj, 
                                             dtime, DEFAULT_NUM_ROLL, true);
+
+        
+        // Differentiate velocity to corrected acceleration
+        accel = new double[velocity.length];
+        accel = ArrayOps.Differentiate(velocity, dtime);
+
+        errorlog.add("Velocity differentiated to unfiltered acceleration");
+        
+        if (writeDebug) {
+           elog.writeOutArray(accel, V0name.getName() + "_" + channel + "_accelBeforeFiltering.txt");
+        }
         if (valid) {
-            paddedvelocity = filter.applyFilter(velocity, taperlength, startIndex);
+            paddedaccel = filter.applyFilter(accel, taperlength, startIndex);
         } else {
             throw new SmException("Invalid bandpass filter calculated parameters");
         }
         calculated_taper = filter.getTaperlength();
         errorlog.add(String.format("filtering after 1st QC, taperlength: %d", 
                                                         filter.getTaperlength()));
-//            if (writeDebug) {
-//               elog.writeOutArray(velocity, V0name.getName() + "_" + channel + "_velocityAfterFiltering.txt");
-//            }
-//            if (writeDebug) {
-//               elog.writeOutArray(paddedvelocity, V0name.getName() + "_" + channel + "_paddedVelocityAfterFiltering.txt");
-//            }
+        if (writeDebug) {
+           elog.writeOutArray(accel, V0name.getName() + "_" + channel + "_accelAfterFiltering.txt");
+           elog.writeOutArray(paddedaccel, V0name.getName() + "_" + channel + "_paddedAccelAfterFiltering.txt");
+        }
         //The velocity array was updated with the filtered values in the 
         //applyFilter call
-        initialVel = velocity[0];
+        double[] paddedvelocity;
         double[] paddeddisplace;
         displace = new double[velocity.length];
         
-        // Integrate padded velocity and extract displacement
+        // Integrate padded acceleration to velocity and displacement and unpad
+        paddedvelocity = ArrayOps.Integrate( paddedaccel, dtime, 0.0);
         paddeddisplace = ArrayOps.Integrate( paddedvelocity, dtime, 0.0);
+        System.arraycopy(paddedvelocity, filter.getPadLength(), velocity, 0, velocity.length);
         System.arraycopy(paddeddisplace, filter.getPadLength(), displace, 0, displace.length);
+        initialVel = velocity[0];
         initialDis = displace[0];
         if (writeDebug) {
-            errorlog.add("Velocity integrated to displacement");
+            errorlog.add("Acceleration integrated to velocity integrated to displacement");
         }
-        
-        // Differentiate velocity to corrected acceleration
-        accel = new double[velocity.length];
-        paddedaccel = ArrayOps.Differentiate(paddedvelocity, dtime);
-        System.arraycopy(paddedaccel, filter.getPadLength(), accel, 0, accel.length);
-        errorlog.add("Velocity differentiated to corrected acceleration");
-//        if (writeDebug) {
-//           elog.writeOutArray(paddedvelocity, V0name.getName() + "_" + channel + "_paddedVelocityAfterFiltering.txt");
-//        }
-//        if (writeDebug) {
-//           elog.writeOutArray(paddeddisplace, V0name.getName() + "_" + channel + "_paddedDisplaceAfterIntegrate.txt");
-//        }
-//        if (writeDebug) {
-//           elog.writeOutArray(paddedaccel, V0name.getName() + "_" + channel + "_paddedAccelAfterFiltering.txt");
-//        }
     }
     /**
      * Calls adaptive baseline correction and extracts the results
@@ -713,7 +713,7 @@ public class V2Process {
     private void makeDebugCSV() throws IOException {
         String[] headerline = {"EVENT","MAG","NAME","CHANNEL",
             "ARRAY LENGTH","SAMP INTERVAL(SEC)","PICK INDEX","PICK TIME(SEC)",
-            "PEAK VEL(CM/SEC)","TAPERLENGTH","PRE-EVENT MEAN","PEAK ACC(G)",
+            "PEAK VEL(CM/SEC)","TAPER (SEC)","PRE-EVENT MEAN (CM/SEC/SEC)","PEAK ACC(G)",
             "STRONG MOTION","EXIT STATUS","VEL INITIAL(CM/SEC)",
             "VEL RESIDUAL(CM/SEC)","DIS RESIDUAL(CM)","BASELINE CORRECTION",
             "POLY1","ABC POLY2","ABC 1ST BREAK","ABC 2ND BREAK",
@@ -728,7 +728,7 @@ public class V2Process {
         data.add(String.format("%d",startIndex));            //event onset index
         data.add(String.format("%8.3f", startIndex*dtime));  //event onset time
         data.add(String.format("%8.5f",VpeakVal));          //peak velocity
-        data.add(String.format("%d",calculated_taper));     //filter taperlength
+        data.add(String.format("%8.3f",(calculated_taper/2.0)*dtime)); //filter taperlength
         data.add(String.format("%8.6f",preEventMean));      //preevent mean removed
         data.add(String.format("%5.4f",ApeakVal*TO_G_CONVERSION)); //peak acc in g
         if (strongMotion) {
@@ -873,106 +873,76 @@ public class V2Process {
      * Getter for the adjusted filter low cutoff value
      * @return the adjusted low filter cutoff frequency
      */
-    public double getLowCut() {
-        return this.lowcutadj;
-    }
+    public double getLowCut() {return this.lowcutadj;}
     /**
      * Getter for the adjusted filter high cutoff value
      * @return the adjusted high filter cutoff frequency
      */
-    public double getHighCut() {
-        return this.highcutadj;
-    }
+    public double getHighCut() {return this.highcutadj;}
     /**
      * Getter for the final QC status of the V2 processing
      * @return the QC exit status
      */
-    public V2Status getQCStatus() {
-        return this.procStatus;
-    }
+    public V2Status getQCStatus() {return this.procStatus;}
     /**
      * Getter for the event onset index
      * @return the event onset index
      */
-    public int getPickIndex() {
-        return this.pickIndex;
-    }
+    public int getPickIndex() {return this.pickIndex;}
     /**
      * Getter for the start index, which is the event index modified by the buffer value
      * @return the start index
      */
-    public int getStartIndex() {
-        return this.startIndex;
-    }
+    public int getStartIndex() {return this.startIndex;}
     /**
      * Setter for the start index
      * @param instartindex the event start index
      */
-    public void setStartIndex(int instartindex) {
-        this.startIndex = instartindex;
-    }
+    public void setStartIndex(int instartindex) {this.startIndex = instartindex;}
     /**
      * Getter for the Bracketed Duration for the real header
      * @return the bracketed duration
      */
-    public double getBracketedDuration() {
-        return bracketedDuration;
-    }
+    public double getBracketedDuration() {return bracketedDuration;}
     /**
      * Getter for the Arias Intensity value for the real header
      * @return the Arias Intensity
      */
-    public double getAriasIntensity() {
-        return AriasIntensity;
-    }
+    public double getAriasIntensity() {return AriasIntensity;}
     /**
      * Getter for the Strong Motion indicator
      * @return true if current record exceeded the strong motion threshold
      * set in the configuration file, false if not
      */
-    public boolean getStrongMotion() {
-        return strongMotion;
-    }
+    public boolean getStrongMotion() {return strongMotion;}
     /**
      * Getter for the duration interval for the real header
      * @return the duration interval
      */
-    public double getDurationInterval() {
-        return durationInterval;
-    }
+    public double getDurationInterval() {return durationInterval;}
     /**
      * Getter for the Cumulative absolute velocity for the real header
      * @return the cumulative absolute velociy
      */
-    public double getCumulativeAbsVelocity() {
-        return cumulativeAbsVelocity;
-    }
+    public double getCumulativeAbsVelocity() {return cumulativeAbsVelocity;}
     /**
      * Getter for the RMS acceleration for the real header
      * @return the RMS acceleration
      */
-    public double getRMSacceleration() {
-        return RMSacceleration;
-    }
+    public double getRMSacceleration() {return RMSacceleration;}
     /**
      * Getter for the initial velocity value for the real header
      * @return the initial velocity value
      */
-    public double getInitialVelocity() {
-        return initialVel;
-    }
+    public double getInitialVelocity() {return initialVel;}
     /**
      * Getter for the initial displacement value for the real header
      * @return the initial displacement value
      */
-    public double getInitialDisplace() {
-        return initialDis;
-    }
+    public double getInitialDisplace() {return initialDis;}
     /**
      * Getter for the padded acceleration array for V3 processing
      * @return reference to the padded acceleration array
      */
-    public double[] getPaddedAccel() {
-        return paddedaccel;
-    }
+    public double[] getPaddedAccel() {return paddedaccel;}
 }

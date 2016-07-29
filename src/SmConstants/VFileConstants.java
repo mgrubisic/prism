@@ -191,6 +191,9 @@ public final class VFileConstants {
     public static final double DEFAULT_QA_RESIDUAL_VELOCITY = 0.1;
     public static final double DEFAULT_QA_RESIDUAL_DISPLACE = 0.1;
     
+    //differentiation order
+    public static final int DEFAULT_DIFFORDER = 5;
+    
     public static final String DEBUG_TO_LOG_ON = "On";
     public static final String BASELINE_WRITE_ON = "On";
     public static final String DELETE_INPUT_V0 = "Yes";

@@ -55,4 +55,6 @@ public class SmConfigConstants {
     public static final String FIRST_POLY_ORDER_UPPER  = "PRISM/AdaptiveBaselineCorrection/FirstPolyOrder/UpperLimit";
     public static final String THIRD_POLY_ORDER_LOWER = "PRISM/AdaptiveBaselineCorrection/ThirdPolyOrder/LowerLimit";
     public static final String THIRD_POLY_ORDER_UPPER = "PRISM/AdaptiveBaselineCorrection/ThirdPolyOrder/UpperLimit";
+    
+    public static final String DIFFERENTIATION_ORDER = "PRISM/DifferentiationOrder";
 }
