@@ -19,7 +19,6 @@ import static SmConstants.VFileConstants.MagnitudeType.MOMENT;
 import static SmConstants.VFileConstants.MagnitudeType.M_LOCAL;
 import static SmConstants.VFileConstants.MagnitudeType.M_OTHER;
 import static SmConstants.VFileConstants.MagnitudeType.SURFACE;
-
 /**
  * This class chooses the Butterworth filter cutoff thresholds to use, based on
  * the magnitude of the earthquake.  It also determines which magnitude from

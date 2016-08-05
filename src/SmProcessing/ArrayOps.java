@@ -365,6 +365,53 @@ public class ArrayOps {
         return numOrder;
     }
     /**
+     * Tests the input array to see if a first or second order polynomial makes
+     * a better fit for the data, and then returns the trend with the best fit.
+     * Best fit is determined by calculating the root mean square error between
+     * the input data and the baseline trend.
+     * @param inarr array to have best fit trend fitted, this array is not modified
+     * @param timestep sample interval
+     * @return array of polynomial coefficients, or array of length 0 if input parameters are invalid
+     */
+    public static double[] findTrendWithBestFit( double[] inarr, double timestep) {
+        if ((inarr == null) || (inarr.length == 0) || 
+                                    (Math.abs(timestep - 0.0) < OPS_EPSILON)) {
+            return new double[0];
+        }
+        //find linear trend for input array and rms compare with original
+        int len = inarr.length;
+        double[] lcoefs;
+        double[] pcoefs;
+        double[] time = makeTimeArray( timestep, len);
+        PolynomialFunction firpoly, secpoly;
+        int numOrder = 0;
+
+        //find 1st order polynomial trend for input array and commpare with original
+        lcoefs = findPolynomialTrend(inarr, 1, timestep);
+        firpoly = new PolynomialFunction( lcoefs );
+        double[] linbase = new double[len];
+        for (int i = 0; i < len; i++) {
+            linbase[i] = firpoly.value(time[i]);
+        }
+        double linrms = rootMeanSquare( inarr, linbase );
+        
+        //find 2nd order polynomial trend for input array and rms compare with original
+        pcoefs = findPolynomialTrend(inarr, 2, timestep);
+        secpoly = new PolynomialFunction( pcoefs );
+        double[] polbase = new double[len];
+        for (int i = 0; i < len; i++) {
+            polbase[i] = secpoly.value(time[i]);
+        }
+        double polrms = rootMeanSquare( inarr, polbase);
+        
+        //compare the rms values and find the trend with the smallest rms
+        if ((linrms < polrms)|| (Math.abs(linrms - polrms) < 5*Math.ulp(polrms))) {
+            return lcoefs;
+        } else {
+            return pcoefs;
+        }
+    }
+    /**
      * Converts raw trace counts to physical values by multiplying the integer
      * counts in the input array by the count conversion factor.  The result is
      * a floating point array.
@@ -611,42 +658,69 @@ public class ArrayOps {
         }
         int len = inarr.length;
         double[] diffarr = new double[len];
+        double df_1,df_2,df_3,df_4,df_End,df_Endm1,df_Endm2,df_Endm3;
         
         //calculate the first and last values with 2-pt difference
-        diffarr[0] = (inarr[1] - inarr[0]) / dt;
-        diffarr[len-1] = (inarr[len-1] - inarr[len-2]) / dt;  
+        df_1 = (inarr[1] - inarr[0]) / dt;
+        df_End = (inarr[len-1] - inarr[len-2]) / dt;  
         //calculate 2nd and 2nd-to-last with 3-pt difference
-        diffarr[1] = (inarr[2] - inarr[0]) / (2*dt);
-        diffarr[len-2] = (inarr[len-1] - inarr[len-3]) / (2*dt);
+        df_2 = (inarr[2] - inarr[0]) / (2*dt);
+        df_Endm1 = (inarr[len-1] - inarr[len-3]) / (2*dt);
         
         if (order == 3) {
             //calculate 3-pt diff [2pt,3pt..3pt,2pt]
+            diffarr[0] = df_1;
+            diffarr[1] = df_2;
             for (int i = 2; i < len-2; i++) {
                 diffarr[i] = (inarr[i+1] - inarr[i-1]) / (2*dt);
             }
+            diffarr[len-2] = df_Endm1;
+            diffarr[len-1] = df_End;
         }
-        else { // calculate next 2 end values and check order
-            diffarr[2] = (inarr[0] - 8*inarr[1] + 8*inarr[3] - inarr[4])/(12*dt);
-            diffarr[len-3] = (inarr[len-5] - 8*inarr[len-4] + 8*inarr[len-2] - inarr[len-1])/(12*dt);
+        else { // calculate next 2 end with 5-pt values and check order
+            df_3 = (inarr[1] - 8*inarr[2] + 8*inarr[4] - inarr[5])/(12*dt);
+            df_Endm2 = (inarr[len-5] - 8*inarr[len-4] + 8*inarr[len-2] - inarr[len-1])/(12*dt);
             if (order == 5) { // run 5-pt  [2pt,3pt,5pt..5pt,3pt,2pt]
-                for (int i = 3; i < len-3; i++) {
+                diffarr[0] = df_1;
+                diffarr[1] = df_2;
+//                diffarr[2] = df_3;
+                for (int i = 2; i < len-2; i++) {
                     diffarr[i] = (inarr[i-2] - 8*inarr[i-1] + 8*inarr[i+1] - inarr[i+2])/(12*dt);
                 }
+//                diffarr[len-3] = df_Endm2;
+                diffarr[len-2] = df_Endm1;
+                diffarr[len-1] = df_End;
             }
             else { //calculate next 2 end values and check order
-                diffarr[3] = (inarr[1] - 8*inarr[2] + 8*inarr[4] - inarr[5])/(12*dt);
-                diffarr[len-4] = (inarr[len-6] - 8*inarr[len-5] + 8*inarr[len-3] - inarr[len-2])/(12*dt);                
+                df_4 = (-1*inarr[0]+9*inarr[1]-45*inarr[2]+45*inarr[4]-9*inarr[5]+inarr[6])/(60*dt);
+                df_Endm3 = (-1*inarr[len-7]+9*inarr[len-6]-45*inarr[len-5]+45*inarr[len-3]-9*inarr[len-2]+inarr[len-1])/(60*dt);                
                 if (order == 7) { //run 7-pt  [2pt,3pt,5pt,7pt..7pt,5pt,3pt,2pt]
+                    diffarr[0] = df_1;
+                    diffarr[1] = df_2;
+                    diffarr[2] = df_3;
+                    diffarr[3] = df_4;
                     for (int i = 4; i < len-4; i++) {
-                        diffarr[i] = (inarr[i-2] - 8*inarr[i-1] + 8*inarr[i+1] - inarr[i+2])/(12*dt);
+                        diffarr[i] = (-1*inarr[i-3]+9*inarr[i-2]-45*inarr[i-1]+45*inarr[i+1]-9*inarr[i+2]+inarr[i+3])/(60*dt);
                     }
+                    diffarr[len-4] = df_Endm3;
+                    diffarr[len-3] = df_Endm2;
+                    diffarr[len-2] = df_Endm1;
+                    diffarr[len-1] = df_End;
                 }
                 else { // run 9-pt [2pt,3pt,5pt,7pt,9pt..9pt,7pt,5pt,3pt,2pt]
+                    diffarr[0] = df_1;
+                    diffarr[1] = df_2;
+                    diffarr[2] = df_3;
+                    diffarr[3] = df_4;
                     for (int i = 4; i < len-4; i++) {
                         diffarr[i] = 
                            (3*inarr[i-4] - 32*inarr[i-3] + 168*inarr[i-2] - 672*inarr[i-1] 
                             + 672*inarr[i+1] - 168*inarr[i+2] + 32*inarr[i+3] - 3*inarr[i+4])/(840*dt);
                     } 
+                    diffarr[len-4] = df_Endm3;
+                    diffarr[len-3] = df_Endm2;
+                    diffarr[len-2] = df_Endm1;
+                    diffarr[len-1] = df_End;
                 }
             }
         }

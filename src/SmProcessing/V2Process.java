@@ -27,8 +27,6 @@ import SmUtilities.SmDebugLogger;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-
 /**
  * This class handles the V2 processing, performing the necessary steps to process
  * the uncorrected acceleration into corrected acceleration, velocity and displacement.
@@ -36,7 +34,6 @@ import java.util.Arrays;
  * @author jmjones
  */
 public class V2Process {
-    //need 3 sets of these params, for each data type
     protected double[] accel;
     protected double ApeakVal;
     protected int ApeakIndex;
@@ -77,7 +74,6 @@ public class V2Process {
     protected double smag;
     protected double omag;
     protected double magnitude;
-    protected MagnitudeType magtype;
     protected BaselineType basetype;
     
     private int pickIndex;
@@ -92,8 +88,7 @@ public class V2Process {
     private int calculated_taper;
     private boolean strongMotion;
     protected double smThreshold;
-    private boolean needsABC;
-    private String logtime;
+    private final String logtime;
     
     private V2Status procStatus;
     private QCcheck qcchecker;
@@ -103,9 +98,9 @@ public class V2Process {
     private boolean writeBaseline;
     private SmDebugLogger elog;
     private String[] logstart;
-    private File V0name;
-    private String channel;
-    private String eventID;
+    private final File V0name;
+    private final String channel;
+    private final String eventID;
     private double QCvelinitial;
     private double QCvelresidual;
     private double QCdisresidual;
@@ -124,6 +119,7 @@ public class V2Process {
     protected double cumulativeAbsVelocity;
     
     protected ProcessStepsRecorder2 stepRec;
+    
     /**
      * Constructor gets the necessary header and configuration file parameters
      * and validates them.
@@ -203,13 +199,119 @@ public class V2Process {
         this.smag = inV1.getRealHeaderValue(SURFACE_MAGNITUDE);
         this.omag = inV1.getRealHeaderValue(OTHER_MAGNITUDE);
     }
-    private void finishAutoConstructor() throws SmException {
+    /**
+     * Controls the flow of automatic V2 processing, starting with event detection,
+     * pre-event mean removal, integration to velocity, 
+     * best fit trend removal, and the first QC.  If this
+     * QC fails, adaptive baseline correction is attempted. If the first QC passed,
+     * the baseline-corrected velocity is filtered, integrated to displacement, and
+     * differentiated to corrected acceleration.  A final QC check is performed
+     * in both best fit and adaptive baseline correction and the status of the
+     * processing is returned.
+     * @return the status of V2 processing, such as GOOD, FAILQC, etc.
+     * @throws SmException if unable to perform processing
+     * @throws IOException if unable to write out to log files
+     */
+    public V2Status processV2Data() throws SmException, IOException {
+        //get parameters from config file and set defaults
+        initializeForProcessing();
+        double[] accopy = prepareAccelForProcessing( accel );
+        writePrePwDdebug(accel.length);
+        
+        //Find Event Onset
+        EventOnsetProcess EventOnset = new EventOnsetProcess(lowcutoff,
+                                    highcutoff, taperlength, numroll, ebuffer);
+        EventOnset.findEventOnset(accopy, dtime, emethod);
+        boolean successfulEventDetection = checkOnsetStatusAndLog(EventOnset.getPickIndex(),
+                EventOnset.getStartIndex(),EventOnset.getTaperlengthAtEventOnset());
+        if (!successfulEventDetection) {
+            return procStatus;
+        }        
+        //Remove trends from acceleration record and integrate to velocity for QC
+        TrendRemovalProcess detrend = new TrendRemovalProcess( startIndex );
+        velocity = detrend.removeTrends(accel, dtime);
+        preEventMean = detrend.getPreEventMean();
+        trendRemovalOrder = detrend.getTrendRemovalOrder();
+        logDetrendResults();
+
+        //perform first QA check on velocity copy, check first and last sections of
+        //velocity array - should be close to 0.0 with tolerances.  If not,
+        //perform adaptive baseline correction.
+        qcchecker = new QCcheck();
+        if (!qcchecker.validateQCvalues()){
+            throw new SmException("Error extracting numeric values from configuration file");
+        }
+        qcchecker.findWindow(lowcutadj, samplerate, startIndex);
+        boolean passedQC = qcchecker.qcVelocity(velocity);
+        checkFirstQCResultsAndLog(passedQC);
+        if ( !passedQC ){
+            // Adaptive Baseline Correction
+            double[] goodrun = adaptiveCorrection();
+            boolean successfulABC = checkABCstatusAndLog(goodrun);
+            if (!successfulABC) {
+                return procStatus;
+            }
+        } else {
+            // Passed first QC, so filter, and integrate
+            FilterAndIntegrateProcess filterInt = 
+                    new FilterAndIntegrateProcess(lowcutadj,highcutadj,DEFAULT_NUM_ROLL,
+                                                        taperlength,startIndex);
+            filterInt.filterAndIntegrate(accel, dtime);
+            LogFilterResults();
+            // Second QC Test (also performed in ABC)
+            boolean success = qcchecker.qcVelocity(velocity) && 
+                                            qcchecker.qcDisplacement(displace);
+            procStatus = (success) ? V2Status.GOOD : V2Status.FAILQC;
+            QCvelinitial = Math.abs(qcchecker.getInitialVelocity());
+            QCvelresidual = Math.abs(qcchecker.getResidualVelocity());
+            QCdisresidual = Math.abs(qcchecker.getResidualDisplacement());
+        }
+        if (procStatus == V2Status.FAILQC) {
+            logFailed2ndQCstats();
+        }
+        //calculate final array params for headers
+        ArrayStats statVel = new ArrayStats( velocity );
+        VpeakVal = statVel.getPeakVal();
+        VpeakIndex = statVel.getPeakValIndex();
+        VavgVal = statVel.getMean();
+
+        ArrayStats statDis = new ArrayStats( displace );
+        DpeakVal = statDis.getPeakVal();
+        DpeakIndex = statDis.getPeakValIndex();
+        DavgVal = statDis.getMean();
+
+        ArrayStats statAcc = new ArrayStats( accel );
+        ApeakVal = statAcc.getPeakVal();
+        ApeakIndex = statAcc.getPeakValIndex();
+        AavgVal = statAcc.getMean();
+
+        logFinalStats();
+        // strong motion computed parameters done if status is good
+        if (procStatus == V2Status.GOOD) {
+            ComputedParams cp = new ComputedParams(accel, dtime, smThreshold);
+            strongMotion = cp.calculateComputedParameters();
+            if (strongMotion) {
+                bracketedDuration = cp.getBracketedDuration();
+                AriasIntensity = cp.getAriasIntensity();
+                HousnerIntensity = cp.getHousnerIntensity();
+                RMSacceleration = cp.getRMSacceleration();
+                durationInterval = cp.getDurationInterval();
+                cumulativeAbsVelocity = cp.getCumulativeAbsVelocity();
+                errorlog.add("Strong motion record");
+            }
+        }
+        if ((writeDebug) || (procStatus != V2Status.GOOD)) {
+            writeOutErrorDebug();
+            makeDebugCSV();
+        }
+        return procStatus;
+    }
+    private void initializeForProcessing() throws SmException {
         this.errorlog = new ArrayList<>();
         this.elog = SmDebugLogger.INSTANCE;
         ConfigReader config = ConfigReader.INSTANCE;
         this.writeDebug = false;
         this.writeBaseline = false;
-        this.needsABC = false;
         this.QCvelinitial = 0.0;
         this.QCvelresidual = 0.0;
         this.QCdisresidual = 0.0;
@@ -266,10 +368,6 @@ public class V2Process {
         } catch (NumberFormatException err) {
             throw new SmException("Error extracting numeric values from configuration file");
         }
-        qcchecker = new QCcheck();
-        if (!qcchecker.validateQCvalues()){
-            throw new SmException("Error extracting numeric values from configuration file");
-        }
         String debugon = config.getConfigValue(DEBUG_TO_LOG);
         this.writeDebug = (debugon == null) ? false : 
                                         debugon.equalsIgnoreCase(DEBUG_TO_LOG_ON);
@@ -277,26 +375,34 @@ public class V2Process {
         String baselineon = config.getConfigValue(WRITE_BASELINE_FUNCTION);
         this.writeBaseline = (baselineon == null) ? false : 
                                     baselineon.equalsIgnoreCase(BASELINE_WRITE_ON);
+        
+        updateThresholds();
     }
     /**
-     * Controls the flow of automatic V2 processing, starting with event detection,
-     * pre-event mean removal, integration to velocity, 
-     * best fit trend removal, and the first QC.  If this
-     * QC fails, adaptive baseline correction is attempted. If the first QC passed,
-     * the baseline-corrected velocity is filtered, integrated to displacement, and
-     * differentiated to corrected acceleration.  A final QC check is performed
-     * in both best fit and adaptive baseline correction and the status of the
-     * processing is returned.
-     * @return the status of V2 processing, such as GOOD, FAILQC, etc.
-     * @throws SmException if unable to perform processing
-     * @throws IOException if unable to write out to log files
+     * Updates the filter threshold values based on the EQ magnitude
+     * @throws SmException if unable to extract value magnitude values from the header
      */
-    public V2Status processV2Data() throws SmException, IOException {
-        finishAutoConstructor();
-//        System.out.println("Start of V2 processing for " + V0name.toString() + " and channel " + channel);
+    private MagnitudeType updateThresholds() throws SmException {
+        FilterCutOffThresholds threshold = new FilterCutOffThresholds();
+        MagnitudeType magtype = threshold.SelectMagAndThresholds(mmag, lmag, smag, omag, noRealVal);
+        if (magtype == MagnitudeType.INVALID) {
+            throw new SmException("All earthquake magnitude real header values are invalid.");
+        }
+        lowcutadj = threshold.getLowCutOff();
+        highcutadj = threshold.getHighCutOff();
+        magnitude = threshold.getMagnitude();
+        // Update Butterworth filter low and high cutoff thresholds for later
+        errorlog.add("Acausal bandpass filter:");
+        errorlog.add(String.format("  adjusted lowcut: %4.2f and adjusted highcut: %4.2f Hz",
+                                                lowcutadj, highcutadj));
+        errorlog.add(String.format("  earthquake magnitude is %4.2f and M used is %s",
+                                                    magnitude,magtype));
+        return magtype;
+    }
+    private double[] prepareAccelForProcessing(double[] accraw) throws SmException {
         stepRec.addCorrectionType(CorrectionType.AUTO);
+        accraw = new double[0];
         // Correct units to CMSQSECN, if needed, and make copy of acc array
-        double[] accraw = new double[0];
         double[] V1Array = inV1.getDataArray();
         inArrayLength = V1Array.length;
 
@@ -308,203 +414,22 @@ public class V2Process {
         } else {
             throw new SmException("V1 file units are unsupported for processing");
         }
-        double[] acc = new double[accraw.length];
-        System.arraycopy( accraw, 0, acc, 0, accraw.length);
-        
-        writePrePwDdebug(accraw.length);
-        //////////////////////////////
-        //
-        // Find event onset
-        //
-        //////////////////////////////
-        findEventOnset(acc);
-        if (pickIndex <= 0) { //No pick index detected, so skip all V2 processing
-            procStatus  = V2Status.NOEVENT;
-            errorlog.add("V2process: exit status = " + procStatus);
-            writeOutErrorDebug();
-            makeDebugCSV();
-            return procStatus;
-        }
-        stepRec.addEventOnset(startIndex * dtime);
-        // Update Butterworth filter low and high cutoff thresholds for later
-        updateThresholds();
-        errorlog.add(String.format("  earthquake magnitude is %4.2f and M used is %s",
-                                                    magnitude,magtype));
-        errorlog.add("Acausal bandpass filter:");
-        errorlog.add(String.format("  adjusted lowcut: %4.2f and adjusted highcut: %4.2f Hz",
-                                                lowcutadj, highcutadj));
-        
-        ///////////////////////////////
-        //
-        // Remove pre-event mean from acceleration
-        //
-        ///////////////////////////////
-        //Remove pre-event mean from acceleration record
-        if (startIndex > 0) {
-            double[] subset = Arrays.copyOfRange( accraw, 0, startIndex );
-            ArrayStats accsub = new ArrayStats( subset );
-            preEventMean = accsub.getMean();
-            ArrayOps.removeValue(accraw, preEventMean);
-            stepRec.addBaselineStep(0, startIndex*dtime, 0, inArrayLength*dtime,
-                    V2DataType.ACC, BaselineType.BESTFIT, CorrectionOrder.MEAN, 0);
-            errorlog.add(String.format("Pre-event mean of %10.6e removed from uncorrected acceleration",preEventMean));
-        }
-//        if (writeDebug) {
-//            elog.writeOutArray(accraw, V0name.getName() + "_" + channel + "_initialBaselineCorrection.txt");
-//        } 
-
-        ///////////////////////////////
-        //
-        // Integrate Acceleration to Velocity and correct for missing initial value
-        //
-        ///////////////////////////////
-        //Integrate the acceleration to get velocity, using 0 as first value estimate
-        velocity = ArrayOps.Integrate( accraw, dtime, 0.0);
-        //Now correct for unknown initial value by removing preevent mean (minus first val.)
-        int intzero = ArrayOps.findZeroCrossing(velocity, startIndex, 0);
-        if (intzero > 1) {
-            double[] velset = Arrays.copyOfRange( velocity, 1, intzero );
-            ArrayStats velsub = new ArrayStats( velset );
-            ArrayOps.removeValue(velocity, velsub.getMean());
-        }
-        
-        errorlog.add("acceleration integrated to velocity");
-        if (writeBaseline) {
-           elog.writeOutArray(velocity, V0name.getName() + "_" + channel + "_after1stIntegrationToVel.txt");
-        }
-        ///////////////////////////////
-        //
-        // Remove Trend with Best Fit on a copy of velocity
-        //
-        ///////////////////////////////
-        //Remove any linear or 2nd order polynomial trend from velocity
-        double[] veltest = new double[velocity.length];
-        System.arraycopy( velocity, 0, veltest, 0, velocity.length);
-        trendRemovalOrder = ArrayOps.removeTrendWithBestFit( veltest, dtime);
-        if (writeBaseline) { 
-            elog.writeOutArray(veltest, V0name.getName() + "_" + channel + "_BestFitTrendRemovedVel.txt");                
-        }
-        //perform first QA check on velocity copy, check first and last sections of
-        //velocity array - should be close to 0.0 with tolerances.  If not,
-        //perform adaptive baseline correction.
-        ///////////////////////////////
-        //
-        // First QC Test
-        //
-        ///////////////////////////////
-        qcchecker.findWindow(lowcutadj, samplerate, startIndex);
-        boolean passedQC = qcchecker.qcVelocity(veltest);
-        if ( !passedQC ){
-            trendRemovalOrder = -1;
-            errorlog.add("Velocity QC1 failed:");
-            errorlog.add(String.format("   initial velocity: %f,  limit %f",
-                                        Math.abs(qcchecker.getInitialVelocity()),
-                                              qcchecker.getInitVelocityQCval()));
-            errorlog.add(String.format("   final velocity: %f,  limit %f",
-                                  Math.abs(qcchecker.getResidualVelocity()), 
-                                            qcchecker.getResVelocityQCval()));
-            errorlog.add("Adaptive baseline correction beginning");
-            ///////////////////////////////
-            //
-            // Adaptive Baseline Correction
-            //
-            ///////////////////////////////
-            needsABC = true;            
-//            System.out.println("ABC needed");
-            double[] goodrun = adaptiveCorrection();
-            //If unable to perform any iterations in ABC, just exit with no V2
-            if (procStatus == V2Status.NOABC) {
-                errorlog.add("V2process: exit status = " + procStatus);
-                writeOutErrorDebug();
-                makeDebugCSV();
-                return procStatus;
-            }
-            updateABCstats(goodrun);
-        } else {
-            ///////////////////////////////
-            //
-            // Passed first QC, so differentiate to acc.,filter, and integrate
-            //
-            ///////////////////////////////
-            errorlog.add(String.format("Best fit trend of order %d removed from velocity", trendRemovalOrder));
-            if (trendRemovalOrder == 1) {
-                stepRec.addBaselineStep(0.0, (velocity.length*dtime),
-                                        0.0, (velocity.length*dtime), 
-                                        V2DataType.VEL, BaselineType.BESTFIT,
-                                        CorrectionOrder.ORDER1, 0);
-            } else {
-                stepRec.addBaselineStep(0.0, (velocity.length*dtime),
-                                        0.0, (velocity.length*dtime), 
-                                        V2DataType.VEL, BaselineType.BESTFIT,
-                                        CorrectionOrder.ORDER2, 0);
-            }
-            velocity = veltest;
-            filterIntegrateDiff();
-            ///////////////////////////////
-            //
-            // Second QC Test (also performed in ABC)
-            //
-            ///////////////////////////////
-            boolean success = qcchecker.qcVelocity(velocity) && 
-                                            qcchecker.qcDisplacement(displace);
-            procStatus = (success) ? V2Status.GOOD : V2Status.FAILQC;
-            QCvelinitial = Math.abs(qcchecker.getInitialVelocity());
-            QCvelresidual = Math.abs(qcchecker.getResidualVelocity());
-            QCdisresidual = Math.abs(qcchecker.getResidualDisplacement());
-        }
-        if (procStatus == V2Status.FAILQC) {
-            errorlog.add("Final QC failed - V2 processing unsuccessful:");
-            errorlog.add(String.format("   initial velocity: %f, limit %f",
-                                        Math.abs(qcchecker.getInitialVelocity()),
-                                              qcchecker.getInitVelocityQCval()));
-            errorlog.add(String.format("   final velocity: %f, limit %f",
-                                  Math.abs(qcchecker.getResidualVelocity()), 
-                                            qcchecker.getResVelocityQCval()));
-            errorlog.add(String.format("   final displacement,: %f, limit %f",
-                                  Math.abs(qcchecker.getResidualDisplacement()),
-                                            qcchecker.getResDisplaceQCval()));
-        }
-        errorlog.add("V2process: exit status = " + procStatus);
-        //calculate final array params for headers
-        ArrayStats statVel = new ArrayStats( velocity );
-        VpeakVal = statVel.getPeakVal();
-        VpeakIndex = statVel.getPeakValIndex();
-        VavgVal = statVel.getMean();
-
-        ArrayStats statDis = new ArrayStats( displace );
-        DpeakVal = statDis.getPeakVal();
-        DpeakIndex = statDis.getPeakValIndex();
-        DavgVal = statDis.getMean();
-
-        ArrayStats statAcc = new ArrayStats( accel );
-        ApeakVal = statAcc.getPeakVal();
-        ApeakIndex = statAcc.getPeakValIndex();
-        AavgVal = statAcc.getMean();
-
-        errorlog.add(String.format("Peak Velocity: %f",VpeakVal));
-        ////////////////////////////
-        //
-        // strong motion computed parameters done if status is good
-        //
-        ////////////////////////////
-        if (procStatus == V2Status.GOOD) {
-            ComputedParams cp = new ComputedParams(accel, dtime, smThreshold);
-            strongMotion = cp.calculateComputedParameters();
-            if (strongMotion) {
-                bracketedDuration = cp.getBracketedDuration();
-                AriasIntensity = cp.getAriasIntensity();
-                HousnerIntensity = cp.getHousnerIntensity();
-                RMSacceleration = cp.getRMSacceleration();
-                durationInterval = cp.getDurationInterval();
-                cumulativeAbsVelocity = cp.getCumulativeAbsVelocity();
-                errorlog.add("Strong motion record");
-            }
-        }
-        if ((writeDebug) || (procStatus != V2Status.GOOD)) {
-            writeOutErrorDebug();
-            makeDebugCSV();
-        }
-        return procStatus;
+        double[] accopy = new double[accraw.length];
+        System.arraycopy( accraw, 0, accopy, 0, accraw.length);
+        return accopy;
+    }    
+        /**
+     * Writes general debug information out to the error/debug log at the 
+     * start of processing
+     * @param arlen the length of the acceleration array
+     */
+    private void writePrePwDdebug(int arlen){
+        errorlog.add("Start of V2 processing for " + V0name.toString() + " and channel " + channel);
+        errorlog.add(String.format("EventID: %s",eventID));
+        errorlog.add(String.format("time per sample in sec %4.3f",dtime));
+        errorlog.add(String.format("sample rate (samp/sec): %4.1f",samplerate));
+        errorlog.add(String.format("length of acceleration array: %d",arlen));
+        errorlog.add("Event detection: remove linear trend, filter, event onset detection");
     }
     /**
      * Writes out the error log to file
@@ -517,107 +442,90 @@ public class V2Process {
         elog.writeToLog(errorout, LogType.DEBUG);
         errorlog.clear();
     }
-    /**
-     * Finds the event onset using the specified method and applies any optional buffer.
-     * First any linear trend is removed, then the array is filtered, and then
-     * the event onset technique is applied.
-     * @param acc the input acceleration
-     * @throws SmException if unable to calculate filter coefficients
-     */
-    private void findEventOnset(double[] acc) throws SmException {
-        ArrayOps.removeLinearTrend( acc, dtime);
-        
-        //set up the filter coefficients and run
-        ButterworthFilter filter = new ButterworthFilter();
-        boolean valid = filter.calculateCoefficients(lowcutoff, highcutoff, 
-                                                        dtime, numroll, true);
-        if (valid) {
-            int calcSec = (int)(taperlength * dtime);
-            filter.applyFilter(acc, taperlength, calcSec);  //filtered values are returned in acc
-        } else {
-            throw new SmException("Invalid bandpass filter input parameters");
-        }
+    private boolean checkOnsetStatusAndLog( int pickInd, int startInd, double tapused) throws IOException{
         errorlog.add(String.format("filtering before event onset detection, taperlength: %d", 
-                                                        filter.getTaperlength()));
-        // Find event onset
+                                                        tapused));
         if (emethod == EventOnsetType.PWD) {
-            EventOnsetDetection depick = new EventOnsetDetection( dtime );
-            pickIndex = depick.findEventOnset(acc);
-            startIndex = depick.applyBuffer(ebuffer);
             errorlog.add("Event Detection algorithm: PwD method");
         } else {
-            AICEventDetect aicpick = new AICEventDetect();
-            pickIndex = aicpick.calculateIndex(acc, "ToPeak");
-            startIndex = aicpick.applyBuffer(ebuffer, dtime);
             errorlog.add("Event Detection algorithm: modified AIC");
         }
+        pickIndex = pickInd;
+        startIndex = startInd;
         errorlog.add(String.format("pick index: %d, start index: %d",
                                                         pickIndex,startIndex));
         errorlog.add(String.format("pick time in seconds: %8.3f, buffered time: %8.3f",
                                           (pickIndex*dtime),(startIndex*dtime)));
-    }
-    /**
-     * Updates the filter threshold values based on the EQ magnitude
-     * @throws SmException if unable to extract value magnitude values from the header
-     */
-    private void updateThresholds() throws SmException {
-        FilterCutOffThresholds threshold = new FilterCutOffThresholds();
-        magtype = threshold.SelectMagAndThresholds(mmag, lmag, smag, omag, noRealVal);
-        if (magtype == MagnitudeType.INVALID) {
-            throw new SmException("All earthquake magnitude real header values are invalid.");
-        }
-        lowcutadj = threshold.getLowCutOff();
-        highcutadj = threshold.getHighCutOff();
-        magnitude = threshold.getMagnitude();
-    }
-    /**
-     * Steps for differentiating to acceleration, filtering, and integrating to 
-     * velocity and displacement in the case where ABC is not needed
-     * @throws SmException if unable to calculate the filter coefficients
-     */
-    private void filterIntegrateDiff() throws SmException {
-        ButterworthFilter filter = new ButterworthFilter();
-        boolean valid = filter.calculateCoefficients(lowcutadj, highcutadj, 
-                                            dtime, DEFAULT_NUM_ROLL, true);
 
-        
-        // Differentiate velocity to corrected acceleration
-        accel = new double[velocity.length];
-        accel = ArrayOps.Differentiate(velocity, dtime);
-
-        errorlog.add("Velocity differentiated to unfiltered acceleration");
-        
-        if (writeDebug) {
-           elog.writeOutArray(accel, V0name.getName() + "_" + channel + "_accelBeforeFiltering.txt");
-        }
-        if (valid) {
-            paddedaccel = filter.applyFilter(accel, taperlength, startIndex);
+        if (pickIndex <= 0) { //No pick index detected, so skip all V2 processing
+            procStatus  = V2Status.NOEVENT;
+            errorlog.add("V2process: exit status = " + procStatus);
+            writeOutErrorDebug();
+            makeDebugCSV();
+            return false;
         } else {
-            throw new SmException("Invalid bandpass filter calculated parameters");
+            stepRec.addEventOnset(startIndex * dtime);
+            return true;
         }
-        calculated_taper = filter.getTaperlength();
-        errorlog.add(String.format("filtering after 1st QC, taperlength: %d", 
-                                                        filter.getTaperlength()));
+    }
+    private void logDetrendResults() {
+        if (startIndex > 0) {
+            stepRec.addBaselineStep(0, startIndex*dtime, 0, inArrayLength*dtime,
+                    V2DataType.ACC, BaselineType.BESTFIT, CorrectionOrder.MEAN, 0);
+            errorlog.add(String.format("Pre-event mean of %10.6e removed from uncorrected acceleration",preEventMean));
+        }
+        // trend found in vel was either Order2 or Order1, so derivative of
+        // trend (which was removed from acc) will be Order1 or Mean
+        if (trendRemovalOrder == 1) { 
+            stepRec.addBaselineStep(0, inArrayLength*dtime, 0, inArrayLength*dtime,
+                    V2DataType.ACC, BaselineType.BESTFIT, CorrectionOrder.ORDER1, 0);            
+        } else {
+            stepRec.addBaselineStep(0, inArrayLength*dtime, 0, inArrayLength*dtime,
+                    V2DataType.ACC, BaselineType.BESTFIT, CorrectionOrder.MEAN, 0);
+        }
+        if (writeBaseline) {
+            elog.writeOutArray(velocity, V0name.getName() + "_" + channel + "_VelAfterTrendRemovedFromAcc.txt");
+            elog.writeOutArray(accel, V0name.getName() + "_" + channel + "_BestFitTrendRemovedAcc.txt");                
+        }
+    }
+    private void checkFirstQCResultsAndLog(boolean passedQC){
+        if (!passedQC) {
+            errorlog.add("Velocity QC1 failed:");
+            errorlog.add(String.format("   initial velocity: %f,  limit %f",
+                                        Math.abs(qcchecker.getInitialVelocity()),
+                                              qcchecker.getInitVelocityQCval()));
+            errorlog.add(String.format("   final velocity: %f,  limit %f",
+                                  Math.abs(qcchecker.getResidualVelocity()), 
+                                            qcchecker.getResVelocityQCval()));
+            errorlog.add("Adaptive baseline correction beginning");
+        } else {
+            errorlog.add(String.format("Best fit trend of order %d removed from acceleration", trendRemovalOrder));
+        }
+    }
+    private void LogFilterResults() {
         if (writeDebug) {
            elog.writeOutArray(accel, V0name.getName() + "_" + channel + "_accelAfterFiltering.txt");
            elog.writeOutArray(paddedaccel, V0name.getName() + "_" + channel + "_paddedAccelAfterFiltering.txt");
         }
-        //The velocity array was updated with the filtered values in the 
-        //applyFilter call
-        double[] paddedvelocity;
-        double[] paddeddisplace;
-        displace = new double[velocity.length];
-        
-        // Integrate padded acceleration to velocity and displacement and unpad
-        paddedvelocity = ArrayOps.Integrate( paddedaccel, dtime, 0.0);
-        paddeddisplace = ArrayOps.Integrate( paddedvelocity, dtime, 0.0);
-        System.arraycopy(paddedvelocity, filter.getPadLength(), velocity, 0, velocity.length);
-        System.arraycopy(paddeddisplace, filter.getPadLength(), displace, 0, displace.length);
-        initialVel = velocity[0];
-        initialDis = displace[0];
         if (writeDebug) {
             errorlog.add("Acceleration integrated to velocity integrated to displacement");
         }
+    }
+    public void logFailed2ndQCstats(){
+        errorlog.add("Final QC failed - V2 processing unsuccessful:");
+        errorlog.add(String.format("   initial velocity: %f, limit %f",
+                                    Math.abs(qcchecker.getInitialVelocity()),
+                                          qcchecker.getInitVelocityQCval()));
+        errorlog.add(String.format("   final velocity: %f, limit %f",
+                              Math.abs(qcchecker.getResidualVelocity()), 
+                                        qcchecker.getResVelocityQCval()));
+        errorlog.add(String.format("   final displacement,: %f, limit %f",
+                              Math.abs(qcchecker.getResidualDisplacement()),
+                                        qcchecker.getResDisplaceQCval()));
+    }
+    public void logFinalStats() {
+        errorlog.add("V2process: exit status = " + procStatus);
+        errorlog.add(String.format("Peak Velocity: %f",VpeakVal));
     }
     /**
      * Calls adaptive baseline correction and extracts the results
@@ -625,10 +533,9 @@ public class V2Process {
      * @throws SmException if unable to get filter coefficients during ABC
      */
     private double[] adaptiveCorrection() throws SmException {
-        ABC2 adapt = new ABC2(
-            dtime,velocity,lowcutadj,highcutadj,numroll,startIndex,taperlength);
+        ABC2 adapt = new ABC2(dtime,velocity,lowcutadj,highcutadj,numroll,
+                                                        startIndex,taperlength);
         procStatus = adapt.findFit();
-//        System.out.println("procstatus: " + procStatus.name());
         basetype = BaselineType.ABC;
         int solution = adapt.getSolution();
         double[] baseline = adapt.getBaselineFunction();
@@ -652,7 +559,13 @@ public class V2Process {
      * Extracts the statistics from the ABC run and places into the class variables
      * @param goodrun the array containing the ABC parameters
      */
-    private void updateABCstats(double[] goodrun) {
+    private boolean checkABCstatusAndLog(double[] goodrun) throws IOException {
+        if (procStatus == V2Status.NOABC) {
+            errorlog.add("V2process: exit status = " + procStatus);
+            writeOutErrorDebug();
+            makeDebugCSV();
+            return false;
+        }
         QCvelinitial = goodrun[2];
         QCvelresidual = goodrun[3];
         QCdisresidual = goodrun[1];
@@ -705,6 +618,7 @@ public class V2Process {
                                         qcchecker.getResDisplaceQCval()));
         errorlog.add(String.format("    ABC: calc. taperlength: %d", 
                                                     calculated_taper));
+        return true;
     }
     /**
      * Makes the CSV file contents for debug and writes to file
@@ -757,19 +671,6 @@ public class V2Process {
         }
         elog.writeToCSV(data, headerline, "ParameterLog.csv");
         data.clear();
-    }
-    /**
-     * Writes general debug information out to the error/debug log at the 
-     * start of processing
-     * @param arlen the length of the acceleration array
-     */
-    private void writePrePwDdebug(int arlen){
-        errorlog.add("Start of V2 processing for " + V0name.toString() + " and channel " + channel);
-        errorlog.add(String.format("EventID: %s",eventID));
-        errorlog.add(String.format("time per sample in sec %4.3f",dtime));
-        errorlog.add(String.format("sample rate (samp/sec): %4.1f",samplerate));
-        errorlog.add(String.format("length of acceleration array: %d",arlen));
-        errorlog.add("Event detection: remove linear trend, filter, event onset detection");
     }
     /**
      * Getter for the peak value for the particular data type

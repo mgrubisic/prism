@@ -291,36 +291,26 @@ public class ButterworthFilter {
      * Getter for the array with the calculated gains
      * @return the gains
      */
-    public double[] getFact() {
-        return fact;
-    }
+    public double[] getFact() { return fact; }
     /**
      * Getter for the first coefficient array
      * @return the first coefficient array
      */
-    public double[] getB1() {
-        return b1;
-    }
+    public double[] getB1() { return b1; }
     /**
      * Getter for the 2nd coefficient array
      * @return the second coefficient array
      */
-    public double[] getB2() {
-        return b2;
-    }
+    public double[] getB2() { return b2; }
     /**
      * Getter for the lengths of pads applied to front and back of array for
      * acausal filtering
      * @return the pad length
      */
-    public int getPadLength() {
-        return (npad/2);
-    }
+    public int getPadLength() { return (npad/2); }
     /**
      * Getter for the calculated taper length
      * @return the calculated taper length
      */
-    public int getTaperlength() {
-        return taperlength;
-    }
+    public int getTaperlength() { return taperlength; }
 }

@@ -36,8 +36,8 @@ import static org.junit.Assert.*;
  */
 public class CentralDiffTest {
     
-    static String dirname = "D:\\PRISM\\central_diff";
-    static String velfile = "D:\\PRISM\\central_diff\\velocity.txt";
+    static String dirname = "C:\\Users\\jmjones\\Documents\\prism_2016_07_28\\central_diff";
+    static String velfile = "C:\\Users\\jmjones\\Documents\\prism_2016_07_28\\central_diff\\velocity.txt";
     static double[] velocity;
     double[] accel3;
     double[] accel5;

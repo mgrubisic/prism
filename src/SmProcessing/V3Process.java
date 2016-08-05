@@ -193,12 +193,6 @@ public class V3Process {
                     y[1][k] = coef_c * y[0][k-1] + coef_d * y[1][k-1] + 
                                                               coef_f * paccel[k];
                 }
-                //DEBUG!!!
-//                if (Math.abs(V3_DAMPING_VALUES[d] - 0.00) < EPSILON) {
-//                    elog.writeOutArray(y[0], "V3_y_1_for_d0_p" + String.valueOf(p+1) + ".txt");
-//                    elog.writeOutArray(y[1], "V3_y_2_for_d0_p" + String.valueOf(p+1) + ".txt");
-//                }
-                //DEBUG!!!
                 //Get the relative displacement (cm)
                 double[] disp = y[0];
                 ArrayStats stat = new ArrayStats(disp);
@@ -229,9 +223,7 @@ public class V3Process {
                         Sa_3p0 = sa[idx];
                     }
                 }
-                
             }
-            
             V3Data.add(sd);
             V3Data.add(sv);
             V3Data.add(sa);
