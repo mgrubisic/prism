@@ -678,50 +678,42 @@ public class ArrayOps {
             diffarr[len-1] = df_End;
         }
         else { // calculate next 2 end with 5-pt values and check order
-            df_3 = (inarr[1] - 8*inarr[2] + 8*inarr[4] - inarr[5])/(12*dt);
+            df_3 = (inarr[0] - 8*inarr[1] + 8*inarr[3] - inarr[4])/(12*dt);
             df_Endm2 = (inarr[len-5] - 8*inarr[len-4] + 8*inarr[len-2] - inarr[len-1])/(12*dt);
             if (order == 5) { // run 5-pt  [2pt,3pt,5pt..5pt,3pt,2pt]
                 diffarr[0] = df_1;
                 diffarr[1] = df_2;
-//                diffarr[2] = df_3;
-                for (int i = 2; i < len-2; i++) {
+                diffarr[2] = df_3;
+                for (int i = 3; i < len-3; i++) {
                     diffarr[i] = (inarr[i-2] - 8*inarr[i-1] + 8*inarr[i+1] - inarr[i+2])/(12*dt);
                 }
-//                diffarr[len-3] = df_Endm2;
+                diffarr[len-3] = df_Endm2;
                 diffarr[len-2] = df_Endm1;
                 diffarr[len-1] = df_End;
             }
             else { //calculate next 2 end values and check order
                 df_4 = (-1*inarr[0]+9*inarr[1]-45*inarr[2]+45*inarr[4]-9*inarr[5]+inarr[6])/(60*dt);
                 df_Endm3 = (-1*inarr[len-7]+9*inarr[len-6]-45*inarr[len-5]+45*inarr[len-3]-9*inarr[len-2]+inarr[len-1])/(60*dt);                
+                diffarr[0] = df_1;
+                diffarr[1] = df_2;
+                diffarr[2] = df_3;
+                diffarr[3] = df_4;
                 if (order == 7) { //run 7-pt  [2pt,3pt,5pt,7pt..7pt,5pt,3pt,2pt]
-                    diffarr[0] = df_1;
-                    diffarr[1] = df_2;
-                    diffarr[2] = df_3;
-                    diffarr[3] = df_4;
                     for (int i = 4; i < len-4; i++) {
                         diffarr[i] = (-1*inarr[i-3]+9*inarr[i-2]-45*inarr[i-1]+45*inarr[i+1]-9*inarr[i+2]+inarr[i+3])/(60*dt);
                     }
-                    diffarr[len-4] = df_Endm3;
-                    diffarr[len-3] = df_Endm2;
-                    diffarr[len-2] = df_Endm1;
-                    diffarr[len-1] = df_End;
                 }
                 else { // run 9-pt [2pt,3pt,5pt,7pt,9pt..9pt,7pt,5pt,3pt,2pt]
-                    diffarr[0] = df_1;
-                    diffarr[1] = df_2;
-                    diffarr[2] = df_3;
-                    diffarr[3] = df_4;
                     for (int i = 4; i < len-4; i++) {
                         diffarr[i] = 
                            (3*inarr[i-4] - 32*inarr[i-3] + 168*inarr[i-2] - 672*inarr[i-1] 
                             + 672*inarr[i+1] - 168*inarr[i+2] + 32*inarr[i+3] - 3*inarr[i+4])/(840*dt);
                     } 
-                    diffarr[len-4] = df_Endm3;
-                    diffarr[len-3] = df_Endm2;
-                    diffarr[len-2] = df_Endm1;
-                    diffarr[len-1] = df_End;
                 }
+                diffarr[len-4] = df_Endm3;
+                diffarr[len-3] = df_Endm2;
+                diffarr[len-2] = df_Endm1;
+                diffarr[len-1] = df_End;
             }
         }
         return diffarr;

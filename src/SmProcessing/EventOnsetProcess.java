@@ -50,7 +50,7 @@ public class EventOnsetProcess {
         ButterworthFilter filter = new ButterworthFilter();
         boolean valid = filter.calculateCoefficients(lowcutoff, highcutoff, 
                                                         dtime, numroll, true);
-        if (valid) {
+        if (valid) {  //calcSec here is used in place of event onset, which is TBD
             int calcSec = (int)(taperlength * dtime);
             filter.applyFilter(acc, taperlength, calcSec);  //filtered values are returned in acc
             taperused = filter.getTaperlength();

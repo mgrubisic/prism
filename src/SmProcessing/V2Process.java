@@ -85,7 +85,7 @@ public class V2Process {
     private double preEventMean;
     private int diffOrder;
     private int trendRemovalOrder;
-    private int calculated_taper;
+    private double calculated_taper;
     private boolean strongMotion;
     protected double smThreshold;
     private final String logtime;
@@ -168,7 +168,7 @@ public class V2Process {
         this.initialDis = 0.0;
         this.preEventMean = 0.0;
         this.trendRemovalOrder = 0;
-        this.calculated_taper = 0;
+        this.calculated_taper = 0.0;
         this.strongMotion = false;
         this.smThreshold = 0.0;
         
@@ -201,11 +201,11 @@ public class V2Process {
     }
     /**
      * Controls the flow of automatic V2 processing, starting with event detection,
-     * pre-event mean removal, integration to velocity, 
-     * best fit trend removal, and the first QC.  If this
+     * pre-event mean removal, integration to velocity to find trend, 
+     * best fit trend derivative removal from acceleration, and the first QC.  If this
      * QC fails, adaptive baseline correction is attempted. If the first QC passed,
-     * the baseline-corrected velocity is filtered, integrated to displacement, and
-     * differentiated to corrected acceleration.  A final QC check is performed
+     * the baseline-corrected acceleration is filtered, integrated to velocity, and
+     * integrated to displacement.  A final QC check is performed
      * in both best fit and adaptive baseline correction and the status of the
      * processing is returned.
      * @return the status of V2 processing, such as GOOD, FAILQC, etc.
@@ -215,7 +215,9 @@ public class V2Process {
     public V2Status processV2Data() throws SmException, IOException {
         //get parameters from config file and set defaults
         initializeForProcessing();
-        double[] accopy = prepareAccelForProcessing( accel );
+        accel = prepareAccelForProcessing();
+        double[] accopy = new double[accel.length];
+        System.arraycopy( accel, 0, accopy, 0, accel.length);
         writePrePwDdebug(accel.length);
         
         //Find Event Onset
@@ -257,6 +259,12 @@ public class V2Process {
                     new FilterAndIntegrateProcess(lowcutadj,highcutadj,DEFAULT_NUM_ROLL,
                                                         taperlength,startIndex);
             filterInt.filterAndIntegrate(accel, dtime);
+            paddedaccel = filterInt.getPaddedAccel();
+            velocity = filterInt.getVelocity();
+            displace = filterInt.getDisplacement();
+            initialVel = filterInt.getInitialVel();
+            initialDis = filterInt.getInitialDis();
+            calculated_taper = filterInt.getCalculatedTaper();
             LogFilterResults();
             // Second QC Test (also performed in ABC)
             boolean success = qcchecker.qcVelocity(velocity) && 
@@ -399,10 +407,10 @@ public class V2Process {
                                                     magnitude,magtype));
         return magtype;
     }
-    private double[] prepareAccelForProcessing(double[] accraw) throws SmException {
+    private double[] prepareAccelForProcessing() throws SmException {
         stepRec.addCorrectionType(CorrectionType.AUTO);
-        accraw = new double[0];
         // Correct units to CMSQSECN, if needed, and make copy of acc array
+        double[] accraw = new double[0];
         double[] V1Array = inV1.getDataArray();
         inArrayLength = V1Array.length;
 
@@ -414,9 +422,7 @@ public class V2Process {
         } else {
             throw new SmException("V1 file units are unsupported for processing");
         }
-        double[] accopy = new double[accraw.length];
-        System.arraycopy( accraw, 0, accopy, 0, accraw.length);
-        return accopy;
+        return accraw;
     }    
         /**
      * Writes general debug information out to the error/debug log at the 
@@ -443,7 +449,7 @@ public class V2Process {
         errorlog.clear();
     }
     private boolean checkOnsetStatusAndLog( int pickInd, int startInd, double tapused) throws IOException{
-        errorlog.add(String.format("filtering before event onset detection, taperlength: %d", 
+        errorlog.add(String.format("filtering before event onset detection, taperlength: %8.3f", 
                                                         tapused));
         if (emethod == EventOnsetType.PWD) {
             errorlog.add("Event Detection algorithm: PwD method");
@@ -642,7 +648,7 @@ public class V2Process {
         data.add(String.format("%d",startIndex));            //event onset index
         data.add(String.format("%8.3f", startIndex*dtime));  //event onset time
         data.add(String.format("%8.5f",VpeakVal));          //peak velocity
-        data.add(String.format("%8.3f",(calculated_taper/2.0)*dtime)); //filter taperlength
+        data.add(String.format("%8.3f",(calculated_taper/2.0))); //filter taperlength
         data.add(String.format("%8.6f",preEventMean));      //preevent mean removed
         data.add(String.format("%5.4f",ApeakVal*TO_G_CONVERSION)); //peak acc in g
         if (strongMotion) {

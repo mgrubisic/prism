@@ -55,6 +55,12 @@ public class TrendRemovalProcess {
         PolynomialFunction diffPoly = trendpoly.polynomialDerivative();
         boolean trendSuccess = ArrayOps.removePolynomialTrend(accel, 
                                                 diffPoly.getCoefficients(), dtime);
+//        for ( double coval : tcoefs ) {
+//            System.out.println("tcoefs: " + coval);
+//        }
+//        for ( double coval : diffPoly.getCoefficients()) {
+//            System.out.println("dcoefs: " + coval);
+//        }
         if (!trendSuccess) {
             throw new SmException("Unable to remove best fit differentiated trend from acceleration.");
         } else {

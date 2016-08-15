@@ -34,11 +34,11 @@ public class FilterAndIntegrateProcess {
     private double initialDis;
     
     public FilterAndIntegrateProcess( double lowcut, double highcut, int numroll,
-                                double taperin, int startInd) {
+                                double tapertime, int startInd) {
         this.lowcut = lowcut;
         this.highcut = highcut;
         this.numroll = numroll;
-        this.taperlength = taperin;
+        this.taperlength = tapertime;
         this.startIndex = startInd;
     }
     public void filterAndIntegrate( double[] accel, double dtime) throws SmException {

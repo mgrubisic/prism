@@ -77,7 +77,7 @@ public class ABC2 {
     private int[] ranking;
     private int solution;
     private int counter;
-    private int taplength_calculated;
+    private double taplength_calculated;
     /**
      * The constructor for ABC validates the low and high ranges for the 1st and
      * 3rd polynomial orders that were defined in the configuration file.
@@ -101,7 +101,7 @@ public class ABC2 {
         this.highcut = highcut;
         this.numroll = numroll;
         this.rms = new double[NUM_SEGMENTS];
-        this.taplength_calculated = 0;
+        this.taplength_calculated = 0.0;
         this.solution = 0;
         this.counter = 1;
         this.bestfirstdegree = 0;
@@ -556,7 +556,7 @@ public class ABC2 {
      * Getter for the calculated taper length used during filtering
      * @return the calculated taper length
      */
-    public int getCalculatedTaperLength() {
+    public double getCalculatedTaperLength() {
         return this.taplength_calculated;
     }
     /**

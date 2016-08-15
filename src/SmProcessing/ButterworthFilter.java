@@ -70,14 +70,14 @@ public class ButterworthFilter {
     private double[] b2;
     private int npad;
     
-    private int taperlength;
+    private int tapercount;
     
     /**
      * Default constructor
      */
     public ButterworthFilter() {
         this.npad = 0;
-        this.taperlength = 0;
+        this.tapercount = 0;
     }
     /**
      * This method calculates the filter coefficients based on the corner frequencies,
@@ -181,9 +181,9 @@ public class ButterworthFilter {
         //Calculate the length of the cosine taper.  Put a lower limit of the
         //taperlength time specified in the configuration file.
 //        int maxtaper = (int)(arrayS.length * 0.05);
-        taperlength = ArrayOps.findZeroCrossing(arrayS, eventOnsetIndex, 0);
-        if ((taperlength <= 0) || ((taperlength*dtime) < taplengthtime)) {
-            taperlength = (int)(taplengthtime / dtime);
+        tapercount = ArrayOps.findZeroCrossing(arrayS, eventOnsetIndex, 0);
+        if ((tapercount <= 0) || ((tapercount*dtime) < taplengthtime)) {
+            tapercount = (int)(taplengthtime / dtime);
         }
 //        taperlength = (taperlength > maxtaper) ? maxtaper : taperlength;
         
@@ -192,8 +192,8 @@ public class ButterworthFilter {
         //Before padding, apply a cosine taper to the front and back of the 
         //array.
         if (icaus) {
-            if (taperlength > 0) {
-                applyCosineTaper( arrayS, taperlength);
+            if (tapercount > 0) {
+                applyCosineTaper( arrayS, tapercount);
             }
             npad = (int)Math.floor(3.0 * (nroll / (f1 * dtime)));
             int check = (int)Math.floor(6.0 * (nroll / ((f2 - f1) * dtime)));
@@ -310,7 +310,7 @@ public class ButterworthFilter {
     public int getPadLength() { return (npad/2); }
     /**
      * Getter for the calculated taper length
-     * @return the calculated taper length
+     * @return the calculated taper length used in filtering
      */
-    public int getTaperlength() { return taperlength; }
+    public double getTaperlength() { return (tapercount * dtime); }
 }

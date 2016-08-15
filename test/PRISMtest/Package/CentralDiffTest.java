@@ -23,9 +23,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -36,8 +33,8 @@ import static org.junit.Assert.*;
  */
 public class CentralDiffTest {
     
-    static String dirname = "C:\\Users\\jmjones\\Documents\\prism_2016_07_28\\central_diff";
-    static String velfile = "C:\\Users\\jmjones\\Documents\\prism_2016_07_28\\central_diff\\velocity.txt";
+    static String dirname = "D:\\PRISM\\source_testbed\\central_diff";
+    static String velfile = "D:\\PRISM\\source_testbed\\central_diff\\velocity.txt";
     static double[] velocity;
     double[] accel3;
     double[] accel5;
