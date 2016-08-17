@@ -539,12 +539,13 @@ public class V2Process {
      * @throws SmException if unable to get filter coefficients during ABC
      */
     private double[] adaptiveCorrection() throws SmException {
-        ABC2 adapt = new ABC2(dtime,velocity,lowcutadj,highcutadj,numroll,
+        ABC2 adapt = new ABC2(dtime,velocity,accel, lowcutadj,highcutadj,numroll,
                                                         startIndex,taperlength);
         procStatus = adapt.findFit();
         basetype = BaselineType.ABC;
         int solution = adapt.getSolution();
         double[] baseline = adapt.getBaselineFunction();
+        double[] derivbaseline = adapt.getBaselineDerivativeFunction();
         double[] goodrun = adapt.getSolutionParms(solution);
         calculated_taper = adapt.getCalculatedTaperLength();
         ABCnumparams = adapt.getNumRuns();
@@ -558,6 +559,7 @@ public class V2Process {
         initialDis = displace[0];
         if (writeBaseline) { 
             elog.writeOutArray(baseline, (V0name.getName() + "_" + channel + "_baseline.txt"));
+            elog.writeOutArray(derivbaseline, (V0name.getName() + "_" + channel + "_derivbaseline.txt"));
         } 
         return goodrun;
     }
@@ -622,7 +624,7 @@ public class V2Process {
                                     qcchecker.getResVelocityQCval()));
         errorlog.add(String.format("    ABC: disend: %f,  limit %f",QCdisresidual, 
                                         qcchecker.getResDisplaceQCval()));
-        errorlog.add(String.format("    ABC: calc. taperlength: %d", 
+        errorlog.add(String.format("    ABC: calc. taperlength: %f", 
                                                     calculated_taper));
         return true;
     }

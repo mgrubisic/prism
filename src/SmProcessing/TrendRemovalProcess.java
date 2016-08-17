@@ -41,12 +41,8 @@ public class TrendRemovalProcess {
         //Integrate the acceleration to get velocity, using 0 as first value estimate
         velocity = ArrayOps.Integrate( accel, dtime, 0.0);
         //Now correct for unknown initial value by removing preevent mean (minus first val.)
-        int intzero = ArrayOps.findZeroCrossing(velocity, startIndex, 0);
-        if (intzero > 1) {
-            double[] velset = Arrays.copyOfRange( velocity, 1, intzero );
-            ArrayStats velsub = new ArrayStats( velset );
-            ArrayOps.removeValue(velocity, velsub.getMean());
-        }
+        ArrayOps.CorrectForZeroInitialEstimate( velocity, startIndex );
+
         //Find any linear or 2nd order polynomial trend in velocity
         //get derivative of trend and remove this from acc
         double[] tcoefs = ArrayOps.findTrendWithBestFit( velocity, dtime);

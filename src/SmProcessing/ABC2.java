@@ -22,6 +22,9 @@ import SmUtilities.ABCSortPairs;
 import SmUtilities.ConfigReader;
 import static SmUtilities.SmConfigConstants.*;
 import java.util.ArrayList;
+import org.apache.commons.math3.analysis.UnivariateFunction;
+import org.apache.commons.math3.analysis.interpolation.SplineInterpolator;
+import org.apache.commons.math3.analysis.interpolation.UnivariateInterpolator;
 import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
 
 /**
@@ -52,6 +55,7 @@ public class ABC2 {
     private final int RESULT_PARMS = 14;
     
     private final int MOVING_WINDOW = 200;
+    private final int difforder;
     private final double dtime;
     private final double lowcut;
     private final double highcut;
@@ -60,6 +64,7 @@ public class ABC2 {
     private final double taplength;
     private double[] velocity;
     private final double[] velstart;
+    private final double[] accstart;
     private double[] displace;
     private double[] accel;
     private double []paddedaccel;
@@ -69,6 +74,7 @@ public class ABC2 {
     private final int degreeP3lo;
     private final int degreeP3hi;
     private double[] bnn;
+    private double[] derivbnn;
     private double[] b1;
     private int bestfirstdegree;
     private int bestthirddegree;
@@ -83,6 +89,7 @@ public class ABC2 {
      * 3rd polynomial orders that were defined in the configuration file.
      * @param delttime sampling interval, in seconds/sample
      * @param invel velocity array to find the baseline function for
+     * @param inacc acceleration array to remove the baseline function derivative from
      * @param lowcut lowcut filter value to use
      * @param highcut high cut filter value
      * @param numroll filter order / 2
@@ -90,13 +97,14 @@ public class ABC2 {
      * @param taplengthtime minimum number of seconds for the filter taper length
      * @throws SmException if polynomial orders are invalid
      */
-    public ABC2(double delttime, double[] invel, 
+    public ABC2(double delttime, double[] invel, double[] inacc,
                                       double lowcut,double highcut, int numroll,
                                       int ppick, double taplengthtime) throws SmException {
         this.dtime = delttime;
         this.estart = ppick;
         this.taplength = taplengthtime;
         this.velstart = invel;
+        this.accstart = inacc;
         this.lowcut = lowcut;
         this.highcut = highcut;
         this.numroll = numroll;
@@ -106,6 +114,10 @@ public class ABC2 {
         this.counter = 1;
         this.bestfirstdegree = 0;
         this.bestthirddegree = 0;
+
+        ConfigReader config = ConfigReader.INSTANCE;
+        String difford = config.getConfigValue(DIFFERENTIATION_ORDER);
+        this.difforder = (difford == null) ? DEFAULT_DIFFORDER : Integer.parseInt(difford);
         
         //Get the values out of the configuration file and screen for correctness.
         //First polynomial order        
@@ -276,26 +288,21 @@ public class ABC2 {
         }
         return status;
     }
-    private void processTheArrays( int firstb, int secondb) {
-        double[] paddedvelocity;
-        double[] paddeddisplace;
-        
+    private void processTheArrays( int secondb, int order) throws SmException {
+
         //fit a baseline function to each segment and make correction
-        velocity = makeCorrection(velstart,firstb,secondb);
-        //filter velocity
-        paddedvelocity = filter.applyFilter(velocity, taplength, estart);
-        taplength_calculated = filter.getTaperlength();
-        //remove any mean value
-        ArrayStats velmean = new ArrayStats( paddedvelocity );
-        ArrayOps.removeValue(paddedvelocity, velmean.getMean());
-        //integrate to get displacement, differentiate for acceleration
-        paddeddisplace = ArrayOps.Integrate( paddedvelocity, dtime, 0.0);
-        displace = new double[velocity.length];
-        System.arraycopy(paddedvelocity, filter.getPadLength(), velocity, 0, velocity.length);
-        System.arraycopy(paddeddisplace, filter.getPadLength(), displace, 0, displace.length);
-        paddedaccel = ArrayOps.Differentiate(paddedvelocity, dtime);
-        accel = new double[velocity.length];
-        System.arraycopy(paddedaccel, filter.getPadLength(), accel, 0, accel.length);
+        //updated results in accel and velocity
+        makeCorrection(velstart, accstart, secondb, order);
+        
+        //filter acceleration and integrate to velocity and displacement
+        FilterAndIntegrateProcess filterInt = 
+                new FilterAndIntegrateProcess(lowcut,highcut,numroll,
+                                                            taplength,estart);
+        filterInt.filterAndIntegrate(accel, dtime);
+        paddedaccel = filterInt.getPaddedAccel();
+        velocity = filterInt.getVelocity();
+        displace = filterInt.getDisplacement();
+        taplength_calculated = filterInt.getCalculatedTaper();
     }
     /**
      * Finds the best fit for the first segment (from 0 to event onset) by
@@ -349,19 +356,19 @@ public class ABC2 {
      * @param order3 the order of the 3rd segment polynomial for correction
      * @return the baseline-corrected input array
      */
-    private double[] makeCorrection( double[] array, int break2, int order3) {
+    private void makeCorrection( double[] velin, double[] accin, int break2, int order3) {
         double[] h2;
         double[] h3;
-        int order2 = 3;
         int break1 = estart;
-        double[] time = ArrayOps.makeTimeArray(dtime, array.length);
+        accel = new double[accin.length];
+        double[] time = ArrayOps.makeTimeArray(dtime, velin.length);
         
         h2 = new double[break2-break1];
         double[] b2 = new double[break2-break1];
-        h3 = new double[array.length-break2];
-        System.arraycopy(array, break1, h2, 0, break2-break1);
-        System.arraycopy(array, break2, h3, 0, array.length-break2);
-        double[] result = new double[ array.length ];
+        h3 = new double[velin.length-break2];
+        System.arraycopy(velin, break1, h2, 0, break2-break1);
+        System.arraycopy(velin, break2, h3, 0, velin.length-break2);
+        double[] result = new double[ velin.length ];
         
         //Get the best fit baseline function for the 3rd segment
         double[] b3 = find3rdPolyFit(h3, order3);
@@ -378,17 +385,24 @@ public class ABC2 {
             }
         }
         //Connect the 1st and 3rd segments with the interpolating spline
+//        double[] b2 = connectSegmentsWithSpline( array, break1, break2, bnn, dtime );
         getSplineSmooth( bnn, break1, break2, dtime );
         System.arraycopy(bnn,break1,b2,0,break2-break1);
         
-        //Remove the baseline function from segments 2 and 3
-        for (int i = 0; i < result.length; i++) {
-            result[i] = array[i] - bnn[i];
+        //differentiate the baseline function and remove the derivative from
+        //acceleration
+        derivbnn = ArrayOps.central_diff(bnn, dtime, difforder);
+        for (int i = 0; i < accin.length; i++) {
+            accel[i] = accin[i] - derivbnn[i];
         }
+        
+        //integrate acceleration to velocity and correct for initial estimate of 0
+        velocity = ArrayOps.Integrate(accel, dtime, 0.0);
+        ArrayOps.CorrectForZeroInitialEstimate( velocity, estart );
+        
         //Compute the rms of original and corrected segments
         rms[1] = ArrayOps.rootMeanSquare(h2,b2);
         rms[2] = ArrayOps.rootMeanSquare(h3,b3);
-        return result;
     }
     /**
      * Finds the 3rd polynomial baseline fit based on the polynomial degree.
@@ -459,12 +473,62 @@ public class ABC2 {
             vals[i] = vals[i] / Math.pow(intlen, 2);
         }
     }
+    public double[] connectSegmentsWithSpline( double[] inArray, int break1, int break2, double[] bnn, double dtime ) {
+        double[] sp = new double[break2-break1];
+        System.arraycopy(inArray, break1, sp, 0, break2-break1);
+        double[] b2 = interpolateSpline( sp, dtime );
+        System.arraycopy(b2, 0, bnn, break1, break2-break1);
+        return b2;
+    }
+    public double[] interpolateSpline( double[] inArray, double dtime ) {
+        int numknots = 10;
+        double[] xval;
+        double[] yval;
+        UnivariateFunction function;
+        int len = inArray.length;
+        double[] outarr = new double[len];
+        int knotlen = len / numknots;
+        int step = knotlen / 2;
+        int end = 0;
+        xval = new double[3]; yval = new double[3];
+        System.out.println("len: " + len + " knotlen: " + knotlen + " step: " + step);
+         
+        //create an interpolating function to estimate values between each
+        //x and y
+        UnivariateInterpolator interpolator = new SplineInterpolator();
+        
+        outarr[0] = inArray[0];
+        for (int x = 1; x < len; x = x + knotlen) {
+            end = ((end+knotlen) > len-1) ? len-1 : end + knotlen;
+            step = ((x + step) > len) ? (len-x)/2 : step;
+            xval[0] = (x-1) * dtime; 
+            xval[1] = (x + step) * dtime; 
+            xval[2] = end * dtime;
+            yval[0] = inArray[x-1]; 
+            yval[1] = inArray[(x+step)]; 
+            yval[2] = inArray[end];
+            function = interpolator.interpolate( xval, yval);
+            for (int pol = x; pol < end; pol++) {
+                outarr[pol] = function.value(pol*dtime);
+            }
+            outarr[end] = inArray[end];
+        }
+         
+        return outarr;        
+    }
     /**
      * Getter for the baseline function
      * @return the baseline function
      */
     public double[] getBaselineFunction() {
         return bnn;
+    }
+    /**
+     * Getter for the baseline derivative function
+     * @return the baseline derivative function
+     */
+    public double[] getBaselineDerivativeFunction() {
+        return derivbnn;
     }
     /**
      * Getter for the array of ranks

@@ -217,6 +217,14 @@ public class ArrayOps {
         }
         return calc;
     }
+    public static void CorrectForZeroInitialEstimate( double[] array, int upperlim ) {
+        int intzero = findZeroCrossing(array, upperlim, 0);
+        if (intzero > 1) {
+            double[] arrset = Arrays.copyOfRange( array, 1, intzero );
+            ArrayStats arrsub = new ArrayStats( arrset );
+            removeValue(array, arrsub.getMean());
+        }
+    }
     /**
      * Calculates the approximate derivative of the input array.
      * 

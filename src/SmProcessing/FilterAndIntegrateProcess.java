@@ -41,6 +41,13 @@ public class FilterAndIntegrateProcess {
         this.taperlength = tapertime;
         this.startIndex = startInd;
     }
+    /**
+     * 
+     * @param accel this array is modified during processing, with the final array
+     * containing the filtered acceleration values
+     * @param dtime
+     * @throws SmException 
+     */
     public void filterAndIntegrate( double[] accel, double dtime) throws SmException {
         ButterworthFilter filter = new ButterworthFilter();
         boolean valid = filter.calculateCoefficients(lowcut, highcut, 
