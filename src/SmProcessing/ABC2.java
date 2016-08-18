@@ -313,7 +313,7 @@ public class ABC2 {
     private double findFirstPolynomialFit() {
         double bestrms = Double.MAX_VALUE;
         int bestdegree = 0;
-        int len = estart;
+        int len = estart+1;
         double[] bestcoefs = new double[0];
         double[] coefs;
         double[] h1 = new double[len];
@@ -360,15 +360,15 @@ public class ABC2 {
         double[] h2;
         double[] h3;
         int break1 = estart;
+        int splinelength = break2-(break1+1);
         accel = new double[accin.length];
         double[] time = ArrayOps.makeTimeArray(dtime, velin.length);
         
-        h2 = new double[break2-break1];
-        double[] b2 = new double[break2-break1];
+        h2 = new double[splinelength];
+        double[] b2 = new double[splinelength];
         h3 = new double[velin.length-break2];
-        System.arraycopy(velin, break1, h2, 0, break2-break1);
+        System.arraycopy(velin, break1+1, h2, 0, splinelength);
         System.arraycopy(velin, break2, h3, 0, velin.length-break2);
-        double[] result = new double[ velin.length ];
         
         //Get the best fit baseline function for the 3rd segment
         double[] b3 = find3rdPolyFit(h3, order3);
@@ -376,7 +376,7 @@ public class ABC2 {
         //Construct the baseline function from the first and 3rd sections
         bnn = new double[time.length];
         for (int i = 0; i < bnn.length; i++) {
-            if ( i < break1) {
+            if ( i <= break1) {
                 bnn[i] = b1[i];
             } else if ( i >= break2) {
                 bnn[i] = b3[i - break2];
@@ -387,7 +387,7 @@ public class ABC2 {
         //Connect the 1st and 3rd segments with the interpolating spline
 //        double[] b2 = connectSegmentsWithSpline( array, break1, break2, bnn, dtime );
         getSplineSmooth( bnn, break1, break2, dtime );
-        System.arraycopy(bnn,break1,b2,0,break2-break1);
+        System.arraycopy(bnn,break1+1,b2,0,splinelength);
         
         //differentiate the baseline function and remove the derivative from
         //acceleration
@@ -430,8 +430,8 @@ public class ABC2 {
      * California Institute of Technology Pasadena, 1996-09, 25 pages,
      * </p>
      * @param vals the input array of values
-     * @param break1 starting index to connect
-     * @param break2 ending index to connect
+     * @param break1 location of last value of 1st baseline segment
+     * @param break2 location of first value of 3rd baseline segment
      * @param intime the time interval between samples
      */
     public void getSplineSmooth( double[] vals, int break1, int break2, double intime ) {
@@ -443,17 +443,17 @@ public class ABC2 {
         int len = vals.length;
         double[] loctime = ArrayOps.makeTimeArray( intime, len);
         double t1 = break1 * intime;
-        double t2 = (break2-1) * intime;
+        double t2 = break2 * intime;
         double time12 = intime * 12.0;   //dt12
         double intlen = t2 - t1;        //t21
         
-        double a = vals[break1-1];
+        double a = vals[break1];
         double b = vals[break2];
-        double c = (   3.0 * vals[break1-5] 
-                    - 16.0 * vals[break1-4] 
-                    + 36.0 * vals[break1-3] 
-                    - 48.0 * vals[break1-2] 
-                    + 25.0 * vals[break1-1]   )/ time12;
+        double c = (   3.0 * vals[break1-4] 
+                    - 16.0 * vals[break1-3] 
+                    + 36.0 * vals[break1-2] 
+                    - 48.0 * vals[break1-1] 
+                    + 25.0 * vals[break1]   )/ time12;
         
         double d = ( -25.0 * vals[break2] 
                     + 48.0 * vals[break2+1] 
@@ -461,7 +461,7 @@ public class ABC2 {
                     + 16.0 * vals[break2+3] 
                     -  3.0 * vals[break2+4]   )/ time12;
 
-        for (int i = break1; i < break2; i++) {
+        for (int i = break1+1; i < break2; i++) {
             start = loctime[i] - t1;
             end = loctime[i] - t2;
             ssq = Math.pow(start, 2);
@@ -474,10 +474,11 @@ public class ABC2 {
         }
     }
     public double[] connectSegmentsWithSpline( double[] inArray, int break1, int break2, double[] bnn, double dtime ) {
-        double[] sp = new double[break2-break1];
-        System.arraycopy(inArray, break1, sp, 0, break2-break1);
+        int splinelength = break2 - (break1+1);
+        double[] sp = new double[splinelength];
+        System.arraycopy(inArray, break1+1, sp, 0, splinelength);
         double[] b2 = interpolateSpline( sp, dtime );
-        System.arraycopy(b2, 0, bnn, break1, break2-break1);
+        System.arraycopy(b2, 0, bnn, break1+1, splinelength);
         return b2;
     }
     public double[] interpolateSpline( double[] inArray, double dtime ) {
@@ -513,7 +514,6 @@ public class ABC2 {
             }
             outarr[end] = inArray[end];
         }
-         
         return outarr;        
     }
     /**
