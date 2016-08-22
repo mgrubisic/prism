@@ -47,8 +47,8 @@ public class ABCsplineTest {
     static int velbreak2 = 4325;
     ABC2 adapt;
     static String[] filecontents;
-    static String dirname = "C:\\Users\\jmjones\\Documents\\prism_2016_08_17\\spline";
-    static String velfile = "C:\\Users\\jmjones\\Documents\\prism_2016_08_17\\spline\\NP1798_Velocity.txt";
+    static String dirname = "D:\\PRISM\\source_testbed\\spline";
+    static String velfile = "D:\\PRISM\\source_testbed\\spline\\NP1798_Velocity.txt";
     
     public ABCsplineTest() throws SmException {
         polysin = new double[LENGTH];
@@ -93,14 +93,6 @@ public class ABCsplineTest {
         writeout.writeOutArray();
         adapt.getSplineSmooth(result, break1, break2, 1);
         writeout = new TextFileWriter(dirname, "polysinSpline.txt",result);
-        writeout.writeOutArray();
-    }
-    @Test
-    public void splineApache() throws SmException, IOException {
-        double[] result = new double[velocity.length];
-        System.arraycopy( velocity,0,result,0,velocity.length);
-        adapt.connectSegmentsWithSpline(velocity, velbreak1, velbreak2, result, 0.01);
-        TextFileWriter writeout = new TextFileWriter(dirname, "polysinSplineApache.txt",result);
         writeout.writeOutArray();
     }
 }

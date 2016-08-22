@@ -22,9 +22,6 @@ import SmUtilities.ABCSortPairs;
 import SmUtilities.ConfigReader;
 import static SmUtilities.SmConfigConstants.*;
 import java.util.ArrayList;
-import org.apache.commons.math3.analysis.UnivariateFunction;
-import org.apache.commons.math3.analysis.interpolation.SplineInterpolator;
-import org.apache.commons.math3.analysis.interpolation.UnivariateInterpolator;
 import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
 
 /**
@@ -83,7 +80,8 @@ public class ABC2 {
     private int[] ranking;
     private int solution;
     private int counter;
-    private double taplength_calculated;
+    private double calculated_taper;
+    private double config_taper;
     /**
      * The constructor for ABC validates the low and high ranges for the 1st and
      * 3rd polynomial orders that were defined in the configuration file.
@@ -109,7 +107,8 @@ public class ABC2 {
         this.highcut = highcut;
         this.numroll = numroll;
         this.rms = new double[NUM_SEGMENTS];
-        this.taplength_calculated = 0.0;
+        this.calculated_taper = 0.0;
+        this.config_taper = 0.0;
         this.solution = 0;
         this.counter = 1;
         this.bestfirstdegree = 0;
@@ -193,7 +192,7 @@ public class ABC2 {
      */
     public VFileConstants.V2Status findFit() throws SmException {
         int vlen = velstart.length;
-        int endval = (int)(0.8 * vlen);
+        int endval = (int)(0.8 * vlen); //iterate through 80% of the array
         int startval = estart + MOVING_WINDOW;
         boolean success = false;
         params = new ArrayList<>();
@@ -288,22 +287,6 @@ public class ABC2 {
         }
         return status;
     }
-    private void processTheArrays( int secondb, int order) throws SmException {
-
-        //fit a baseline function to each segment and make correction
-        //updated results in accel and velocity
-        makeCorrection(velstart, accstart, secondb, order);
-        
-        //filter acceleration and integrate to velocity and displacement
-        FilterAndIntegrateProcess filterInt = 
-                new FilterAndIntegrateProcess(lowcut,highcut,numroll,
-                                                            taplength,estart);
-        filterInt.filterAndIntegrate(accel, dtime);
-        paddedaccel = filterInt.getPaddedAccel();
-        velocity = filterInt.getVelocity();
-        displace = filterInt.getDisplacement();
-        taplength_calculated = filterInt.getCalculatedTaper();
-    }
     /**
      * Finds the best fit for the first segment (from 0 to event onset) by
      * iterating over the different polynomial orders and choosing the order that
@@ -342,6 +325,30 @@ public class ABC2 {
         }
         bestfirstdegree = bestdegree;
         return bestrms;
+    }
+    /**
+     * Performs the steps of making the correction for segments 2 and 3, then filtering
+     * and integrating to obtain the corrected acceleration and velocity
+     * @param secondb the second break point
+     * @param order the polynomial order for the 3rd segment
+     * @throws SmException if unable to calculate valid filter parameters
+     */
+    private void processTheArrays( int secondb, int order) throws SmException {
+
+        //fit a baseline function to segments 2 and 3 and make correction
+        //updated results in accel and velocity
+        makeCorrection(velstart, accstart, secondb, order);
+        
+        //filter acceleration and integrate to velocity and displacement
+        FilterAndIntegrateProcess filterInt = 
+                new FilterAndIntegrateProcess(lowcut,highcut,numroll,
+                                                            taplength,estart);
+        filterInt.filterAndIntegrate(accel, dtime);
+        paddedaccel = filterInt.getPaddedAccel();
+        velocity = filterInt.getVelocity();
+        displace = filterInt.getDisplacement();
+        calculated_taper = filterInt.getCalculatedTaper();
+        config_taper = filterInt.getConfigTaper();
     }
     /**
      * Makes the baseline correction on the input array. It first calculates the
@@ -385,7 +392,6 @@ public class ABC2 {
             }
         }
         //Connect the 1st and 3rd segments with the interpolating spline
-//        double[] b2 = connectSegmentsWithSpline( array, break1, break2, bnn, dtime );
         getSplineSmooth( bnn, break1, break2, dtime );
         System.arraycopy(bnn,break1+1,b2,0,splinelength);
         
@@ -429,7 +435,8 @@ public class ABC2 {
      * EERL 96-04, Earthquake Engineering Research Laboratory, 
      * California Institute of Technology Pasadena, 1996-09, 25 pages,
      * </p>
-     * @param vals the input array of values
+     * @param vals the input array of values, where the array between break1
+     * and break2 will be filled with the calculated spline values
      * @param break1 location of last value of 1st baseline segment
      * @param break2 location of first value of 3rd baseline segment
      * @param intime the time interval between samples
@@ -472,49 +479,6 @@ public class ABC2 {
                       end * ssq * d;
             vals[i] = vals[i] / Math.pow(intlen, 2);
         }
-    }
-    public double[] connectSegmentsWithSpline( double[] inArray, int break1, int break2, double[] bnn, double dtime ) {
-        int splinelength = break2 - (break1+1);
-        double[] sp = new double[splinelength];
-        System.arraycopy(inArray, break1+1, sp, 0, splinelength);
-        double[] b2 = interpolateSpline( sp, dtime );
-        System.arraycopy(b2, 0, bnn, break1+1, splinelength);
-        return b2;
-    }
-    public double[] interpolateSpline( double[] inArray, double dtime ) {
-        int numknots = 10;
-        double[] xval;
-        double[] yval;
-        UnivariateFunction function;
-        int len = inArray.length;
-        double[] outarr = new double[len];
-        int knotlen = len / numknots;
-        int step = knotlen / 2;
-        int end = 0;
-        xval = new double[3]; yval = new double[3];
-        System.out.println("len: " + len + " knotlen: " + knotlen + " step: " + step);
-         
-        //create an interpolating function to estimate values between each
-        //x and y
-        UnivariateInterpolator interpolator = new SplineInterpolator();
-        
-        outarr[0] = inArray[0];
-        for (int x = 1; x < len; x = x + knotlen) {
-            end = ((end+knotlen) > len-1) ? len-1 : end + knotlen;
-            step = ((x + step) > len) ? (len-x)/2 : step;
-            xval[0] = (x-1) * dtime; 
-            xval[1] = (x + step) * dtime; 
-            xval[2] = end * dtime;
-            yval[0] = inArray[x-1]; 
-            yval[1] = inArray[(x+step)]; 
-            yval[2] = inArray[end];
-            function = interpolator.interpolate( xval, yval);
-            for (int pol = x; pol < end; pol++) {
-                outarr[pol] = function.value(pol*dtime);
-            }
-            outarr[end] = inArray[end];
-        }
-        return outarr;        
     }
     /**
      * Getter for the baseline function
@@ -621,7 +585,14 @@ public class ABC2 {
      * @return the calculated taper length
      */
     public double getCalculatedTaperLength() {
-        return this.taplength_calculated;
+        return this.calculated_taper;
+    }
+    /**
+     * Getter for the config taper length used during filtering
+     * @return the config taper length
+     */
+    public double getConfigTaperLength() {
+        return this.config_taper;
     }
     /**
      * Clears the params array to release dynamic memory storage

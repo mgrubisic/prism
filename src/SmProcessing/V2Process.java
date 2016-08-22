@@ -83,9 +83,9 @@ public class V2Process {
     protected int numroll;  // the filter order is rolloff*2
     protected double taperlength;
     private double preEventMean;
-    private int diffOrder;
     private int trendRemovalOrder;
     private double calculated_taper;
+    private double config_taper;
     private boolean strongMotion;
     protected double smThreshold;
     private final String logtime;
@@ -169,6 +169,7 @@ public class V2Process {
         this.preEventMean = 0.0;
         this.trendRemovalOrder = 0;
         this.calculated_taper = 0.0;
+        this.config_taper = 0.0;
         this.strongMotion = false;
         this.smThreshold = 0.0;
         
@@ -265,6 +266,7 @@ public class V2Process {
             initialVel = filterInt.getInitialVel();
             initialDis = filterInt.getInitialDis();
             calculated_taper = filterInt.getCalculatedTaper();
+            config_taper = filterInt.getConfigTaper();
             LogFilterResults();
             // Second QC Test (also performed in ABC)
             boolean success = qcchecker.qcVelocity(velocity) && 
@@ -314,6 +316,11 @@ public class V2Process {
         }
         return procStatus;
     }
+    /**
+     * Initializes variables for the automatic processing and gets the filter input 
+     * variables, event onset type, and logging flags from the configuration file.
+     * @throws SmException if unable to extract information from the configuration file
+     */
     private void initializeForProcessing() throws SmException {
         this.errorlog = new ArrayList<>();
         this.elog = SmDebugLogger.INSTANCE;
@@ -336,9 +343,6 @@ public class V2Process {
         try {
             String unitcode = config.getConfigValue(DATA_UNITS_CODE);
             this.data_unit_code = (unitcode == null) ? CMSQSECN : Integer.parseInt(unitcode);
-
-            String diffcode = config.getConfigValue(DIFFERENTIATION_ORDER);
-            this.diffOrder = (diffcode == null) ? DEFAULT_DIFFORDER : Integer.parseInt(diffcode);
 
             String lowcut = config.getConfigValue(BP_FILTER_CUTOFFLOW);
             this.lowcutoff = (lowcut == null) ? DEFAULT_LOWCUT : Double.parseDouble(lowcut);
@@ -407,6 +411,11 @@ public class V2Process {
                                                     magnitude,magtype));
         return magtype;
     }
+    /**
+     * Gets the raw acceleration from the V1 record and converts units if necessary
+     * @return the raw acceleration array in units of cm per sq. sec
+     * @throws SmException if data units code from the configuration file is invalid
+     */
     private double[] prepareAccelForProcessing() throws SmException {
         stepRec.addCorrectionType(CorrectionType.AUTO);
         // Correct units to CMSQSECN, if needed, and make copy of acc array
@@ -424,7 +433,7 @@ public class V2Process {
         }
         return accraw;
     }    
-        /**
+    /**
      * Writes general debug information out to the error/debug log at the 
      * start of processing
      * @param arlen the length of the acceleration array
@@ -448,6 +457,15 @@ public class V2Process {
         elog.writeToLog(errorout, LogType.DEBUG);
         errorlog.clear();
     }
+    /**
+     * Checks the status returned by the EventOnsetProcess and logs critical values,
+     * also records the onset with the Process Steps Recorder
+     * @param pickInd the event onset array index
+     * @param startInd the buffered event onset array index
+     * @param tapused the taper length used during event onset filtering
+     * @return the success or failure status of event onset detection
+     * @throws IOException if unable to write to the debug file
+     */
     private boolean checkOnsetStatusAndLog( int pickInd, int startInd, double tapused) throws IOException{
         errorlog.add(String.format("filtering before event onset detection, taperlength: %8.3f", 
                                                         tapused));
@@ -474,6 +492,10 @@ public class V2Process {
             return true;
         }
     }
+    /**
+     * Records the results of the Trend Removal Process in the log and with the Process
+     * Steps Recorder.
+     */
     private void logDetrendResults() {
         if (startIndex > 0) {
             stepRec.addBaselineStep(0, startIndex*dtime, 0, inArrayLength*dtime,
@@ -494,6 +516,10 @@ public class V2Process {
             elog.writeOutArray(accel, V0name.getName() + "_" + channel + "_BestFitTrendRemovedAcc.txt");                
         }
     }
+    /**
+     * Records the results of the first QC test in the error log
+     * @param passedQC pass or fail status of the QC test
+     */
     private void checkFirstQCResultsAndLog(boolean passedQC){
         if (!passedQC) {
             errorlog.add("Velocity QC1 failed:");
@@ -508,6 +534,9 @@ public class V2Process {
             errorlog.add(String.format("Best fit trend of order %d removed from acceleration", trendRemovalOrder));
         }
     }
+    /**
+     * Writes out information to the error log after filtering
+     */
     private void LogFilterResults() {
         if (writeDebug) {
            elog.writeOutArray(accel, V0name.getName() + "_" + channel + "_accelAfterFiltering.txt");
@@ -517,6 +546,9 @@ public class V2Process {
             errorlog.add("Acceleration integrated to velocity integrated to displacement");
         }
     }
+    /**
+     * Logs the results of the 2nd QC tests in the error log
+     */
     public void logFailed2ndQCstats(){
         errorlog.add("Final QC failed - V2 processing unsuccessful:");
         errorlog.add(String.format("   initial velocity: %f, limit %f",
@@ -529,6 +561,9 @@ public class V2Process {
                               Math.abs(qcchecker.getResidualDisplacement()),
                                         qcchecker.getResDisplaceQCval()));
     }
+    /**
+     * Logs the final V2process status in the error log
+     */
     public void logFinalStats() {
         errorlog.add("V2process: exit status = " + procStatus);
         errorlog.add(String.format("Peak Velocity: %f",VpeakVal));
@@ -548,6 +583,7 @@ public class V2Process {
         double[] derivbaseline = adapt.getBaselineDerivativeFunction();
         double[] goodrun = adapt.getSolutionParms(solution);
         calculated_taper = adapt.getCalculatedTaperLength();
+        config_taper = adapt.getConfigTaperLength();
         ABCnumparams = adapt.getNumRuns();
         ABCwinrank = (procStatus == V2Status.GOOD) ? (solution + 1) : 0;
         adapt.clearParamsArray();
@@ -624,8 +660,10 @@ public class V2Process {
                                     qcchecker.getResVelocityQCval()));
         errorlog.add(String.format("    ABC: disend: %f,  limit %f",QCdisresidual, 
                                         qcchecker.getResDisplaceQCval()));
-        errorlog.add(String.format("    ABC: calc. taperlength: %f", 
+        errorlog.add(String.format("    ABC: calc. taperlength (zero crossing): %f", 
                                                     calculated_taper));
+        errorlog.add(String.format("    ABC: config taperlength (end): %f", 
+                                                    config_taper));
         return true;
     }
     /**
@@ -635,7 +673,7 @@ public class V2Process {
     private void makeDebugCSV() throws IOException {
         String[] headerline = {"EVENT","MAG","NAME","CHANNEL",
             "ARRAY LENGTH","SAMP INTERVAL(SEC)","PICK INDEX","PICK TIME(SEC)",
-            "PEAK VEL(CM/SEC)","TAPER (SEC)","PRE-EVENT MEAN (CM/SEC/SEC)","PEAK ACC(G)",
+            "PEAK VEL(CM/SEC)","START TAPER (SEC)","END TAPER (SEC)","PRE-EVENT MEAN (CM/SEC/SEC)","PEAK ACC(G)",
             "STRONG MOTION","EXIT STATUS","VEL INITIAL(CM/SEC)",
             "VEL RESIDUAL(CM/SEC)","DIS RESIDUAL(CM)","BASELINE CORRECTION",
             "POLY1","ABC POLY2","ABC 1ST BREAK","ABC 2ND BREAK",
@@ -651,6 +689,7 @@ public class V2Process {
         data.add(String.format("%8.3f", startIndex*dtime));  //event onset time
         data.add(String.format("%8.5f",VpeakVal));          //peak velocity
         data.add(String.format("%8.3f",(calculated_taper/2.0))); //filter taperlength
+        data.add(String.format("%8.3f",(config_taper/2.0))); //filter taperlength
         data.add(String.format("%8.6f",preEventMean));      //preevent mean removed
         data.add(String.format("%5.4f",ApeakVal*TO_G_CONVERSION)); //peak acc in g
         if (strongMotion) {

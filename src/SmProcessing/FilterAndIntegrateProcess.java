@@ -13,11 +13,11 @@
  ******************************************************************************/
 package SmProcessing;
 
-import static SmConstants.VFileConstants.DEFAULT_NUM_ROLL;
 import SmException.SmException;
 
 /**
- *
+ * This class performs the filtering of the acceleration array and its integration
+ * to velocity and again to displacement.
  * @author jmjones
  */
 public class FilterAndIntegrateProcess {
@@ -29,10 +29,18 @@ public class FilterAndIntegrateProcess {
     private double[] paddedaccel;
     private final double taperlength;
     private double calculated_taper;
+    private double config_taper;
     private final int startIndex;
     private double initialVel;
     private double initialDis;
-    
+    /**
+     * Constructor simply initializes filter variables
+     * @param lowcut filter low cutoff frequency
+     * @param highcut filter high cutoff frequency
+     * @param numroll the filter roll off, which is 1/2 the filter order
+     * @param tapertime the taper length value from the configuration file
+     * @param startInd the array index for the start of the event
+     */
     public FilterAndIntegrateProcess( double lowcut, double highcut, int numroll,
                                 double tapertime, int startInd) {
         this.lowcut = lowcut;
@@ -45,8 +53,8 @@ public class FilterAndIntegrateProcess {
      * 
      * @param accel this array is modified during processing, with the final array
      * containing the filtered acceleration values
-     * @param dtime
-     * @throws SmException 
+     * @param dtime the sample time interval (seconds/sample) for the record
+     * @throws SmException if unable to calculate valid filter parameters
      */
     public void filterAndIntegrate( double[] accel, double dtime) throws SmException {
         ButterworthFilter filter = new ButterworthFilter();
@@ -58,7 +66,8 @@ public class FilterAndIntegrateProcess {
             throw new SmException("Invalid bandpass filter calculated parameters");
         }
         calculated_taper = filter.getTaperlength();
-        //The velocity array was updated with the filtered values in the 
+        config_taper = filter.getEndTaperlength();
+        //The acceleration array was updated with the filtered values in the 
         //applyFilter call
         double[] paddedvelocity;
         double[] paddeddisplace;
@@ -73,10 +82,39 @@ public class FilterAndIntegrateProcess {
         initialVel = velocity[0];
         initialDis = displace[0];
     }
+    /**
+     * getter for the velocity array after integration from filtered acceleration
+     * @return the velocity array
+     */
     public double[] getVelocity() { return velocity;}
+    /**
+     * getter for the displacement array after 2nd integration from filtered acceleration
+     * @return the displacement array
+     */
     public double[] getDisplacement() { return displace; }
+    /**
+     * getter for the padded acceleration array after filtering
+     * @return the padded acceleration array
+     */
     public double[] getPaddedAccel() { return paddedaccel; }
+    /**
+     * getter for the initial velocity value
+     * @return the initial velocity value
+     */
     public double getInitialVel() { return initialVel; }
+    /**
+     * getter for the initial displacement value
+     * @return the initial displacement value
+     */
     public double getInitialDis() { return initialDis; }
+    /**
+     * getter for the taper length calculated for the start of the array
+     * @return the initial taper length in seconds
+     */
     public double getCalculatedTaper() { return calculated_taper; }
+    /**
+     * getter for the taper length used at the end of the array
+     * @return the final taper length in seconds
+     */
+    public double getConfigTaper() { return config_taper; }
 }

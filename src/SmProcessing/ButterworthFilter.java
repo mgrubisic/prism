@@ -13,7 +13,6 @@
  ******************************************************************************/
 package SmProcessing;
 
-import static SmConstants.VFileConstants.DEFAULT_TAPER_LENGTH;
 import java.util.Arrays;
 
 /**
@@ -71,6 +70,7 @@ public class ButterworthFilter {
     private int npad;
     
     private int tapercount;
+    private int taperend;
     
     /**
      * Default constructor
@@ -78,6 +78,7 @@ public class ButterworthFilter {
     public ButterworthFilter() {
         this.npad = 0;
         this.tapercount = 0;
+        this.taperend = 0;
     }
     /**
      * This method calculates the filter coefficients based on the corner frequencies,
@@ -157,17 +158,18 @@ public class ButterworthFilter {
      * If it was set to causal, the filtering is only forwards.  Before filtering,
      * if acausal, pads are added to the front and back of the array. The ends of
      * the input array are tapered by a half-cosine taper (only acausal) in order to prevent
-     * ringing in the output waveform.  The taper length is calculated by finding
+     * ringing in the output waveform.  The taper length for the start of the array is calculated by finding
      * the first zero crossing that occurs before the event onset.  This time
      * becomes the taper length time, with exceptions.  The exceptions: if there's
      * no zero crossing found before the event onset, or the calculated time
      * is less than the value entered as taplengthtime.  For these exceptions,
-     * the input taper length value is used instead.
+     * the input taper length value is used instead.  The taper length for the end
+     * of the array is the taper length input value from the configuration file.
      * @param arrayS the input array to filter, NOTE: this array is updated with
      * the filtered version upon return
-     * @param taplengthtime the length of time in seconds to apply the taper, the
-     * actual taper length at front and back is 1/2 of this (half cosine). This
-     * value is only used if the calculated taper length is invalid or too short.
+     * @param taplengthtime the length of time in seconds to apply the taper.  This
+     * value is used for the taper at the end of the array and only used for the
+     * taper at the start of the array if the calculated taper length is invalid or too short.
      * @param eventOnsetIndex the event onset index is used to refine the
      * taper length
      * @return an array containing the filtered result with the pads still included
@@ -178,14 +180,14 @@ public class ButterworthFilter {
         double[] filteredS;
         double x1; double x2; double y1; double y2; double xp; double yp;
 
-        //Calculate the length of the cosine taper.  Put a lower limit of the
-        //taperlength time specified in the configuration file.
-//        int maxtaper = (int)(arrayS.length * 0.05);
+        //Calculate the length of the initial cosine taper.  Put a lower limit of the
+        //taperlength time specified in the configuration file, and set the ending
+        //taper length to the configuration file value.
         tapercount = ArrayOps.findZeroCrossing(arrayS, eventOnsetIndex, 0);
         if ((tapercount <= 0) || ((tapercount*dtime) < taplengthtime)) {
-            tapercount = (int)(taplengthtime / dtime);
+            tapercount = (int)((2.0*taplengthtime) / dtime);
         }
-//        taperlength = (taperlength > maxtaper) ? maxtaper : taperlength;
+        taperend = (int)((2.0*taplengthtime) / dtime);
         
         //Copy the input array into a return array.  If the filter was configured
         //as acausal, then pad the length of the array by the value calculated below.
@@ -193,7 +195,7 @@ public class ButterworthFilter {
         //array.
         if (icaus) {
             if (tapercount > 0) {
-                applyCosineTaper( arrayS, tapercount);
+                applyCosineTaper( arrayS, tapercount, taperend);
             }
             npad = (int)Math.floor(3.0 * (nroll / (f1 * dtime)));
             int check = (int)Math.floor(6.0 * (nroll / ((f2 - f1) * dtime)));
@@ -262,7 +264,7 @@ public class ButterworthFilter {
      * that the taper should be applied to.  The length of the half cosine taper
      * itself is 1/2 of the range.
      */
-    public void applyCosineTaper( double[] array, int range ) {
+    public void applyCosineTaper( double[] array, int range, int endrange ) {
         //The range is the number of elements at the front and back of the
         //array that the taper should be applied to.
         
@@ -280,10 +282,18 @@ public class ButterworthFilter {
         for (int i = 0; i < m; i++) {
             array[i] = array[i] * taper[i];
         }
+        //Apply the end-length taper to the end of the array
+        int m2 = endrange / 2;
+        
+        double[] taper2 = new double[m2];
+        for (int i = 0; i < m2; i++) {
+            taper2[i] = 0.5 * (1.0 - Math.cos(2 * pi * i / (endrange-1)));
+        }
+        
         //apply at the end
-        int k = m-1;
-        for (int i = len-m; i < len; i++) {
-            array[i] = array[i] * taper[k];
+        int k = m2 - 1;
+        for (int i = len - m2; i < len; i++) {
+            array[i] = array[i] * taper2[k];
             k--;
         }
     }
@@ -313,4 +323,9 @@ public class ButterworthFilter {
      * @return the calculated taper length used in filtering
      */
     public double getTaperlength() { return (tapercount * dtime); }
+    /**
+     * Getter for the end taper length
+     * @return the end taper length used in filtering
+     */
+    public double getEndTaperlength() { return (taperend * dtime); }
 }

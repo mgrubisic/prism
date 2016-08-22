@@ -217,6 +217,18 @@ public class ArrayOps {
         }
         return calc;
     }
+    /**
+     * To be called after the Integrate method, this method corrects for an unknown
+     * initial value in the integration. This method calls the findZeroCrossing
+     * method to locate the first zero crossing in the array between the upper limit
+     * input parameter and the start of the array, working from the upper limit
+     * backwards towards the start. If a zero crossing is found, the mean of the
+     * array subset (from 0 to zero crossing) is calculated and removed from the
+     * entire array.
+     * @param array input array to make the correction on
+     * @param upperlim upper limit index of the array, defining the window within
+     * which to look for any offset introduced by an initial integration estimate of 0
+     */
     public static void CorrectForZeroInitialEstimate( double[] array, int upperlim ) {
         int intzero = findZeroCrossing(array, upperlim, 0);
         if (intzero > 1) {
@@ -227,8 +239,8 @@ public class ArrayOps {
     }
     /**
      * Calculates the approximate derivative of the input array.
-     * 
-     * @param array array to be differentiated
+     * This method has been deprecated and replaced with central_diff.
+     * @param array the array to be differentiated
      * @param dt the time step in seconds
      * @return new array containing the approximate derivative of the input points,
      * or an array of 0 length if input parameters are invalid
