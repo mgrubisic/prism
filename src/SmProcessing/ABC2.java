@@ -39,12 +39,16 @@ import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
  * The last
  * portion is fitted with a polynomial while an interpolating spline function is
  * used to create the middle segment.  The rms is calculated for these 2 baseline
- * functions, the input velocity is corrected by the 3 baseline segments, and after
+ * functions, the input acceleration is corrected by the derivative of the 3 baseline segments, and after
  * filtering and integration the QC checks are recorded for each iteration along
  * with a goodness of fit value. 
  * </p><p>
  * The goodness of fit values are ranked, and the lowest ranking iteration that
  * also passes the QC checks is chosen as the final baseline correction.</p>
+ * <p>The solutions returned from ABC reflect the order of corrections determined from
+ * the velocity array.  The actual corrections made were the derivative of the baseline
+ * correction determined from velocity.  To record the order of the actual corrections
+ * made to each segment of acceleration, subtract 1 from each ABC order.</p>
  * @author jmjones
  */
 public class ABC2 {
@@ -397,14 +401,14 @@ public class ABC2 {
         
         //differentiate the baseline function and remove the derivative from
         //acceleration
-        derivbnn = ArrayOps.central_diff(bnn, dtime, difforder);
+        derivbnn = ArrayOps.centralDiff(bnn, dtime, difforder);
         for (int i = 0; i < accin.length; i++) {
             accel[i] = accin[i] - derivbnn[i];
         }
         
         //integrate acceleration to velocity and correct for initial estimate of 0
-        velocity = ArrayOps.Integrate(accel, dtime, 0.0);
-        ArrayOps.CorrectForZeroInitialEstimate( velocity, estart );
+        velocity = ArrayOps.integrate(accel, dtime, 0.0);
+        ArrayOps.correctForZeroInitialEstimate( velocity, estart );
         
         //Compute the rms of original and corrected segments
         rms[1] = ArrayOps.rootMeanSquare(h2,b2);

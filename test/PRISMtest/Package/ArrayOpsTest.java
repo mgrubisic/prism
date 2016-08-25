@@ -17,16 +17,11 @@ package PRISMtest.Package;
 import SmProcessing.ArrayOps;
 import SmProcessing.ArrayStats;
 import SmUtilities.TextFileReader;
-import SmUtilities.TextFileWriter;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
-import static org.junit.Assert.*;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -58,12 +53,15 @@ public class ArrayOpsTest {
     static double[] accel;
     static double[] vel;
     static double[] disp;
+    static double[] velForDiff;
+    static double[] accelForDiff;
     static String[] filecontents;
     
-//    String dirname = "D:/PRISM/test/test";
     static String accelfile = "/PRISMtest/Data/acceleration.txt";
     static String velfile = "/PRISMtest/Data/velocity.txt";
     static String dispfile = "/PRISMtest/Data/displacement.txt";
+    static String velDiffile = "/PRISMtest/Data/velocityCentralDiff.txt";
+    static String accDiffile = "/PRISMtest/Data/accel5_MATLAB.csv";
     
     static ArrayStats centerstat;
     static ArrayStats posstat;
@@ -149,42 +147,37 @@ public class ArrayOpsTest {
             name = new File(url.toURI());
             infile = new TextFileReader( name );
             filecontents = infile.readInTextFile();
-//            System.out.println("dislen: " + filecontents.length);
             disp = new double[filecontents.length];
             for (String num : filecontents) {
                 disp[next++] = Double.parseDouble(num);
+            }
+        }
+        next = 0;
+        url = ArrayOpsTest.class.getResource( velDiffile );
+        if (url != null) {
+            name = new File(url.toURI());
+            infile = new TextFileReader( name );
+            filecontents = infile.readInTextFile();
+            velForDiff = new double[filecontents.length];
+            for (String num : filecontents) {
+                velForDiff[next++] = Double.parseDouble(num);
+            }
+        }
+        next = 0;
+        url = ArrayOpsTest.class.getResource( accDiffile );
+        if (url != null) {
+            name = new File(url.toURI());
+            infile = new TextFileReader( name );
+            filecontents = infile.readInTextFile();
+            accelForDiff = new double[filecontents.length];
+            for (String num : filecontents) {
+                accelForDiff[next++] = Double.parseDouble(num);
             }
         }
     }
     
      @Test
      public void testRemoveValue() throws IOException {
-//        TextFileWriter writeout = new TextFileWriter(dirname, "time.txt",time);
-//        writeout.writeOutArray();
-//        writeout = new TextFileWriter(dirname, "linecentered.txt",linecentered);
-//        writeout.writeOutArray();
-//        writeout = new TextFileWriter(dirname, "linepos.txt",linepos);
-//        writeout.writeOutArray();
-//        writeout = new TextFileWriter(dirname, "lineneg.txt",lineneg);
-//        writeout.writeOutArray();
-//        writeout = new TextFileWriter(dirname, "lineinte.txt",lineinte);
-//        writeout.writeOutArray();
-//        writeout = new TextFileWriter(dirname, "poly.txt",poly);
-//        writeout.writeOutArray();
-//        writeout = new TextFileWriter(dirname, "polysin.txt",polysin);
-//        writeout.writeOutArray();
-//        writeout = new TextFileWriter(dirname, "polypos.txt",polypos);
-//        writeout.writeOutArray();
-//        writeout = new TextFileWriter(dirname, "polyline.txt",polyline);
-//        writeout.writeOutArray();
-//        writeout = new TextFileWriter(dirname, "zeroconstant.txt",zeroconstant);
-//        writeout.writeOutArray();
-//        writeout = new TextFileWriter(dirname, "posconstant.txt",posconstant);
-//        writeout.writeOutArray();
-//        writeout = new TextFileWriter(dirname, "negconstant.txt",negconstant);
-//        writeout.writeOutArray();
-//        writeout = new TextFileWriter(dirname, "poly3order.txt",poly3order);
-//        writeout.writeOutArray();
 
         double[] test = new double[LENGTH];
          System.arraycopy(zeroconstant, 0, test, 0, LENGTH);
@@ -274,16 +267,16 @@ public class ArrayOpsTest {
          double[] test = new double[0];
          double[] test1 = new double[0];
          double[] test2 = null;
-         org.junit.Assert.assertArrayEquals(lineinte, ArrayOps.Differentiate(poly, STEP), BIG_EPSILON);
-         org.junit.Assert.assertArrayEquals(posconstant, ArrayOps.Differentiate(lineinte, STEP), EPSILON);
-         org.junit.Assert.assertArrayEquals(test, ArrayOps.Differentiate(lineinte, 0.0), EPSILON);
-         org.junit.Assert.assertArrayEquals(test1, ArrayOps.Differentiate(test, STEP), EPSILON);
-         org.junit.Assert.assertArrayEquals(test1, ArrayOps.Differentiate(test2, STEP), EPSILON);
-         org.junit.Assert.assertArrayEquals(poly, ArrayOps.Integrate(lineinte, STEP,0.0), EPSILON);
-         org.junit.Assert.assertArrayEquals(lineinte, ArrayOps.Integrate(posconstant, STEP,0.0), EPSILON);
-         org.junit.Assert.assertArrayEquals(test, ArrayOps.Integrate(lineinte, 0.0,0.0), EPSILON);
-         org.junit.Assert.assertArrayEquals(test1, ArrayOps.Integrate(test, STEP,0.0), EPSILON);
-         org.junit.Assert.assertArrayEquals(test1, ArrayOps.Integrate(test2, STEP,0.0), EPSILON);
+         org.junit.Assert.assertArrayEquals(lineinte, ArrayOps.differentiate(poly, STEP), BIG_EPSILON);
+         org.junit.Assert.assertArrayEquals(posconstant, ArrayOps.differentiate(lineinte, STEP), EPSILON);
+         org.junit.Assert.assertArrayEquals(test, ArrayOps.differentiate(lineinte, 0.0), EPSILON);
+         org.junit.Assert.assertArrayEquals(test1, ArrayOps.differentiate(test, STEP), EPSILON);
+         org.junit.Assert.assertArrayEquals(test1, ArrayOps.differentiate(test2, STEP), EPSILON);
+         org.junit.Assert.assertArrayEquals(poly, ArrayOps.integrate(lineinte, STEP,0.0), EPSILON);
+         org.junit.Assert.assertArrayEquals(lineinte, ArrayOps.integrate(posconstant, STEP,0.0), EPSILON);
+         org.junit.Assert.assertArrayEquals(test, ArrayOps.integrate(lineinte, 0.0,0.0), EPSILON);
+         org.junit.Assert.assertArrayEquals(test1, ArrayOps.integrate(test, STEP,0.0), EPSILON);
+         org.junit.Assert.assertArrayEquals(test1, ArrayOps.integrate(test2, STEP,0.0), EPSILON);
      }
      @Test
      public void testMakeTimeArray() {
@@ -314,9 +307,10 @@ public class ArrayOpsTest {
          org.junit.Assert.assertEquals(false, result);
      }
      @Test
-     public void testRemovePolynomialTrend() {
+     public void testFindAndRemovePolynomialTrend() {
          double[] coefs;
          double[] test = new double[LENGTH];
+         double[] empty = new double[0];
          boolean result;
          System.arraycopy(poly, 0, test, 0, LENGTH);
          coefs = ArrayOps.findPolynomialTrend(test, 2, STEP);
@@ -330,21 +324,48 @@ public class ArrayOpsTest {
          org.junit.Assert.assertArrayEquals(zeroconstant, test, EPSILON);
          org.junit.Assert.assertEquals(true, result);
          
+         //time step = 0
          result = ArrayOps.removePolynomialTrend(test, coefs, 0.0);
          org.junit.Assert.assertEquals(false, result);
+         org.junit.Assert.assertArrayEquals(empty,ArrayOps.findPolynomialTrend(poly, 2, 0.0), EPSILON);
+         //no input array
          test = null;
          result = ArrayOps.removePolynomialTrend(test, coefs, STEP);
          org.junit.Assert.assertEquals(false, result);
+         org.junit.Assert.assertArrayEquals(empty,ArrayOps.findPolynomialTrend(test, 2, 2.0), EPSILON);
+         //zero length input array
          test = new double[0];
          result = ArrayOps.removePolynomialTrend(test, coefs, STEP);
          org.junit.Assert.assertEquals(false, result);
+         org.junit.Assert.assertArrayEquals(empty,ArrayOps.findPolynomialTrend(test, 2, 2.0), EPSILON);
+         //no coefs for remove trend
          test = new double[LENGTH];
          coefs = null;
          result = ArrayOps.removePolynomialTrend(test, coefs, STEP);
          org.junit.Assert.assertEquals(false, result);
+         //zero length coefs array for remove trend
          coefs = new double[0];
          result = ArrayOps.removePolynomialTrend(test, coefs, STEP);
          org.junit.Assert.assertEquals(false, result);
+         //invalid poly order for find trend
+         org.junit.Assert.assertArrayEquals(empty,ArrayOps.findPolynomialTrend(poly, 0, 2.0), EPSILON);
+     }
+     @Test
+     public void testFindTrendWithBestFit() {
+         double[] coefs;
+         double[] test;
+         double[] empty = new double[0];
+         coefs = ArrayOps.findPolynomialTrend(poly, 2, STEP);
+         org.junit.Assert.assertArrayEquals(coefs, ArrayOps.findTrendWithBestFit(poly, STEP), EPSILON);
+
+         coefs = ArrayOps.findPolynomialTrend(linecentered, 1, STEP);
+         org.junit.Assert.assertArrayEquals(coefs, ArrayOps.findTrendWithBestFit(linecentered, STEP), EPSILON);
+
+         org.junit.Assert.assertArrayEquals(empty, ArrayOps.findTrendWithBestFit(poly, 0.0), EPSILON);
+         test = new double[0];
+         org.junit.Assert.assertArrayEquals(empty, ArrayOps.findTrendWithBestFit(test, 2.0), EPSILON);
+         test = null;
+         org.junit.Assert.assertArrayEquals(empty, ArrayOps.findTrendWithBestFit(test, 2.0), EPSILON);
      }
      @Test
      public void testfindSubsetMean() {
@@ -412,6 +433,25 @@ public class ArrayOpsTest {
          org.junit.Assert.assertEquals(-2,ArrayOps.findZeroCrossing(posconstant, 800, 0));
      }
      @Test
+     public void testCorrectForZeroInitialEstimate(){
+         double[] test = new double[LENGTH];
+         double[] fix = new double[LENGTH];
+         for (int i=0; i<LENGTH; i++) {
+             if (i < 10) {
+                 test[i] = posconstant[i] * -1;
+                 fix[i] = test[i] + 2.0;
+             } else {
+                 test[i] = posconstant[i];
+                 fix[i] = test[i] + 2.0;
+             }
+         }
+         ArrayOps.correctForZeroInitialEstimate( test, 12 );
+         org.junit.Assert.assertArrayEquals(test,fix,SM_EPSILON);
+         System.arraycopy(posconstant, 0, test, 0, LENGTH);
+         ArrayOps.correctForZeroInitialEstimate( test, 12 );
+         org.junit.Assert.assertArrayEquals(test,posconstant,SM_EPSILON);
+     }
+     @Test
      public void testRemoveTrendWithBestFit() {
          double[] test1 = null;
          double[] test2 = new double[0];
@@ -430,11 +470,23 @@ public class ArrayOpsTest {
      }
      @Test
      public void testFindLinearTrend() {
+         double[] test1 = null;
+         double[] test2 = new double[0];
+         double[] errreturn = new double[0];
+         org.junit.Assert.assertArrayEquals(errreturn, ArrayOps.findLinearTrend(test1, 2.0),EPSILON);
+         org.junit.Assert.assertArrayEquals(errreturn, ArrayOps.findLinearTrend(test2, 2.0),EPSILON);
+         org.junit.Assert.assertArrayEquals(errreturn, ArrayOps.findLinearTrend(linecentered, 0.0),EPSILON);
          org.junit.Assert.assertArrayEquals(ArrayOps.findLinearTrend(polyline,STEP),linepos,EPSILON);
      }
      @Test
+     public void testCentralDiff() {
+         double[] empty = new double[0];
+         org.junit.Assert.assertArrayEquals(accelForDiff, ArrayOps.centralDiff(velForDiff, 0.01, 5) ,SM_EPSILON);
+         org.junit.Assert.assertArrayEquals(empty, ArrayOps.centralDiff(velForDiff, 0.01, 6) ,SM_EPSILON);
+     }
+     @Test
      public void testCompatibility() {
-         org.junit.Assert.assertArrayEquals(ArrayOps.Integrate(accel,0.005, 0.0007705),vel,SM_EPSILON);
-         org.junit.Assert.assertArrayEquals(ArrayOps.Integrate(vel,0.005, 0.00),disp,SM_EPSILON);
+         org.junit.Assert.assertArrayEquals(ArrayOps.integrate(accel,0.005, 0.0007705),vel,SM_EPSILON);
+         org.junit.Assert.assertArrayEquals(ArrayOps.integrate(vel,0.005, 0.00),disp,SM_EPSILON);
      }
 }

@@ -15,16 +15,11 @@
 package PRISMtest.Package;
 
 import SmProcessing.AICEventDetect;
-import SmProcessing.ArrayStats;
 import SmUtilities.TextFileReader;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import static org.junit.Assert.*;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -35,16 +30,16 @@ import org.junit.Test;
 public class AICEventDetectTest {
     final double EPSILON = 0.001;
     AICEventDetect aicPeak;
-    AICEventDetect aicWhole;
+//    AICEventDetect aicWhole;
     
-    static final String picktest = "/PRISMtest/Data/15481673.AZ.FRD.HNN.txt";
+    static String picktest = "/PRISMtest/Data/15481673.AZ.FRD.HNN.txt";
     static String[] fileContents;
     
     static double[] hnn;    
     
     public AICEventDetectTest() {
         aicPeak = new AICEventDetect();
-        aicWhole = new AICEventDetect();
+//        aicWhole = new AICEventDetect();
     }
     
     @BeforeClass
@@ -67,7 +62,25 @@ public class AICEventDetectTest {
     
      @Test
      public void checkEventDetection() {
+         double[] empty = new double[0];
+         double[] test = null;
+         String test2 = null;
          int pick1 = aicPeak.calculateIndex(hnn, "topeak");
          org.junit.Assert.assertEquals(1472, pick1);
+         org.junit.Assert.assertEquals(1472,aicPeak.getIndex());
+         
+         org.junit.Assert.assertEquals(972,aicPeak.applyBuffer(5, 0.01));
+         org.junit.Assert.assertEquals(972,aicPeak.getBufferedIndex());
+         org.junit.Assert.assertEquals(0,aicPeak.applyBuffer(15, 0.01));
+         org.junit.Assert.assertEquals(-1,aicPeak.applyBuffer(5, 0.0));
+         
+         org.junit.Assert.assertEquals(-1, aicPeak.calculateIndex(empty, "topeak"));
+         org.junit.Assert.assertEquals(-1, aicPeak.calculateIndex(test, "topeak"));
+         
+         org.junit.Assert.assertEquals(1472, aicPeak.calculateIndex(hnn, ""));
+         org.junit.Assert.assertEquals(1472, aicPeak.calculateIndex(hnn, "nnn"));
+         org.junit.Assert.assertEquals(1472, aicPeak.calculateIndex(hnn, test2));
+         
+         
      }
 }

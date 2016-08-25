@@ -75,8 +75,8 @@ public class FilterAndIntegrateProcess {
         displace = new double[accel.length];
         
         // Integrate padded acceleration to velocity and displacement and unpad
-        paddedvelocity = ArrayOps.Integrate( paddedaccel, dtime, 0.0);
-        paddeddisplace = ArrayOps.Integrate( paddedvelocity, dtime, 0.0);
+        paddedvelocity = ArrayOps.integrate( paddedaccel, dtime, 0.0);
+        paddeddisplace = ArrayOps.integrate( paddedvelocity, dtime, 0.0);
         System.arraycopy(paddedvelocity, filter.getPadLength(), velocity, 0, velocity.length);
         System.arraycopy(paddeddisplace, filter.getPadLength(), displace, 0, displace.length);
         initialVel = velocity[0];

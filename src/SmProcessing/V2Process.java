@@ -444,7 +444,6 @@ public class V2Process {
         errorlog.add(String.format("time per sample in sec %4.3f",dtime));
         errorlog.add(String.format("sample rate (samp/sec): %4.1f",samplerate));
         errorlog.add(String.format("length of acceleration array: %d",arlen));
-        errorlog.add("Event detection: remove linear trend, filter, event onset detection");
     }
     /**
      * Writes out the error log to file
@@ -467,8 +466,8 @@ public class V2Process {
      * @throws IOException if unable to write to the debug file
      */
     private boolean checkOnsetStatusAndLog( int pickInd, int startInd, double tapused) throws IOException{
-        errorlog.add(String.format("filtering before event onset detection, taperlength: %8.3f", 
-                                                        tapused));
+        errorlog.add(String.format("Filtering before event onset detection, taperlength: %8.3f", 
+                                                        (tapused/2.0)));
         if (emethod == EventOnsetType.PWD) {
             errorlog.add("Event Detection algorithm: PwD method");
         } else {
@@ -511,6 +510,7 @@ public class V2Process {
             stepRec.addBaselineStep(0, inArrayLength*dtime, 0, inArrayLength*dtime,
                     V2DataType.ACC, BaselineType.BESTFIT, CorrectionOrder.MEAN, 0);
         }
+        errorlog.add(String.format("Best fit trend of order %d removed from acceleration", trendRemovalOrder));
         if (writeBaseline) {
             elog.writeOutArray(velocity, V0name.getName() + "_" + channel + "_VelAfterTrendRemovedFromAcc.txt");
             elog.writeOutArray(accel, V0name.getName() + "_" + channel + "_BestFitTrendRemovedAcc.txt");                
@@ -530,8 +530,6 @@ public class V2Process {
                                   Math.abs(qcchecker.getResidualVelocity()), 
                                             qcchecker.getResVelocityQCval()));
             errorlog.add("Adaptive baseline correction beginning");
-        } else {
-            errorlog.add(String.format("Best fit trend of order %d removed from acceleration", trendRemovalOrder));
         }
     }
     /**
@@ -549,7 +547,7 @@ public class V2Process {
     /**
      * Logs the results of the 2nd QC tests in the error log
      */
-    public void logFailed2ndQCstats(){
+    private void logFailed2ndQCstats(){
         errorlog.add("Final QC failed - V2 processing unsuccessful:");
         errorlog.add(String.format("   initial velocity: %f, limit %f",
                                     Math.abs(qcchecker.getInitialVelocity()),
@@ -564,7 +562,7 @@ public class V2Process {
     /**
      * Logs the final V2process status in the error log
      */
-    public void logFinalStats() {
+    private void logFinalStats() {
         errorlog.add("V2process: exit status = " + procStatus);
         errorlog.add(String.format("Peak Velocity: %f",VpeakVal));
     }
@@ -617,42 +615,46 @@ public class V2Process {
         ABCpoly2 = (int)goodrun[7];
         ABCbreak1 = (int)goodrun[4];
         ABCbreak2 = (int)goodrun[5];
+        
+        //For each step here, record the order minus 1 and set the data type
+        //to acceleration instead of velocity.  The values returned from ABC
+        //record the orders of the velocity baseline determination.
         if (ABCpoly1 == 1) {
             stepRec.addBaselineStep(0.0, (ABCbreak1*dtime),
                                     0.0, (ABCbreak1*dtime),
-                                    V2DataType.VEL, BaselineType.ABC,
-                                    CorrectionOrder.ORDER1,1);
+                                    V2DataType.ACC, BaselineType.ABC,
+                                    CorrectionOrder.MEAN,1);
         } else {
             stepRec.addBaselineStep(0.0, (ABCbreak1*dtime),
                                     0.0, (ABCbreak1*dtime),
-                                    V2DataType.VEL, BaselineType.ABC,
-                                    CorrectionOrder.ORDER2,1);
+                                    V2DataType.ACC, BaselineType.ABC,
+                                    CorrectionOrder.ORDER1,1);
         }
         stepRec.addBaselineStep((ABCbreak1*dtime), (ABCbreak2*dtime),
                                 (ABCbreak1*dtime), (ABCbreak2*dtime),
-                                V2DataType.VEL, BaselineType.ABC,
-                                CorrectionOrder.SPLINE, 2);
+                                V2DataType.ACC, BaselineType.ABC,
+                                CorrectionOrder.ORDER2, 2);
         if (ABCpoly2 == 1) {
             stepRec.addBaselineStep((ABCbreak2*dtime), (velocity.length*dtime),
                                     (ABCbreak2*dtime), (velocity.length*dtime),
-                                    V2DataType.VEL, BaselineType.ABC,
-                                    CorrectionOrder.ORDER1, 3);
+                                    V2DataType.ACC, BaselineType.ABC,
+                                    CorrectionOrder.MEAN, 3);
         } else if (ABCpoly2 == 2) {
             stepRec.addBaselineStep((ABCbreak2*dtime), (velocity.length*dtime),
                                     (ABCbreak2*dtime), (velocity.length*dtime),
-                                    V2DataType.VEL, BaselineType.ABC,
-                                    CorrectionOrder.ORDER2, 3);
+                                    V2DataType.ACC, BaselineType.ABC,
+                                    CorrectionOrder.ORDER1, 3);
         } else {
             stepRec.addBaselineStep((ABCbreak2*dtime), (velocity.length*dtime),
                                     (ABCbreak2*dtime), (velocity.length*dtime),
-                                    V2DataType.VEL, BaselineType.ABC,
-                                    CorrectionOrder.ORDER3, 3);
+                                    V2DataType.ACC, BaselineType.ABC,
+                                    CorrectionOrder.ORDER2, 3);
         }
         errorlog.add("    length of ABC params: " + ABCnumparams);
         errorlog.add("    ABC: final status: " + procStatus.name());
         errorlog.add("    ABC: rank: " + ABCwinrank);
-        errorlog.add("    ABC: poly1 order: " + ABCpoly1);
-        errorlog.add("    ABC: poly2 order: " + ABCpoly2);
+        errorlog.add("    ABC: poly1 order: " + (ABCpoly1-1));
+        errorlog.add("    ABC: poly2 order: " + (ABCpoly2-1));
         errorlog.add("    ABC: start: " + ABCbreak1 + "  stop: " + ABCbreak2);
         errorlog.add(String.format("    ABC: velstart: %f,  limit %f", 
                         QCvelinitial,qcchecker.getInitVelocityQCval()));
@@ -661,9 +663,9 @@ public class V2Process {
         errorlog.add(String.format("    ABC: disend: %f,  limit %f",QCdisresidual, 
                                         qcchecker.getResDisplaceQCval()));
         errorlog.add(String.format("    ABC: calc. taperlength (zero crossing): %f", 
-                                                    calculated_taper));
+                                                    (calculated_taper/2.0)));
         errorlog.add(String.format("    ABC: config taperlength (end): %f", 
-                                                    config_taper));
+                                                    (config_taper/2.0)));
         return true;
     }
     /**
@@ -673,10 +675,10 @@ public class V2Process {
     private void makeDebugCSV() throws IOException {
         String[] headerline = {"EVENT","MAG","NAME","CHANNEL",
             "ARRAY LENGTH","SAMP INTERVAL(SEC)","PICK INDEX","PICK TIME(SEC)",
-            "PEAK VEL(CM/SEC)","START TAPER (SEC)","END TAPER (SEC)","PRE-EVENT MEAN (CM/SEC/SEC)","PEAK ACC(G)",
-            "STRONG MOTION","EXIT STATUS","VEL INITIAL(CM/SEC)",
+            "PEAK VEL(CM/SEC)","START TAPER (SEC)","END TAPER (SEC)","PRE-EVENT MEAN (CM/SEC/SEC)","1ST BASELINE CORRECTION ORDER",
+            "PEAK ACC(G)","STRONG MOTION","EXIT STATUS","VEL INITIAL(CM/SEC)",
             "VEL RESIDUAL(CM/SEC)","DIS RESIDUAL(CM)","BASELINE CORRECTION",
-            "POLY1","ABC POLY2","ABC 1ST BREAK","ABC 2ND BREAK",
+            "ABC POLY1","ABC POLY2","ABC 1ST BREAK","ABC 2ND BREAK",
             "ABC PARM LENGTH","ABC WIN RANK"};
         ArrayList<String> data = new ArrayList<>();
         data.add(eventID);                                  //event id
@@ -691,6 +693,7 @@ public class V2Process {
         data.add(String.format("%8.3f",(calculated_taper/2.0))); //filter taperlength
         data.add(String.format("%8.3f",(config_taper/2.0))); //filter taperlength
         data.add(String.format("%8.6f",preEventMean));      //preevent mean removed
+        data.add(String.format("%d",trendRemovalOrder));  //order of 1st baseline correction
         data.add(String.format("%5.4f",ApeakVal*TO_G_CONVERSION)); //peak acc in g
         if (strongMotion) {
             data.add("YES");
@@ -705,16 +708,14 @@ public class V2Process {
             data.add(String.format("%8.6f",QCvelresidual));    //QC value residual velocity
             data.add(String.format("%8.6f",QCdisresidual));    //QC value residual displace
             data.add(basetype.name());
-            if (basetype == BaselineType.BESTFIT) {
-                data.add((trendRemovalOrder > 0) ? String.format("%d",trendRemovalOrder) : "");
-            } else {
-                data.add((ABCpoly1 > 0) ? String.format("%d",ABCpoly1) : "");
+            if (basetype == BaselineType.ABC) {
+                data.add(String.format("%d",(ABCpoly1-1)));
+                data.add(String.format("%d",(ABCpoly2-1)));
+                data.add(String.format("%d",ABCbreak1));
+                data.add(String.format("%d",ABCbreak2));
+                data.add(String.format("%d",ABCnumparams));
+                data.add(String.format("%d",ABCwinrank));
             }
-            data.add((ABCpoly2 > 0) ? String.format("%d",ABCpoly2) : "");
-            data.add((ABCbreak1 > 0) ? String.format("%d",ABCbreak1) : "");
-            data.add((ABCbreak2 > 0) ? String.format("%d",ABCbreak2) : "");
-            data.add((ABCnumparams > 0) ? String.format("%d",ABCnumparams) : "");
-            data.add((ABCwinrank > 0) ? String.format("%d",ABCwinrank) : "");
         }
         elog.writeToCSV(data, headerline, "ParameterLog.csv");
         data.clear();

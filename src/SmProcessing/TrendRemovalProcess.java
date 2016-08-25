@@ -55,9 +55,9 @@ public class TrendRemovalProcess {
             ArrayOps.removeValue(accel, preEventMean);
         }
         //Integrate the acceleration to get velocity, using 0 as first value estimate
-        velocity = ArrayOps.Integrate( accel, dtime, 0.0);
+        velocity = ArrayOps.integrate( accel, dtime, 0.0);
         //Now correct for unknown initial value by removing preevent mean (minus first val.)
-        ArrayOps.CorrectForZeroInitialEstimate( velocity, startIndex );
+        ArrayOps.correctForZeroInitialEstimate( velocity, startIndex );
 
         //Find any linear or 2nd order polynomial trend in velocity
         //get derivative of trend and remove this from acc
@@ -70,7 +70,7 @@ public class TrendRemovalProcess {
         if (!trendSuccess) {
             throw new SmException("Unable to remove best fit differentiated trend from acceleration.");
         } else {
-            velocity = ArrayOps.Integrate(accel, dtime, 0.0);
+            velocity = ArrayOps.integrate(accel, dtime, 0.0);
         }
         return velocity;
     }

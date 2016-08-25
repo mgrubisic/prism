@@ -101,6 +101,10 @@ public class EventOnsetDetection {
      * @return the event onset index
      */
     public int findEventOnset( final double[] accTotal) {
+        if ((accTotal == null) || (accTotal.length == 0)) {
+            eventStart = -1;
+            return eventStart;
+        }
         
         // Find the peak value and use only the array from start to the peak
         // value to look for the p-wave arrival.
@@ -132,7 +136,7 @@ public class EventOnsetDetection {
             Edi[i] = const_C * Math.pow(veloc[i], 2);
         }
         //Viscous damping energy over mass (m^2/sec^2)
-        double[] Edoverm = ArrayOps.Integrate(Edi, dtime, 0.0);
+        double[] Edoverm = ArrayOps.integrate(Edi, dtime, 0.0);
         
         //Spectral viscous damping energy over mass (m^2/sec^2)
         //find largest absolute value in array
@@ -148,7 +152,7 @@ public class EventOnsetDetection {
             EIM[i] = Edoverm[i] / Edoverm_max;
         }
         //Integrand of normalized damping energy (m^2/sec^3)
-        double[] PIM = ArrayOps.Differentiate(EIM, dtime);
+        double[] PIM = ArrayOps.differentiate(EIM, dtime);
 
         // find the most common value in the lower half of the range of PIM.
         // The value returned is the most frequently-occurring

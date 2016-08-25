@@ -164,9 +164,12 @@ public class Prism {
                 }
             }
         } 
+
         catch (SmException err){
             System.err.println(err.getMessage());
         }
+
+
     }
     /**
      * Reads in the configuration file and parses the xml

@@ -260,9 +260,12 @@ public class ButterworthFilter {
     /**
      * This method adds the half cosine taper to the front and back of the array
      * @param array input array to have the taper applied to
-     * @param range the number of elements at the front and back of the array
-     * that the taper should be applied to.  The length of the half cosine taper
+     * @param range the number of elements at the front and back of the array that the
+     * taper should be applied to. The length of the half cosine taper
      * itself is 1/2 of the range.
+     * @param endrange the number of elements at the back of the array that the taper 
+     * should be applied to. The length of the half cosine taper
+     * itself is 1/2 of the end range.
      */
     public void applyCosineTaper( double[] array, int range, int endrange ) {
         //The range is the number of elements at the front and back of the

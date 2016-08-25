@@ -17,15 +17,10 @@ package PRISMtest.Package;
 import SmProcessing.EventOnsetCoefs;
 import SmProcessing.EventOnsetDetection;
 import SmUtilities.TextFileReader;
-import SmUtilities.TextFileWriter;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import static org.junit.Assert.*;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -40,7 +35,7 @@ public class EventOnsetDetectionTest {
     EventOnsetDetection e10;
     EventOnsetDetection e20;
     
-    static final String picktest = "/PRISMtest/Data/15481673.AZ.FRD.HNN.txt";
+    static String picktest = "/PRISMtest/Data/15481673.AZ.FRD.HNN.txt";
     static String[] fileContents;
     
     static double[] hnn;
@@ -93,7 +88,17 @@ public class EventOnsetDetectionTest {
     }
     @Test
     public void check15481673AZFRDHNNOnset() {
+        double[] test;
         int pick = e10.findEventOnset(hnn);
         org.junit.Assert.assertEquals(1649, pick);
+        org.junit.Assert.assertEquals(1649, e10.getEventStart());
+        org.junit.Assert.assertEquals(1149, e10.applyBuffer(5));
+        org.junit.Assert.assertEquals(1149, e10.getBufferedStart());
+        org.junit.Assert.assertEquals(5.0, e10.getBufferLength(),0.001);
+        
+        test = new double[0];
+        org.junit.Assert.assertEquals(-1, e10.findEventOnset(test));
+        test = null;
+        org.junit.Assert.assertEquals(-1, e10.findEventOnset(test));
     }
 }
