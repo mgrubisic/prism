@@ -154,11 +154,11 @@ public class SmQueue {
             if ((V2result == V2Status.GOOD) || (V2result == V2Status.FAILQC)) {
                 //create the V2 components to get the processing results
                 V2acc = new V2Component( CORACC, v1rec );
-                V2acc.buildV2(V2DataType.ACC, v2val);
+                V2acc.buildV2(V2DataType.ACC, v2val, null);
                 V2vel = new V2Component( VELOCITY, v1rec );
-                V2vel.buildV2(V2DataType.VEL, v2val);
+                V2vel.buildV2(V2DataType.VEL, v2val, null);
                 V2dis = new V2Component( DISPLACE, v1rec );
-                V2dis.buildV2(V2DataType.DIS, v2val);
+                V2dis.buildV2(V2DataType.DIS, v2val, null);
                 Vprod.addProduct(V2acc, "V2");
                 Vprod.addProduct(V2vel, "V2");
                 Vprod.addProduct(V2dis, "V2");

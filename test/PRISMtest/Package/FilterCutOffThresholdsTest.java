@@ -16,7 +16,6 @@ package PRISMtest.Package;
 
 import SmConstants.VFileConstants.MagnitudeType;
 import SmProcessing.FilterCutOffThresholds;
-import static org.junit.Assert.*;
 import org.junit.Test;
 
 /**

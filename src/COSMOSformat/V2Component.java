@@ -132,173 +132,6 @@ public class V2Component extends COSMOScontentFormat {
     }
     /**
      * This method builds the V2 component from the V2 process object, picking
-     * up the data array and updating header parameters and format lines.  Once
-     * in this method, the V2Process object is no longer needed and its array
-     * is transferred to the V2Component object.
-     * @param procType ACC, VEL, or DIS for the V2 data type
-     * @param inVvals the V2Process object
-     * @throws SmException if unable to access the header values
-     * @throws FormatException if unable to format the numeric values to text
-     */
-    public void buildV2( V2DataType procType, V2Process inVvals) 
-                                            throws SmException, FormatException {
-        Double epsilon = 0.001;
-        StringBuilder sb = new StringBuilder(MAX_LINE_LENGTH);
-        final double MSEC_TO_SEC = 1e-3;
-        String realformat = "%8.3f";
-        String freqformat = "%5.2f";
-        double time;
-        String unitsname;
-        int unitscode;
-
-        SmTimeFormatter proctime = new SmTimeFormatter();
-        ConfigReader config = ConfigReader.INSTANCE;
-        ProcessStepsRecorder2 stepRec = ProcessStepsRecorder2.INSTANCE;
-        
-        //verify that real header value delta t is defined and valid
-        double delta_t = this.realHeader.getRealValue(DELTA_T);
-        if ((Math.abs(delta_t - this.noRealVal) < epsilon) || (delta_t < 0.0)){
-            throw new SmException("Real header #62, delta t, is invalid: " + 
-                                                                        delta_t);
-        } 
-        //Get the time that the peak value occurred for the given data type
-        double dtime = MSEC_TO_SEC * delta_t;
-        if (procType == V2DataType.ACC) {
-            time = (inVvals.getPeakIndex(V2DataType.ACC)) * dtime;
-            unitsname = inVvals.getDataUnits(V2DataType.ACC);
-            unitscode = inVvals.getDataUnitCode(V2DataType.ACC);
-        } else if (procType == V2DataType.VEL) {
-            time = (inVvals.getPeakIndex(V2DataType.VEL)) * dtime;
-            unitsname = inVvals.getDataUnits(V2DataType.VEL);
-            unitscode = inVvals.getDataUnitCode(V2DataType.VEL);
-        } else {
-            time = (inVvals.getPeakIndex(V2DataType.DIS)) * dtime;
-            unitsname = inVvals.getDataUnits(V2DataType.DIS);
-            unitscode = inVvals.getDataUnitCode(V2DataType.DIS);
-        }
-        //Get the processing agency info from the config. data
-        String agabbrev = config.getConfigValue(PROC_AGENCY_ABBREV);
-        if (agabbrev == null) {
-            agabbrev = DEFAULT_AG_CODE;
-        }
-        String agcode = config.getConfigValue(PROC_AGENCY_CODE);
-        int agency_code = (agcode == null) ? 0 : Integer.parseInt(agcode);
-        
-        //Get the array output format of single column per channel or packed
-        String arrformat = config.getConfigValue(OUT_ARRAY_FORMAT);
-        arrformat = (arrformat == null) ? DEFAULT_ARRAY_STYLE : arrformat;
-        SmArrayStyle packtype = (arrformat.equalsIgnoreCase("singleColumn")) ? 
-                              SmArrayStyle.SINGLE_COLUMN : SmArrayStyle.PACKED;
-        
-        //Get the current processing time
-        String val = proctime.getGMTdateTime();
-        //update values in the text header
-        if (procType == V2DataType.ACC) {
-            this.textHeader[0] = CORACC.concat(this.textHeader[0].substring(END_OF_DATATYPE));
-            this.textHeader[10] = sb.append("Processed:").append(val).append(", ")
-                                .append(agabbrev).append(", Max = ")
-                                .append(String.format(realformat,inVvals.getPeakVal(V2DataType.ACC)))
-                                .append(" ").append(unitsname).append(" at ")
-                                .append(String.format(realformat,time))
-                                .append(" sec").toString();
-        } else if (procType == V2DataType.VEL) {
-            this.textHeader[0] = VELOCITY.concat(this.textHeader[0].substring(END_OF_DATATYPE));
-            this.textHeader[10] = sb.append("Processed:").append(val).append(", ")
-                                .append(agabbrev).append(", Max = ")
-                                .append(String.format(realformat,inVvals.getPeakVal(V2DataType.VEL)))
-                                .append(" ").append(unitsname).append(" at ")
-                                .append(String.format(realformat,time))
-                                .append(" sec").toString();
-        } else {
-            this.textHeader[0] = DISPLACE.concat(this.textHeader[0].substring(END_OF_DATATYPE));
-            this.textHeader[10] = sb.append("Processed:").append(val).append(", ")
-                                .append(agabbrev).append(", Max = ")
-                                .append(String.format(realformat,inVvals.getPeakVal(V2DataType.DIS)))
-                                .append(" ").append(unitsname).append(" at ")
-                                .append(String.format(realformat,time))
-                                .append(" sec").toString();
-        }
-        sb = new StringBuilder(MAX_LINE_LENGTH);
-        this.textHeader[11] = sb.append("Record filtered below ")
-                                .append(String.format(freqformat,inVvals.getLowCut()))
-                                .append(" Hz (periods over ")
-                                .append(String.format(freqformat,(1.0/inVvals.getLowCut())))
-                                .append(" secs), and above ")
-                                .append(String.format(freqformat,inVvals.getHighCut()))
-                                .append(" Hz")
-                                .toString();
-        
-        //transfer the data array and set all array values
-        V2Data.setFieldWidth(REAL_FIELDWIDTH_V2);
-        V2Data.setPrecision(REAL_PRECISION_V2);
-        V2Data.setDisplayType("E");
-        
-        if (procType == V2DataType.ACC) {
-            V2Data.setRealArray(inVvals.getV2Array(V2DataType.ACC));
-            V2Data.setNumVals(inVvals.getV2ArrayLength(V2DataType.ACC));
-            V2Data.buildArrayParams( packtype );
-            this.buildNewDataFormatLine(unitsname, unitscode, "acceleration");
-        } else if (procType == V2DataType.VEL) {
-            V2Data.setRealArray(inVvals.getV2Array(V2DataType.VEL));
-            V2Data.setNumVals(inVvals.getV2ArrayLength(V2DataType.VEL));
-            this.realHeader.setRealValue(INITIAL_VELOCITY_VAL, V2Data.getRealValue(0));
-            V2Data.buildArrayParams( packtype );
-            this.buildNewDataFormatLine(unitsname, unitscode, "velocity    ");
-        }else {
-            V2Data.setRealArray(inVvals.getV2Array(V2DataType.DIS));
-            V2Data.setNumVals(inVvals.getV2ArrayLength(V2DataType.DIS));
-            this.realHeader.setRealValue(INITIAL_DISPLACE_VAL, V2Data.getRealValue(0));            
-            V2Data.buildArrayParams( packtype );
-            this.buildNewDataFormatLine(unitsname, unitscode, "displacement");            
-        }
-        
-        //update the headers and end-of-data line with the V2 values
-        this.intHeader.setIntValue(PROCESSING_STAGE_INDEX, V2_STAGE);
-        this.realHeader.setRealValue(PEAK_VAL_TIME, time);
-        this.intHeader.setIntValue(V_UNITS_INDEX, unitscode);
-        this.realHeader.setRealValue(SCALING_FACTOR, FROM_G_CONVERSION);
-        this.intHeader.setIntValue(LOW_FREQ_FILTER_TYPE, BUTTER_A_CODE);
-        this.intHeader.setIntValue(HIGH_FREQ_FILTER_TYPE, BUTTER_A_CODE);
-        this.realHeader.setRealValue(LOW_FREQ_CORNER, inVvals.getLowCut());
-        this.realHeader.setRealValue(HIGH_FREQ_CORNER, inVvals.getHighCut());
-        this.intHeader.setIntValue(FILTER_DOMAIN_FLAG, TIME_DOMAIN);
-        this.realHeader.setRealValue(INITIAL_VELOCITY_VAL, inVvals.getInitialVelocity());
-        this.realHeader.setRealValue(INITIAL_DISPLACE_VAL, inVvals.getInitialDisplace());
-        this.realHeader.setRealValue(BRACKETED_DURATION, inVvals.getBracketedDuration());
-        this.realHeader.setRealValue(DURATION_INTERVAL, inVvals.getDurationInterval());
-        this.realHeader.setRealValue(CUMULATIVE_ABS_VEL, inVvals.getCumulativeAbsVelocity());
-        //Housner intensity is calculated during V3 processing and appears in V3 product
-        this.realHeader.setRealValue(RMS_ACCELERATION, inVvals.getRMSacceleration());
-        this.realHeader.setRealValue(ARIAS_INTENSITY, inVvals.getAriasIntensity());
-        
-        this.endOfData = this.parentV1.endOfData;
-        if (procType == V2DataType.ACC) {
-            this.intHeader.setIntValue(DATA_PHYSICAL_PARAM_CODE, ACC_PARM_CODE);
-            this.realHeader.setRealValue(PEAK_VAL, inVvals.getPeakVal(V2DataType.ACC));
-            this.realHeader.setRealValue(AVG_VAL, inVvals.getAvgVal(V2DataType.ACC));
-            this.updateEndOfDataLine(CORACC, this.getChannel());
-        } else if (procType == V2DataType.VEL) {
-            this.intHeader.setIntValue(DATA_PHYSICAL_PARAM_CODE, VEL_PARM_CODE);
-            this.realHeader.setRealValue(PEAK_VAL, inVvals.getPeakVal(V2DataType.VEL));
-            this.realHeader.setRealValue(AVG_VAL, inVvals.getAvgVal(V2DataType.VEL));
-            this.updateEndOfDataLine(VELOCITY, this.getChannel());
-        } else {
-            this.intHeader.setIntValue(DATA_PHYSICAL_PARAM_CODE, DIS_ABS_PARM_CODE);
-            this.realHeader.setRealValue(PEAK_VAL, inVvals.getPeakVal(V2DataType.DIS));
-            this.realHeader.setRealValue(AVG_VAL, inVvals.getAvgVal(V2DataType.DIS));            
-            this.updateEndOfDataLine(DISPLACE, this.getChannel());
-        }
-        //Update the comments with processing steps, but only if it passed
-        // the QA test.
-        if (inVvals.getQCStatus() == V2Status.GOOD) {
-            ArrayList<String> psteps = stepRec.formatSteps();
-            this.comments = updateComments(this.comments, psteps);
-            psteps.clear();
-        }
-    }
-    
-    /**
-     * This method builds the V2 component from the V2 process object, picking
      * up the data array and updating header parameters and format lines. Once
      * in this method, the V2Process object is no longer needed and its array
      * is transferred to the V2Component object. Use this method when processing
@@ -332,14 +165,21 @@ public class V2Component extends COSMOScontentFormat {
         SmTimeFormatter proctime = new SmTimeFormatter();
         ConfigReader config = ConfigReader.INSTANCE;
         
-        //verify that real header value delta t is defined and valid
-        double delta_t = this.realHeader.getRealValue(DELTA_T);
-        if ((Math.abs(delta_t - this.noRealVal) < epsilon) || (delta_t < 0.0)) {
-            throw new SmException("Real header #62, delta t, is invalid: " + delta_t);
-        } 
+        double delta_t;
+        double dtime;
+        if (inVvals.getResampleIndicator()) {
+            dtime = 1.0 / inVvals.getSampleRate();
+            delta_t = dtime * (1.0 / MSEC_TO_SEC);
+        } else {
+            delta_t = this.realHeader.getRealValue(DELTA_T);
+            if ((Math.abs(delta_t - this.noRealVal) < epsilon) || (delta_t < 0.0)){
+                throw new SmException("Real header #62, delta t, is invalid: " + 
+                                                                            delta_t);
+            }
+            dtime = MSEC_TO_SEC * delta_t;
+        }
         
         //Get the time that the peak value occurred for the given data type
-        double dtime = MSEC_TO_SEC * delta_t;
         if (procType == V2DataType.ACC) {
             time = (inVvals.getPeakIndex(V2DataType.ACC)) * dtime;
             unitsname = inVvals.getDataUnits(V2DataType.ACC);
@@ -416,22 +256,25 @@ public class V2Component extends COSMOScontentFormat {
             V2Data.setRealArray(inVvals.getV2Array(V2DataType.ACC));
             V2Data.setNumVals(inVvals.getV2ArrayLength(V2DataType.ACC));
             V2Data.buildArrayParams( packtype );
-            this.buildNewDataFormatLine(unitsname, unitscode, "acceleration");
+            this.buildNewDataFormatLine(unitsname, unitscode, "acceleration", dtime);
         } else if (procType == V2DataType.VEL) {
             V2Data.setRealArray(inVvals.getV2Array(V2DataType.VEL));
             V2Data.setNumVals(inVvals.getV2ArrayLength(V2DataType.VEL));
             this.realHeader.setRealValue(INITIAL_VELOCITY_VAL, V2Data.getRealValue(0));
             V2Data.buildArrayParams( packtype );
-            this.buildNewDataFormatLine(unitsname, unitscode, "velocity    ");
+            this.buildNewDataFormatLine(unitsname, unitscode, "velocity    ", dtime);
         }else {
             V2Data.setRealArray(inVvals.getV2Array(V2DataType.DIS));
             V2Data.setNumVals(inVvals.getV2ArrayLength(V2DataType.DIS));
             this.realHeader.setRealValue(INITIAL_DISPLACE_VAL, V2Data.getRealValue(0));            
             V2Data.buildArrayParams( packtype );
-            this.buildNewDataFormatLine(unitsname, unitscode, "displacement");            
+            this.buildNewDataFormatLine(unitsname, unitscode, "displacement", dtime);            
         }
         
         //update the headers and end-of-data line with the V2 values
+        if (inVvals.getResampleIndicator()) {
+            this.realHeader.setRealValue(DELTA_T, delta_t);
+        }
         this.intHeader.setIntValue(PROCESSING_STAGE_INDEX, V2_STAGE);
         this.realHeader.setRealValue(PEAK_VAL_TIME, time);
         this.intHeader.setIntValue(V_UNITS_INDEX, unitscode);
@@ -469,8 +312,17 @@ public class V2Component extends COSMOScontentFormat {
             this.updateEndOfDataLine(DISPLACE, this.getChannel());
         }
         
-        //Update the comments.
-        this.comments = updateComments(this.comments, processSteps);
+        //Update the comments with processing steps
+        if (processSteps != null) {
+            this.comments = updateComments(this.comments, processSteps);
+        } else {
+            if (inVvals.getQCStatus() == V2Status.GOOD) {
+                ProcessStepsRecorder2 stepRec = ProcessStepsRecorder2.INSTANCE;
+                ArrayList<String> psteps = stepRec.formatSteps();
+                this.comments = updateComments(this.comments, psteps);
+                psteps.clear();
+            }
+        }
     }
     
     /**
@@ -480,15 +332,15 @@ public class V2Component extends COSMOScontentFormat {
      * @param units the numeric code for the type of units, COSMOS table 2
      * @param unitscode code containing the type of units (cm, cm/sec, etc.)
      * @param dataType "acceleration", "velocity", or "displacement"
+     * @param timestep the time in seconds between samples
      * @throws SmException if unable to access values in the headers
      */
     public void buildNewDataFormatLine(String units, int unitscode, 
-                                        String dataType) throws SmException {
+                                        String dataType, double timestep) throws SmException {
         //calculate the time by multiplying the number of data values by delta t
         String line;
-        double deltat = this.getRealHeaderValue(DELTA_T);
         int numvals = V2Data.getNumVals();
-        double calcTime = deltat * numvals * MSEC_TO_SEC;
+        double calcTime = timestep * numvals;
         String timeSec = Integer.toString((int)calcTime);
         line = String.format("%1$8s %2$13s pts, approx %3$4s secs, units=%4$7s(%5$02d), Format=",
                                      String.valueOf(numvals),dataType,

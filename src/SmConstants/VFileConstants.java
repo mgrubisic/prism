@@ -165,6 +165,9 @@ public final class VFileConstants {
     public static final double FROM_G_CONVERSION = 980.665; //cm per sq. sec per g
     public static final double TO_G_CONVERSION = 0.0010197;  //g per cm per sq. sec
     
+    //resampling constant, this is the minimum samples per second limit for no re-sampling
+    public static final int SAMPLING_LIMIT = 200;
+    
     public enum EventOnsetType{ AIC, PWD };
     public enum BaselineType{ BESTFIT, ABC };
     public enum CorrectionType{ AUTO, MANUAL };

@@ -17,7 +17,6 @@ package PRISMtest.Package;
 import SmConstants.VFileConstants;
 import SmUtilities.ProcessStepsRecorder2;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 /**
  *
@@ -26,6 +25,7 @@ import static org.junit.Assert.*;
 public class ProcessStepsRecorderTest {
     String[] test1;
     String[] test2;
+    String[] testresamp;
     String[] empty;
     
     public ProcessStepsRecorderTest() {
@@ -46,6 +46,11 @@ public class ProcessStepsRecorderTest {
         test2[3] = "|<VBLABC1>SF:   0.0000, EF:  12.0000, SA:   0.0000, EA:  12.0000, ORDER:ORDER1";
         test2[4] = "|<VBLABC2>SF:  12.0000, EF:  24.0000, SA:  12.0000, EA:  24.0000, ORDER:SPLINE";
         test2[5] = "|<VBLABC3>SF:  24.0000, EF: 124.0000, SA:  24.0000, EA: 124.0000, ORDER:ORDER3";
+
+        testresamp = new String[3];
+        testresamp[0] = "|<PROCESS> AUTO";
+        testresamp[1] = "|<RESAMPLE> Data resampled to 200.00 samples/sec";
+        testresamp[2] = "|<EONSET> event onset(sec)=  15.3200";
     }
     
     @Test
@@ -96,5 +101,16 @@ public class ProcessStepsRecorderTest {
         String[] result = new String[6];
         result = stepRec.formatSteps().toArray(result);
         org.junit.Assert.assertArrayEquals(test2,result);
+    }
+    @Test
+    public void testRecorderResample() {
+        ProcessStepsRecorder2 stepRec = ProcessStepsRecorder2.INSTANCE;
+        stepRec.clearSteps();
+        stepRec.addCorrectionType(VFileConstants.CorrectionType.AUTO);
+        stepRec.addEventOnset(15.32);
+        stepRec.addResampling(200.00);
+        String[] result = new String[3];
+        result = stepRec.formatSteps().toArray(result);
+        org.junit.Assert.assertArrayEquals(testresamp,result);
     }
 }

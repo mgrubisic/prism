@@ -28,15 +28,16 @@ import org.apache.commons.math3.transform.TransformType;
  * @author jmjones
  */
 public class FFourierTransform {
-    private double[] arrpad;
     private int powerlength;
     private int fftlen;
+    private int cpowerlength;
     /**
      * Constructor just initializes variables.
      */
     public FFourierTransform() {
         this.powerlength = 0;
         this.fftlen = 0;
+        this.cpowerlength = 0;
     }
     /**
      * Performs the FFT calculations by padding the input array to the closest
@@ -47,14 +48,11 @@ public class FFourierTransform {
      * @return the magnitudes of the transformed array
      */
     public double[] calculateFFT( double[] array ) {
-        powerlength = findPower2Length( array.length);
-        arrpad = new double[powerlength];
-        Arrays.fill(arrpad, 0.0);
-        System.arraycopy(array, 0, arrpad, 0, array.length);
+        double[] arrpad = padArray( array );
          
         FastFourierTransformer fft = new FastFourierTransformer( DftNormalization.STANDARD);
         Complex[] transfreq = fft.transform(arrpad, TransformType.FORWARD);
-         
+
         fftlen = (powerlength / 2) + 1;
         double[] mags = new double[fftlen];
         for (int i = 0; i < fftlen; i++) {
@@ -62,6 +60,84 @@ public class FFourierTransform {
                                     Math.pow(transfreq[i].getImaginary(),2));
         }
         return mags;
+    }
+    /**
+     * Performs the FFT calculations by padding the input array AT THE START to the closest
+     * power of 2 gt or eq to the current length, calling the FFT transform method,
+     * and returning the complex array.
+     * @param array input array for calculating the transform
+     * @return the transformed array
+     */
+    public Complex[] calculateFFTComplex( double[] array ) {
+        double[] arrpad = padArrayAtStart( array );
+        FastFourierTransformer fft = new FastFourierTransformer( DftNormalization.STANDARD);
+        Complex[] transfreq = fft.transform(arrpad, TransformType.FORWARD);
+        return transfreq;
+    }
+    /**
+     * Calculates the inverse FFT on an input complex array and returns an array
+     * of doubles containing only the real component of the iFFT result.
+     * @param transfreq array of complex frequency values
+     * @return an array containing the real components of the iFFT result
+     */
+    public double[] inverseFFTComplex( Complex[] transfreq ) {
+        Complex[] transpad = padArrayComplex( transfreq );
+        double[] realvals;
+        FastFourierTransformer fft = new FastFourierTransformer( DftNormalization.STANDARD);
+        Complex[] invvals = fft.transform(transpad, TransformType.INVERSE);
+        realvals = new double[invvals.length];
+        for (int i = 0; i < invvals.length; i++) {
+            realvals[i] = invvals[i].getReal();
+        }
+        return realvals;
+    }
+    /**
+     * pads the incoming array with zeros to the nearest power of 2 length, pads
+     * are added at the end
+     * @param array the input array
+     * @return the padded real array
+     */
+    private double[] padArray( double[] array ) {
+        powerlength = findPower2Length( array.length);
+        if (array.length != powerlength) {
+            double[] arrpad = new double[powerlength];
+            Arrays.fill(arrpad, 0.0);
+            System.arraycopy(array, 0, arrpad, 0, array.length);
+            return arrpad;
+        } else {
+            return array;
+        }
+    }
+    /**
+     * pads the incoming array with zeros to the nearest power of 2 length, pads
+     * are added at the end
+     * @param array the input array
+     * @return the padded real array
+     */
+    private double[] padArrayAtStart( double[] array ) {
+        powerlength = findPower2Length( array.length);
+        int inlen = array.length;
+        if (inlen != powerlength) {
+            double[] arrpad = new double[powerlength];
+            Arrays.fill(arrpad, 0.0);
+            System.arraycopy(array, 0, arrpad, (powerlength-inlen), array.length);
+            return arrpad;
+        } else {
+            return array;
+        }
+    }
+    /**
+     * pads the incoming array with zeros to the nearest power of 2 length, pads
+     * are added at the end
+     * @param array the input array
+     * @return the padded real array
+     */
+    private Complex[] padArrayComplex( Complex[] carray ) {
+        cpowerlength = findPower2Length( carray.length);
+        Complex[] arrpad = new Complex[cpowerlength];
+        Arrays.fill(arrpad, Complex.ZERO);
+        System.arraycopy(carray, 0, arrpad, 0, carray.length);
+        return arrpad;
     }
     /**
      * finds the nearest power of 2 that is greater than or equal to the input value

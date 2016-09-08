@@ -51,7 +51,7 @@
 	applied. -->
 	<BandPassFilterParameters>
 		<BandPassFilterOrder>4</BandPassFilterOrder>
-		<BandPassTaperLength>2.0</BandPassTaperLength>
+		<BandPassTaperLength>3.0</BandPassTaperLength>
 		<BandPassFilterCutoff>
 			<CutoffLow>0.1</CutoffLow>
 			<CutoffHigh>20.0</CutoffHigh>
@@ -87,6 +87,9 @@
 	strong motion flag set.  This value should be a percentage, such as 5 for strong
 	motion records >= 5%g -->
 	<StrongMotionThreshold>5</StrongMotionThreshold>
+	
+	<!-- The differentiation order parameter: values 3,5,7,9 -->
+	<DifferentiationOrder>5</DifferentiationOrder>
 		
 	<!--	Tags for output data array format are SingleColumn and Packed.
 	SingleColumn will write one data value per line, and Packed will pack
@@ -113,5 +116,5 @@
 	processing.
 	-->
 	<DebugToLog>On</DebugToLog>
-	<WriteBaselineFunction>Off</WriteBaselineFunction>
+	<WriteBaselineFunction>On</WriteBaselineFunction>
 </PRISM>

@@ -64,6 +64,7 @@ public class V2Process {
     protected int data_unit_code;
     protected double dtime;
     protected double samplerate;
+    protected boolean needresampling;
     protected double noRealVal;
     protected double lowcutoff;
     protected double highcutoff;
@@ -141,6 +142,7 @@ public class V2Process {
         this.eventID = inV1.getEventID();
         this.logtime = logtime;
         this.basetype = BaselineType.BESTFIT;
+        this.needresampling = false;
         
         //Get config values to cm/sec2 (acc), cm/sec (vel), cm (dis)
         this.acc_unit_code = CMSQSECN;
@@ -412,7 +414,9 @@ public class V2Process {
         return magtype;
     }
     /**
-     * Gets the raw acceleration from the V1 record and converts units if necessary
+     * Gets the raw acceleration from the V1 record and converts units if necessary.
+     * Also checks to see if resampling is needed and if so, resamples, updates
+     * samples per second, and adds a comment to the comment list.
      * @return the raw acceleration array in units of cm per sq. sec
      * @throws SmException if data units code from the configuration file is invalid
      */
@@ -431,7 +435,21 @@ public class V2Process {
         } else {
             throw new SmException("V1 file units are unsupported for processing");
         }
-        return accraw;
+        //check if the sample rate is below the threshold and if it is, resample
+        //to at least 200 sps
+        Resampling resamp = new Resampling();
+        needresampling = resamp.needsResampling((int)samplerate);
+        if (needresampling) {
+            System.out.println("needs resampling");
+            double[] accresamp = resamp.resampleArray(accraw, (int)samplerate);
+            samplerate = resamp.getNewSamplingRate();
+            dtime = 1.0 / samplerate;
+            stepRec.addResampling(samplerate);
+            inArrayLength = accresamp.length;
+            return accresamp;
+        } else {
+            return accraw;
+        }
     }    
     /**
      * Writes general debug information out to the error/debug log at the 
@@ -818,6 +836,17 @@ public class V2Process {
             return this.dis_units;
         }
     }
+    /**
+     * Getter for the flag indicating that the input data array was resampled
+     * @return true if the array was resampled, otherwise false
+     */
+    public boolean getResampleIndicator() { return this.needresampling; }
+    /**
+     * Getter for the sample rate, which is only updated from the value in the
+     * V1 header if the resample indicator is set to true
+     * @return the sample rate
+     */
+    public double getSampleRate() { return this.samplerate; }
     /**
      * Getter for the adjusted filter low cutoff value
      * @return the adjusted low filter cutoff frequency

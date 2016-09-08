@@ -22,7 +22,8 @@ import java.util.ArrayList;
 
 /**
  * This class records the V2 processing steps so they can be included in the
- * comments section of the product files. In addition to event onset time and pre-
+ * comments section of the product files. In addition to event onset time, 
+ * resampling rate (if any) and pre-
  * event mean, this also records the baseline correction functions applied to
  * the trace, identifying them by start time, stop time, and function.  This class
  * is a singleton with a private constructor and is instantiated with
@@ -32,15 +33,19 @@ import java.util.ArrayList;
 public class ProcessStepsRecorder2 {
     private double eventOnsetTime;
     private CorrectionType ctype;
+    private boolean needsResampling;
+    private double samplerate;
     private ArrayList<blcorrect> blist;
     public final static ProcessStepsRecorder2 INSTANCE = new ProcessStepsRecorder2();
     /**
      * Private constructor for the singleton class.
      */
     private ProcessStepsRecorder2(){
-        eventOnsetTime = 0.0;
-        ctype = CorrectionType.AUTO;
-        blist = new ArrayList<>();
+        this.eventOnsetTime = 0.0;
+        this.ctype = CorrectionType.AUTO;
+        this.needsResampling = false;
+        this.samplerate = 0.0;
+        this.blist = new ArrayList<>();
     }
     /**
      * Adds the event onset time to the recorder.
@@ -55,6 +60,14 @@ public class ProcessStepsRecorder2 {
      */
     public void addCorrectionType( CorrectionType intype ) {
         ctype = intype;
+    }
+    /**
+     * Sets a flag that the sampling rate has changed and records the new rate
+     * @param newsamp updated sampling rate
+     */
+    public void addResampling( double newsamp ) {
+        samplerate = newsamp;
+        needsResampling = true;
     }
     /**
      * Adds baseline correction information to the recorder.  Baseline corrections
@@ -84,6 +97,8 @@ public class ProcessStepsRecorder2 {
     public void clearSteps() {
         eventOnsetTime = 0.0;
         ctype = CorrectionType.AUTO;
+        needsResampling = false;
+        samplerate = 0.0;
         blist.clear();
     }
     /**
@@ -97,6 +112,9 @@ public class ProcessStepsRecorder2 {
         String timeformat = "%9.4f";
         ArrayList<String> outlist = new ArrayList<>();
         outlist.add(String.format("|<PROCESS> %1$s", ctype.name()));
+        if (needsResampling) {
+            outlist.add(String.format("|<RESAMPLE> Data resampled to %6.2f samples/sec",samplerate));
+        }
         outlist.add(String.format("|<EONSET> event onset(sec)=%1s",
             String.format(timeformat,eventOnsetTime)));
         for (blcorrect blc : blist) {
