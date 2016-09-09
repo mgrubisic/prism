@@ -116,5 +116,5 @@
 	processing.
 	-->
 	<DebugToLog>On</DebugToLog>
-	<WriteBaselineFunction>On</WriteBaselineFunction>
+	<WriteBaselineFunction>Off</WriteBaselineFunction>
 </PRISM>

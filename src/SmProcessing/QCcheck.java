@@ -107,7 +107,7 @@ public class QCcheck {
         if (window > 0) {
             velwindowstart = ArrayOps.findZeroCrossing(velocity, window, 0);
             velstart = (velwindowstart > 0) ? 
-                    ArrayOps.findSubsetMean(velocity, 0, velwindowstart) : 
+                    ArrayOps.findSubsetMean(velocity, 0, velwindowstart+1) : 
                                                                     velocity[0];
             velwindowend = ArrayOps.findZeroCrossing(velocity, vellen-window-1, vellen-1);
             velend = (velwindowend > 0) ? 

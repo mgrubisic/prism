@@ -65,10 +65,10 @@ public class Resampling {
         //this is the new length of the resampled output array
         int newlen = ylen * factor;
         
-        System.out.println("ylen: " + ylen);
-        System.out.println("fftpadlen: " + fftpadlen);
-        System.out.println("factor: " + factor);
-        System.out.println("newlen: " + newlen);
+//        System.out.println("ylen: " + ylen);
+//        System.out.println("fftpadlen: " + fftpadlen);
+//        System.out.println("factor: " + factor);
+//        System.out.println("newlen: " + newlen);
         
         //calculate the number of padding zeroes and fill the zero array
         padlen = ylen * (factor-1);
@@ -79,11 +79,11 @@ public class Resampling {
 
         //compute fft
         Complex[] zarray = fft.calculateFFTComplex( yarray );
-        System.out.println("length of zarray: " + zarray.length);
-        System.out.println("zlen: " + zlen);
-        System.out.println("padlen: " + padlen);
-        System.out.println("complexlen: " + complexlen);
-        System.out.println("padlen_power2: " + padlenpower2);
+//        System.out.println("length of zarray: " + zarray.length);
+//        System.out.println("zlen: " + zlen);
+//        System.out.println("padlen: " + padlen);
+//        System.out.println("complexlen: " + complexlen);
+//        System.out.println("padlen_power2: " + padlenpower2);
 //        System.out.println("z array");
 //        for (Complex each : zarray) {
 //            System.out.println(each.toString());
@@ -91,7 +91,7 @@ public class Resampling {
         
         //construct a new Fourier spectrum by centering zeroes
         Complex[] zp = new Complex[complexlen];
-        System.out.println("length of zp: " + zp.length);
+//        System.out.println("length of zp: " + zp.length);
         System.arraycopy(zarray, 0, zp, 0, zlen);
         System.arraycopy(zeroes, 0, zp, zlen, padlenpower2);
         System.arraycopy(zarray, zlen, zp, (zlen+padlenpower2), fftpadlen-zlen);

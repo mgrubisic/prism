@@ -19,14 +19,12 @@ package PRISMtest.Package;
 import SmException.SmException;
 import SmProcessing.Resampling;
 import SmUtilities.TextFileReader;
-import SmUtilities.TextFileWriter;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.net.URISyntaxException;
+import java.net.URL;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 /**
  *
@@ -34,51 +32,43 @@ import static org.junit.Assert.*;
  */
 public class ResamplingTest {
 
-    static String yfile = "D:\\PRISM\\source_testbed\\resampling\\test_with_20\\y.txt";
-    static String tongafile = "D:\\PRISM\\source_testbed\\resampling\\Tonga_HNZ_full.txt";
-    static String testloc = "D:\\PRISM\\source_testbed\\test\\resampling";
-    static String chirpfile = "D:\\PRISM\\source_testbed\\resampling\\chirp_100sps_analytical_singlecol.txt";
-    static String chirploc = "D:\\PRISM\\source_testbed\\test\\resampling";
+    static String data = "/PRISMtest/Data/resample_in.txt";
+    static String results = "/PRISMtest/Data/resample_out.txt";
     static double[] yarray;
-    static double[] tonga;
-    static double[] chirp;
+    static double[] yparray;
     static String[] filecontents;
     static int SPS = 100;
+    static double EPSILON = 0.000001;
     
     public ResamplingTest() {
     }
     
     @BeforeClass
-    public static void setUpClass() throws IOException {
-        File name;
+    public static void setUpClass() throws IOException, URISyntaxException {
         TextFileReader infile;
         int next = 0;
+        File name;
         
-        Path pathname = Paths.get(yfile);
-        name = pathname.toFile();
-        infile = new TextFileReader( name );
-        filecontents = infile.readInTextFile();
-        yarray = new double[filecontents.length];
-        for (String num : filecontents) {
-            yarray[next++] = Double.parseDouble(num);
+        URL url = EventOnsetDetectionTest.class.getResource(data);
+        if (url != null) {
+            name = new File(url.toURI());
+            infile = new TextFileReader( name );
+            filecontents = infile.readInTextFile();
+            yarray = new double[filecontents.length];
+            for (String num : filecontents) {
+                yarray[next++] = Double.parseDouble(num);
+            }
         }
         next = 0;
-        pathname = Paths.get(tongafile);
-        name = pathname.toFile();
-        infile = new TextFileReader( name );
-        filecontents = infile.readInTextFile();
-        tonga = new double[filecontents.length];
-        for (String num : filecontents) {
-            tonga[next++] = Double.parseDouble(num);
-        }
-        next = 0;
-        pathname = Paths.get(chirpfile);
-        name = pathname.toFile();
-        infile = new TextFileReader( name );
-        filecontents = infile.readInTextFile();
-        chirp = new double[filecontents.length];
-        for (String num : filecontents) {
-            chirp[next++] = Double.parseDouble(num);
+        url = EventOnsetDetectionTest.class.getResource(results);
+        if (url != null) {
+            name = new File(url.toURI());
+            infile = new TextFileReader( name );
+            filecontents = infile.readInTextFile();
+            yparray = new double[filecontents.length];
+            for (String num : filecontents) {
+                yparray[next++] = Double.parseDouble(num);
+            }
         }
     }
 
@@ -100,28 +90,7 @@ public class ResamplingTest {
     @Test
     public void testResampleArray() throws SmException {
         Resampling resamp = new Resampling();
-        double[] yparray = resamp.resampleArray(yarray, SPS);
-        System.out.println("y array");
-        for (double val: yarray) {
-            System.out.println(val);
-        }
-        System.out.println("yp array");
-        for (double val: yparray) {
-            System.out.println(val);
-        }
-    }
-    @Test
-    public void testResampleArrayV1() throws SmException, IOException {
-        Resampling resamp = new Resampling();
-        double[] tongap = resamp.resampleArray(tonga, SPS);
-        TextFileWriter writeout = new TextFileWriter(testloc, "Tonga_HNZ_200_full.txt",tongap);
-        writeout.writeOutArray();
-    }
-    @Test
-    public void testResampleChirp() throws SmException, IOException {
-        Resampling resamp = new Resampling();
-        double[] chirpout = resamp.resampleArray(chirp, SPS);
-        TextFileWriter writeout = new TextFileWriter(testloc, "chirp_200_2000.txt",chirpout);
-        writeout.writeOutArray();
+        double[] yptest = resamp.resampleArray(yarray, SPS);
+        org.junit.Assert.assertArrayEquals(yptest, yparray, EPSILON);
     }
 }

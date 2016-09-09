@@ -440,7 +440,6 @@ public class V2Process {
         Resampling resamp = new Resampling();
         needresampling = resamp.needsResampling((int)samplerate);
         if (needresampling) {
-            System.out.println("needs resampling");
             double[] accresamp = resamp.resampleArray(accraw, (int)samplerate);
             samplerate = resamp.getNewSamplingRate();
             dtime = 1.0 / samplerate;
