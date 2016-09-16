@@ -17,7 +17,6 @@ package SmProcessing;
 import static SmConstants.VFileConstants.FROM_G_CONVERSION;
 import static SmConstants.VFileConstants.TO_G_CONVERSION;
 import static SmProcessing.ArrayOps.convertArrayUnits;
-import SmUtilities.SmDebugLogger;
 import java.util.Arrays;
 
 /**

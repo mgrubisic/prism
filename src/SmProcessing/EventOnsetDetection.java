@@ -49,6 +49,7 @@ public class EventOnsetDetection {
     private int eventStart;
     private double bufferVal;
     private int bufferedStart;
+    private final int difforder;
     
     /**
      * Constructor gets the event onset coefficients for the input sampling
@@ -63,6 +64,7 @@ public class EventOnsetDetection {
         eventStart = 0;
         bufferVal = 0.0;
         bufferedStart = 0;
+        difforder = 5;
 
         //Get the matrix coefficients for the specific sampling interval
         EventOnsetCoefs pickCoef = new EventOnsetCoefs();
@@ -93,7 +95,7 @@ public class EventOnsetDetection {
     }
     /**
      * Finds the event onset by applying the input acceleration array to the 
-     * model of the ocillator and calculating the damping energy output.  This
+     * model of the oscillator and calculating the damping energy output.  This
      * damping energy is binned by a histogram to determine when its state
      * begins to change from 0.  The nearest zero crossing before this time
      * is determined to be the event onset.
@@ -152,7 +154,7 @@ public class EventOnsetDetection {
             EIM[i] = Edoverm[i] / Edoverm_max;
         }
         //Integrand of normalized damping energy (m^2/sec^3)
-        double[] PIM = ArrayOps.differentiate(EIM, dtime);
+        double[] PIM = ArrayOps.differentiate(EIM, dtime, difforder);
 
         // find the most common value in the lower half of the range of PIM.
         // The value returned is the most frequently-occurring

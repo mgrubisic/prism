@@ -96,7 +96,7 @@ public class V1Process {
      * processing api to convert the counts to physical values and remove the
      * mean.
      */
-    public void processV1Data() throws SmException {
+    public void processV1Data(){
         //Get the units from the config file and calculate conversion factor
         double conv;
         if (data_unit_code == CMSQSECN) {

@@ -236,7 +236,8 @@ public class ArrayOps {
     }
     /**
      * Calculates the approximate derivative of the input array.
-     * This method has been deprecated and replaced with central_diff.
+     * This method has been deprecated and replaced with central_diff.  See the
+     * differentiate method with 3 parameters, which is a wrapper for central_diff.
      * @param array the array to be differentiated
      * @param dt the time step in seconds
      * @return new array containing the approximate derivative of the input points,
@@ -258,6 +259,16 @@ public class ArrayOps {
             calc[i] = calc[i] / (dt + dt);
         }
         return calc;
+    }
+    /**
+     * Wrapper for the new centralDiff algorithm for differentiation.
+     * @param array the input array to be differentiated
+     * @param dt seconds per sample
+     * @param order the differentiation order from the configuration file
+     * @return 
+     */
+    public static double[] differentiate( double[] array, double dt, int order ) {
+        return centralDiff( array, dt, order );
     }
     /**
      * Finds a polynomial trend of specified degree from the input array.  The

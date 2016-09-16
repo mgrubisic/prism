@@ -79,7 +79,7 @@ public class Prism {
                 }
             }
         } else {
-            throw new SmException("Input and output directories must provided.");
+            throw new SmException("Input and output directories must be provided.");
         }
     }
     /**

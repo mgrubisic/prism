@@ -19,7 +19,9 @@ import java.util.Arrays;
 import org.apache.commons.math3.complex.Complex;
 
 /**
- *
+ * The Resampling class re-samples records to a higher sampling rate as needed.
+ * If performs the resampling in the frequency domain, using the fft of the
+ * input array to increase the frequency of the samples.
  * @author jmjones
  */
 public class Resampling {
@@ -30,7 +32,7 @@ public class Resampling {
     private int newrate;
     private final FFourierTransform fft;
     /**
-     * 
+     * The resampling constructor simply initializes variables
      */
     public Resampling() {
         this.ylen = 0;
@@ -40,11 +42,14 @@ public class Resampling {
         this.fft = new FFourierTransform();
     }
     /**
-     * 
-     * @param yarray
-     * @param sps
-     * @return
-     * @throws SmException 
+     * Performs the actual re-sampling by taking the fft of the input array and
+     * padding the complex arrray with zeros in the middle to increase the frequency.
+     * The inverse fft is then calculated and the new values are retrieved from
+     * the real components of the ifft.
+     * @param yarray the input array to be re-sampled
+     * @param sps the initial sampling rate
+     * @return the re-sampled array
+     * @throws SmException if the input sampling rate is invalid
      */
     public double[] resampleArray( double[] yarray, int sps ) throws SmException {
         ylen = yarray.length;
@@ -127,9 +132,10 @@ public class Resampling {
         return yp;
     }
     /**
-     * 
-     * @param sps
-     * @return 
+     * Tests the input sampling rate against a sampling limit.
+     * @param sps the input sampling rate
+     * @return true if the array's sampling rate is below the sampling limit,
+     * false otherwise
      */
     public boolean needsResampling( int sps ) {
         boolean needssampling = false;
@@ -139,9 +145,10 @@ public class Resampling {
         return needssampling;
     }
     /**
-     * 
-     * @param sps
-     * @return 
+     * Calculates a new sampling rate based on the initial rate and the sampling
+     * limit.  Also calculates the factor such that old_rate * factor = new_rate.
+     * @param sps the input sampling rate
+     * @return the new sampling rate
      */
     public int calcNewSamplingRate( int sps ) {
         newrate = -1;
@@ -151,6 +158,14 @@ public class Resampling {
         }
         return newrate;
     }
+    /**
+     * Getter for the factor increase from old rate to new rate
+     * @return the factor, such that old_rate * factor = new_rate
+     */
     public int getFactor() { return factor; }
+    /**
+     * Getter for the new sampling rate.
+     * @return the new sampling rate
+     */
     public int getNewSamplingRate() { return newrate; }
 }

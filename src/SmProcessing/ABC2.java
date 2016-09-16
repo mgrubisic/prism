@@ -401,7 +401,7 @@ public class ABC2 {
         
         //differentiate the baseline function and remove the derivative from
         //acceleration
-        derivbnn = ArrayOps.centralDiff(bnn, dtime, difforder);
+        derivbnn = ArrayOps.differentiate(bnn, dtime, difforder);
         for (int i = 0; i < accin.length; i++) {
             accel[i] = accin[i] - derivbnn[i];
         }
