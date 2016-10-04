@@ -90,10 +90,10 @@ public class EventOnsetDetectionTest {
     public void check15481673AZFRDHNNOnset() {
         double[] test;
         int pick = e10.findEventOnset(hnn);
-        org.junit.Assert.assertEquals(1649, pick);
-        org.junit.Assert.assertEquals(1649, e10.getEventStart());
-        org.junit.Assert.assertEquals(1149, e10.applyBuffer(5));
-        org.junit.Assert.assertEquals(1149, e10.getBufferedStart());
+        org.junit.Assert.assertEquals(1640, pick);
+        org.junit.Assert.assertEquals(1640, e10.getEventStart());
+        org.junit.Assert.assertEquals(1140, e10.applyBuffer(5));
+        org.junit.Assert.assertEquals(1140, e10.getBufferedStart());
         org.junit.Assert.assertEquals(5.0, e10.getBufferLength(),0.001);
         
         test = new double[0];
