@@ -10,6 +10,7 @@
  * http://www.usgs.gov/visual-id/credit_usgs.html#copyright
  * 
  * Date: first release date Feb. 2015
+ *       second release date Oct. 2016
  ******************************************************************************/
 
 package SmProcessing;
