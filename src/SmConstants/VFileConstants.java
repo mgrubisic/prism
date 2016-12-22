@@ -22,7 +22,7 @@ package SmConstants;
 public final class VFileConstants {
     //text header markers
     public static final int HEADLINE_1_LENGTH = 59;
-    public static final int END_OF_DATATYPE = 24;
+    public static final int END_OF_DATATYPE = 25;
     public static final int NUM_HEAD_START = 46;
     public static final int NUM_HEAD_END = 48;
     

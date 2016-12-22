@@ -55,6 +55,10 @@ public class SmProduct {
     private File logDir;
     private ArrayList<String> loglist;
     private boolean deleteInputFiles;
+    private final String V0DIR = "V0";
+    private final String V1DIR = "V1";
+    private final String V2DIR = "V2";
+    private final String V3DIR = "V3";
     
     /**
      * Constructor for the product class.
@@ -160,22 +164,22 @@ public class SmProduct {
         this.stationDir = stationId;
         
         //Create the V0 - V3 folders
-        File V0Id = Paths.get(stationId.toString(), "V0").toFile();
+        File V0Id = Paths.get(stationId.toString(), V0DIR).toFile();
         if (!V0Id.isDirectory()) {
             V0Id.mkdir();
         }
-        File V1Id = Paths.get(stationId.toString(), "V1").toFile();
+        File V1Id = Paths.get(stationId.toString(), V1DIR).toFile();
         if (!V1Id.isDirectory()) {
             V1Id.mkdir();
         }
         if ((V2result == V2Status.GOOD) || (V2result == V2Status.FAILQC)) {
-            File V2Id = Paths.get(stationId.toString(), "V2").toFile();
+            File V2Id = Paths.get(stationId.toString(), V2DIR).toFile();
             if (!V2Id.isDirectory()) {
                 V2Id.mkdir();
             }
         }
         if (V2result == V2Status.GOOD) {  //V3 processing only occurs on valid V2 products
-            File V3Id = Paths.get(stationId.toString(), "V3").toFile();
+            File V3Id = Paths.get(stationId.toString(), V3DIR).toFile();
             if (!V3Id.isDirectory()) {
                 V3Id.mkdir();
             }        
@@ -200,8 +204,8 @@ public class SmProduct {
             V0Component rec0 = (V0Component)iter.next();
             contents = rec0.VrecToText();
             chanvalue = (V0List.size() > 1) ? rec0.getChannel() : "";
-            outName = buildFilename(rec0.getStationDir(), rec0.getFileName(),"V0",
-                                                         chanvalue, "");
+            outName = buildFilename(rec0.getStationDir(),V0DIR, rec0.getFileName(),
+                                                    "V0c", chanvalue, "");
             textout = new TextFileWriter(outName, contents);
             textout.writeOutToFile();
             this.loglist.add(outName.toString());
@@ -213,8 +217,8 @@ public class SmProduct {
             V1Component rec1 = (V1Component)iter.next();
             contents = rec1.VrecToText();
             chanvalue = (V1List.size() > 1) ? rec1.getChannel() : "";
-            outName = buildFilename(rec1.getStationDir(), rec1.getFileName(),"V1",
-                                                         chanvalue, "");
+            outName = buildFilename(rec1.getStationDir(),V1DIR, rec1.getFileName(),
+                                                    "V1c", chanvalue, "");
             textout = new TextFileWriter(outName, contents);
             textout.writeOutToFile();
             this.loglist.add(outName.toString());
@@ -226,8 +230,8 @@ public class SmProduct {
             V2Component rec2 = (V2Component)iter.next();
             contents = rec2.VrecToText();
             chanvalue = (V2List.size() > 3) ? rec2.getChannel() : "";
-            outName = buildFilename(rec2.getStationDir(), rec2.getFileName(),"V2",
-                                                         chanvalue, "acc");
+            outName = buildFilename(rec2.getStationDir(),V2DIR, rec2.getFileName(),
+                                                  "V2c", chanvalue, "acc");
             textout = new TextFileWriter(outName, contents);
             textout.writeOutToFile();
             this.loglist.add(outName.toString());
@@ -235,8 +239,8 @@ public class SmProduct {
             //get velocity and write to file
             if (iter.hasNext()) {
                 rec2 = (V2Component)iter.next();
-                outName = buildFilename(rec2.getStationDir(), rec2.getFileName(),"V2",
-                                                         chanvalue, "vel");
+                outName = buildFilename(rec2.getStationDir(),V2DIR, rec2.getFileName(),
+                                                    "V2c",chanvalue, "vel");
                 contents = rec2.VrecToText();
                 textout = new TextFileWriter(outName, contents);
                 textout.writeOutToFile();
@@ -245,8 +249,8 @@ public class SmProduct {
             //get displacement and write to file
             if (iter.hasNext()) {
                 rec2 = (V2Component)iter.next();
-                outName = buildFilename(rec2.getStationDir(), rec2.getFileName(),"V2",
-                                                         chanvalue, "dis");
+                outName = buildFilename(rec2.getStationDir(),V2DIR, rec2.getFileName(),
+                                                    "V2c", chanvalue, "dis");
                 contents = rec2.VrecToText();
                 textout = new TextFileWriter(outName, contents);
                 textout.writeOutToFile();
@@ -259,8 +263,8 @@ public class SmProduct {
         while (iter.hasNext()) {
             V3Component rec3 = (V3Component)iter.next();
             chanvalue = (V3List.size() > 1) ? rec3.getChannel() : "";
-            outName = buildFilename(rec3.getStationDir(), rec3.getFileName(),"V3",
-                                                         chanvalue, "");
+            outName = buildFilename(rec3.getStationDir(), V3DIR, rec3.getFileName(),
+                                                   "V3c", chanvalue, "");
             contents = rec3.VrecToText();
             textout = new TextFileWriter(outName, contents);
             textout.writeOutToFile();
@@ -277,14 +281,15 @@ public class SmProduct {
      * Builds the output filename from a folder path, file name, file extension,
      * channel number, and V2 processing type extension
      * @param outloc the output folder for this file
+     * @param localdir the directory for the specific cosmos file type
      * @param fileName the file name
      * @param fileExtension the extension of V1, V2, etc.
      * @param channel the channel id if needed in the filename
      * @param ext an extension for V2s, such as 'acc', 'vel', or 'dis'
      * @return the full file path
      */
-    public Path buildFilename(File outloc, String fileName, String fileExtension, 
-                                                    String channel, String ext) {
+    public Path buildFilename(File outloc, String localdir, String fileName,  
+                              String fileExtension, String channel, String ext) {
         Path pathname = Paths.get(fileName);
         String name = pathname.getFileName().toString();
         String getExtensionRegex = "\\.(?i)V\\d(?i)c??$";
@@ -302,7 +307,7 @@ public class SmProduct {
         sb.append(".");
         sb.append(fileExtension);
         name = matcher.replaceFirst(sb.toString());
-        Path outName = Paths.get(outloc.toString(),fileExtension, name);
+        Path outName = Paths.get(outloc.toString(),localdir, name);
         return outName;
     }
     /**
