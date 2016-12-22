@@ -265,7 +265,7 @@ public class ArrayOps {
      * @param array the input array to be differentiated
      * @param dt seconds per sample
      * @param order the differentiation order from the configuration file
-     * @return 
+     * @return differentiated array
      */
     public static double[] differentiate( double[] array, double dt, int order ) {
         return centralDiff( array, dt, order );
