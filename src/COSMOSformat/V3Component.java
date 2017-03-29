@@ -158,7 +158,8 @@ public class V3Component extends COSMOScontentFormat {
         int unitscode;
         String eodname;
         String line;
-        String freqformat = "%4.2f";
+        String freqformat42 = "%4.2f";
+        String freqformat53 = "%5.3f";
 
         SmTimeFormatter proctime = new SmTimeFormatter();
         ConfigReader config = ConfigReader.INSTANCE;
@@ -173,7 +174,7 @@ public class V3Component extends COSMOScontentFormat {
         
         String agcode = config.getConfigValue(PROC_AGENCY_CODE);
         int agency_code = (agcode == null) ? 0 : Integer.parseInt(agcode);
-        unitsname = inVvals.getDataUnits();
+        unitsname = GUNITST;
 
         
         //get real header value 62 (it has already been validated in the processing)
@@ -263,11 +264,11 @@ public class V3Component extends COSMOScontentFormat {
         this.textHeader[0] = SPECTRA.concat(this.textHeader[0].substring(END_OF_DATATYPE));
         sb = new StringBuilder(MAX_LINE_LENGTH);
         this.textHeader[10] = sb.append("Processed:").append(val).append(",")
-                            .append(agabbrev).append(", SaMax= ")
-                            .append(String.format(freqformat,inVvals.getPeakVal()))
-                            .append(" ").append(unitsname).append(" at ")
-                            .append(String.format(freqformat,inVvals.getPeakPeriod()))
-                            .append(" secp, 5%damp").toString();
+                            .append(agabbrev).append(", SaMax=")
+                            .append(String.format(freqformat53,inVvals.getPeakVal()/FROM_G_CONVERSION))
+                            .append(unitsname).append(" at ")
+                            .append(String.format(freqformat42,inVvals.getPeakPeriod()))
+                            .append(" sec prd   5%damping").toString();
         
         //Update the Response Spectrum Parameters in the headers
         this.intHeader.setIntValue(PROCESSING_STAGE_INDEX, V3_STAGE);

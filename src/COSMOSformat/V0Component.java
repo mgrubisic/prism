@@ -121,7 +121,7 @@ public class V0Component extends COSMOScontentFormat {
                             VFileConstants.SmArrayStyle.SINGLE_COLUMN : 
                                             VFileConstants.SmArrayStyle.PACKED;
         V0Data.buildArrayParams( packtype );
-        this.buildNewDataFormatLine(COUNTTEXT, CNTN, "raw accel. ");
+        this.buildNewDataFormatLine(COUNTTEXT, CNTN, "raw accel.  ");
         this.setFileName(inname);
 //        this.checkForRcrdIdAndAuth();
         
@@ -142,7 +142,7 @@ public class V0Component extends COSMOScontentFormat {
         int numvals = V0Data.getNumVals();
         double calcTime = deltat * numvals * MSEC_TO_SEC;
         String timeSec = Integer.toString((int)calcTime);
-        line = String.format("%1$8s %2$13s pts, approx %3$4s secs, units=%4$7s(%5$02d), Format=",
+        line = String.format("%1$8s %2$12s pts, approx %3$4s secs, units=%4$7s(%5$02d),Format=",
                                      String.valueOf(numvals),dataType,
                                                     timeSec, units, unitscode);
         V0Data.setFormatLine(line + V0Data.getNumberFormat());

@@ -157,7 +157,8 @@ public class V2Component extends COSMOScontentFormat {
         StringBuilder sb = new StringBuilder(MAX_LINE_LENGTH);
         final double MSEC_TO_SEC = 1e-3;
         String realformat = "%8.3f";
-        String freqformat = "%5.2f";
+        String freqformat5 = "%5.1f";
+        String freqformat6 = "%6.2f";
         double time;
         String unitsname;
         int unitscode;
@@ -238,12 +239,12 @@ public class V2Component extends COSMOScontentFormat {
                                 .append(" sec").toString();
         }
         sb = new StringBuilder(MAX_LINE_LENGTH);
-        this.textHeader[11] = sb.append("Record filtered below ")
-                                .append(String.format(freqformat,inVvals.getLowCut()))
-                                .append(" Hz (periods over ")
-                                .append(String.format(freqformat,(1.0/inVvals.getLowCut())))
-                                .append(" secs), and above ")
-                                .append(String.format(freqformat,inVvals.getHighCut()))
+        this.textHeader[11] = sb.append("Record filtered below")
+                                .append(String.format(freqformat6,inVvals.getLowCut()))
+                                .append(" Hz (periods over")
+                                .append(String.format(freqformat6,(1.0/inVvals.getLowCut())))
+                                .append(" secs), and above")
+                                .append(String.format(freqformat5,inVvals.getHighCut()))
                                 .append(" Hz")
                                 .toString();
         
@@ -342,7 +343,7 @@ public class V2Component extends COSMOScontentFormat {
         int numvals = V2Data.getNumVals();
         double calcTime = timestep * numvals;
         String timeSec = Integer.toString((int)calcTime);
-        line = String.format("%1$8s %2$13s pts, approx %3$4s secs, units=%4$7s(%5$02d), Format=",
+        line = String.format("%1$8s %2$12s pts, approx %3$4s secs, units=%4$7s(%5$02d),Format=",
                                      String.valueOf(numvals),dataType,
                                                     timeSec, units, unitscode);
         V2Data.setFormatLine(line + V2Data.getNumberFormat());

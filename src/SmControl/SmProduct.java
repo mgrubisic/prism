@@ -337,7 +337,7 @@ public class SmProduct {
     }
     /**
      * Removes the input file from the input directory, if it exists, and if the
-     * Delete Input Files flag in the configuration file is set to .Yes'. If the
+     * Delete Input Files flag in the configuration file is set to 'Yes'. If the
      * configuration file is set to 'No', the file is not deleted.
      * @param source the input file
      * @throws IOException if unable to delete the file

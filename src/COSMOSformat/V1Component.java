@@ -213,7 +213,7 @@ public class V1Component extends COSMOScontentFormat {
         double calcTime = dtime * numvals * MSEC_TO_SEC;
         String timeSec = Integer.toString((int)calcTime);
         String datType = "acceleration";
-        line = String.format("%1$8s %2$13s pts, approx %3$4s secs, units=%4$7s(%5$02d), Format=",
+        line = String.format("%1$8s %2$12s pts, approx %3$4s secs, units=%4$7s(%5$02d),Format=",
                                      String.valueOf(numvals),datType,
                                                     timeSec, units, unitsCode);
         V1Data.setFormatLine(line + V1Data.getNumberFormat());
