@@ -190,7 +190,7 @@ public class V2Process {
         boolean match = false;
         dtime = delta_t * MSEC_TO_SEC;    
         samplerate = 1.0 / dtime;
-        orig_samplerate = samplerate; 
+        orig_samplerate = samplerate;
         for (double each : V3_SAMPLING_RATES) {
             if (Math.abs(each - samplerate) < epsilon) {
                 match = true;
@@ -223,7 +223,7 @@ public class V2Process {
         //get parameters from config file and set defaults
         boolean successfulInit = initializeForProcessing();
         if (!successfulInit) {
-            return V2Status.FAILINIT;
+            return procStatus;
         }
         accel = prepareAccelForProcessing();
         double[] accopy = new double[accel.length];
@@ -331,7 +331,7 @@ public class V2Process {
      * @throws SmException if unable to extract information from the configuration file
      * or if processing parameters are invalid.
      */
-    private boolean initializeForProcessing() throws SmException {
+    private boolean initializeForProcessing() throws SmException, IOException {
         this.errorlog = new ArrayList<>();
         this.elog = SmDebugLogger.INSTANCE;
         ConfigReader config = ConfigReader.INSTANCE;
@@ -398,8 +398,14 @@ public class V2Process {
         this.writeBaseline = (baselineon == null) ? false : 
                                     baselineon.equalsIgnoreCase(BASELINE_WRITE_ON);
         
-        boolean thresholdStatus = updateThresholds(orig_samplerate);
-        return thresholdStatus;
+        boolean passedThresholds = updateThresholds(orig_samplerate);
+        if (!passedThresholds) {
+            procStatus  = V2Status.FAILINIT;
+            errorlog.add("V2process: exit status = " + procStatus);
+            writeOutErrorDebug();
+            makeDebugCSV();            
+        }
+        return passedThresholds;
     }
     /**
      * Updates the filter threshold values based on the EQ magnitude
@@ -416,7 +422,7 @@ public class V2Process {
         if (magtype == MagnitudeType.LOWSPS) {
             thresholdstat = false;
             errorlog.add("Original sample rate too low for given earthquake magnitude");
-            errorlog.add(String.format("  earthquake magnitude is %4.2f",magnitude));
+            errorlog.add(String.format("  earthquake magnitude is %4.2f and sample rate is %6.2f",magnitude, samprate));
         } else {
             lowcutadj = threshold.getLowCutOff();
             highcutadj = threshold.getHighCutOff();
@@ -735,7 +741,7 @@ public class V2Process {
         } else {
             data.add("NO");
         }
-        data.add(procStatus.name());                       //exit status
+        data.add(procStatus.name()); //exit status
         if ((procStatus == V2Status.GOOD) || (procStatus == V2Status.FAILQC)) {
             data.add(String.format("%8.6f",QCvelinitial));     //QC value initial velocity
             data.add(String.format("%8.6f",QCvelresidual));    //QC value residual velocity
