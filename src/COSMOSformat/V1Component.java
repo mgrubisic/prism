@@ -152,7 +152,10 @@ public class V1Component extends COSMOScontentFormat {
             agabbrev = DEFAULT_AG_CODE;
         }
         String agcode = config.getConfigValue(PROC_AGENCY_CODE);
-        int agency_code = (agcode == null) ? 0 : Integer.parseInt(agcode);
+        if (agcode != null) {
+            int agency_code = Integer.parseInt(agcode);
+            this.intHeader.setIntValue(PROCESSING_AGENCY, agency_code);
+        }
         
         //Get units info from V1 processing object
         String unitsname = inVvals.getDataUnits();
@@ -188,7 +191,6 @@ public class V1Component extends COSMOScontentFormat {
         this.intHeader.setIntValue(PROCESSING_STAGE_INDEX, V1_STAGE);
         this.intHeader.setIntValue(V_UNITS_INDEX, unitscode);
         this.intHeader.setIntValue(DATA_PHYSICAL_PARAM_CODE, ACC_PARM_CODE);
-        this.intHeader.setIntValue(PROCESSING_AGENCY, agency_code);
         
         this.realHeader.setRealValue(PEAK_VAL, inVvals.getPeakVal());
         this.realHeader.setRealValue(AVG_VAL, inVvals.getAvgVal());

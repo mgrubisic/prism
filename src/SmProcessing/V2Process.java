@@ -64,6 +64,7 @@ public class V2Process {
     protected int data_unit_code;
     protected double dtime;
     protected double samplerate;
+    protected double orig_samplerate;
     protected boolean needresampling;
     protected double noRealVal;
     protected double lowcutoff;
@@ -184,9 +185,12 @@ public class V2Process {
             throw new SmException("Real header #62, delta t, is invalid: " + 
                                                                         delta_t);
         }
+        // Determine the delta time and the sample rate, and also capture the
+        // initial sample rate since some records will be resampled later.
         boolean match = false;
         dtime = delta_t * MSEC_TO_SEC;    
         samplerate = 1.0 / dtime;
+        orig_samplerate = samplerate; 
         for (double each : V3_SAMPLING_RATES) {
             if (Math.abs(each - samplerate) < epsilon) {
                 match = true;
@@ -217,7 +221,10 @@ public class V2Process {
      */
     public V2Status processV2Data() throws SmException, IOException {
         //get parameters from config file and set defaults
-        initializeForProcessing();
+        boolean successfulInit = initializeForProcessing();
+        if (!successfulInit) {
+            return V2Status.FAILINIT;
+        }
         accel = prepareAccelForProcessing();
         double[] accopy = new double[accel.length];
         System.arraycopy( accel, 0, accopy, 0, accel.length);
@@ -322,8 +329,9 @@ public class V2Process {
      * Initializes variables for the automatic processing and gets the filter input 
      * variables, event onset type, and logging flags from the configuration file.
      * @throws SmException if unable to extract information from the configuration file
+     * or if processing parameters are invalid.
      */
-    private void initializeForProcessing() throws SmException {
+    private boolean initializeForProcessing() throws SmException {
         this.errorlog = new ArrayList<>();
         this.elog = SmDebugLogger.INSTANCE;
         ConfigReader config = ConfigReader.INSTANCE;
@@ -390,28 +398,36 @@ public class V2Process {
         this.writeBaseline = (baselineon == null) ? false : 
                                     baselineon.equalsIgnoreCase(BASELINE_WRITE_ON);
         
-        updateThresholds();
+        boolean thresholdStatus = updateThresholds(orig_samplerate);
+        return thresholdStatus;
     }
     /**
      * Updates the filter threshold values based on the EQ magnitude
      * @throws SmException if unable to extract value magnitude values from the header
      */
-    private MagnitudeType updateThresholds() throws SmException {
-        FilterCutOffThresholds threshold = new FilterCutOffThresholds();
+    private boolean updateThresholds(double samprate) throws SmException {
+        boolean thresholdstat = true;
+        FilterCutOffThresholds threshold = new FilterCutOffThresholds(samprate);
         MagnitudeType magtype = threshold.SelectMagAndThresholds(mmag, lmag, smag, omag, noRealVal);
         if (magtype == MagnitudeType.INVALID) {
-            throw new SmException("All earthquake magnitude real header values are invalid.");
+            throw new SmException("Earthquake magnitude real header values not valid for automated processing.");
         }
-        lowcutadj = threshold.getLowCutOff();
-        highcutadj = threshold.getHighCutOff();
         magnitude = threshold.getMagnitude();
-        // Update Butterworth filter low and high cutoff thresholds for later
-        errorlog.add("Acausal bandpass filter:");
-        errorlog.add(String.format("  adjusted lowcut: %4.2f and adjusted highcut: %4.2f Hz",
-                                                lowcutadj, highcutadj));
-        errorlog.add(String.format("  earthquake magnitude is %4.2f and M used is %s",
-                                                    magnitude,magtype));
-        return magtype;
+        if (magtype == MagnitudeType.LOWSPS) {
+            thresholdstat = false;
+            errorlog.add("Original sample rate too low for given earthquake magnitude");
+            errorlog.add(String.format("  earthquake magnitude is %4.2f",magnitude));
+        } else {
+            lowcutadj = threshold.getLowCutOff();
+            highcutadj = threshold.getHighCutOff();
+            // Update Butterworth filter low and high cutoff thresholds for later
+            errorlog.add("Acausal bandpass filter:");
+            errorlog.add(String.format("  adjusted lowcut: %4.2f and adjusted highcut: %4.2f Hz",
+                                                    lowcutadj, highcutadj));
+            errorlog.add(String.format("  earthquake magnitude is %4.2f and M used is %s",
+                                                        magnitude,magtype));
+        }
+        return thresholdstat;
     }
     /**
      * Gets the raw acceleration from the V1 record and converts units if necessary.

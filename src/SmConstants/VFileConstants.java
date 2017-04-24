@@ -76,7 +76,7 @@ public final class VFileConstants {
     public enum LogType { DEBUG, TROUBLE };
     
     public enum V2DataType { ACC, VEL, DIS };
-    public enum V2Status { GOOD, FAILQC, NOEVENT, NOABC };
+    public enum V2Status { GOOD, FAILQC, NOEVENT, NOABC, FAILINIT };
     
     //units names and codes
     public static final String SECT = "sec";
@@ -127,7 +127,7 @@ public final class VFileConstants {
     public static final int SENSOR_SENSITIVITY = 41; //in volts per g
     public static final int SCALING_FACTOR = 87;
     
-    public enum MagnitudeType { INVALID, MOMENT, M_LOCAL, SURFACE, M_OTHER };
+    public enum MagnitudeType { INVALID, MOMENT, M_LOCAL, SURFACE, M_OTHER, LOWSPS };
     
     public static final int LOCAL_MAGNITUDE = 14;
     public static final int MOMENT_MAGNITUDE = 12;

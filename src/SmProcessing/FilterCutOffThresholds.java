@@ -33,17 +33,21 @@ public class FilterCutOffThresholds {
     private double f1; //low cutoff
     private double f2; //high cutoff
     private double ML;
+    private double samplerate;
 
-    private final double low = 3.5;
-    private final double mid = 4.5;
+    private final double mid = 3.5;
     private final double high = 5.5;
+    private final double highsamp = 100;
+    private final double midsamp = 90;
+    private final double lowsamp = 60;
 /**
  * Constructor just initializes the thresholds and magnitude to 0.
  */
-    public FilterCutOffThresholds() {
+    public FilterCutOffThresholds(double samprate) {
         this.ML = 0.0;
         this.f1 = 0.0;
         this.f2 = 0.0;
+        this.samplerate = samprate;
     }
     /**
      * Determines the high and low filter cutoff thresholds to use based on
@@ -56,13 +60,21 @@ public class FilterCutOffThresholds {
      * -999.99.  To use this class with an already validated magnitude, just set
      * the first value to the validated magnitude and set all other input 
      * parameters to -999.99.
+     * There is a second check to ensure that the sampling rate is sufficient for
+     * the earthquake magnitude.  These are the minimum sampling rates and
+     * magnitudes:
+     * EQ mag(ML)       flc(HZ)     fhc(HZ)  Nyquist f(Hz)  min samp (samp/sec)
+     * ML(ge)5.5        0.1         40       50                  100
+     * 3.5(le)ML(lt)5.5 0.3         35       45                  90
+     * ML(lt)3.5        0.5         25       30                  60
      * @param mm moment magnitude from the COSMOS header
      * @param lm local magnitude from the COSMOS header
      * @param sm surface magnitude from the COSMOS header
      * @param om other magnitude from the COSMOS header
      * @param noval No Data value for the COSMOS real header
      * @return the magnitude type that was used to select the high and low 
-     * cutoff values, or INVALID if no earthquake values have been defined.
+     * cutoff values, or INVALID if no earthquake values have been defined, or 
+     * LOWSPS if the sample rate is too low for the given magnitude.
      */
     public MagnitudeType SelectMagAndThresholds( double mm, double lm, double sm,
                                                          double om, double noval) {
@@ -89,18 +101,27 @@ public class FilterCutOffThresholds {
             magtype = MOMENT;
             ML = mm;
         }
-        if ((ML > high) || (Math.abs(ML - high) < epsilon)){
-            f1 = 0.1;
-            f2 = 40.0;
+        if ((ML > high) || (Math.abs(ML - high) < epsilon)) { 
+            if ((samplerate > highsamp) || (Math.abs(samplerate - highsamp) < epsilon)){
+                f1 = 0.1;
+                f2 = 40.0;
+            } else {
+                magtype = MagnitudeType.LOWSPS;
+            }
         } else if ((ML > mid) || (Math.abs(ML - mid) < epsilon)) {
-            f1 = 0.3;
-            f2 = 35.0;
-        } else if ((ML > low) || (Math.abs(ML - low) < epsilon)) {
-            f1 = 0.3;
-            f2 = 35.0;
+            if ((samplerate > midsamp) || (Math.abs(samplerate - midsamp) < epsilon)){
+                f1 = 0.3;
+                f2 = 35.0;
+            } else {
+                magtype = MagnitudeType.LOWSPS;
+            }
         } else {  //ML < low
-            f1 = 0.5;
-            f2 = 25.0;
+            if ((samplerate > lowsamp) || (Math.abs(samplerate - lowsamp) < epsilon)){
+                f1 = 0.5;
+                f2 = 25.0;
+            } else {
+                magtype = MagnitudeType.LOWSPS;
+            }
         }
         return magtype;
     }
