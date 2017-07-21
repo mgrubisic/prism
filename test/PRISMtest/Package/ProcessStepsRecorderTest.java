@@ -26,6 +26,7 @@ public class ProcessStepsRecorderTest {
     String[] test1;
     String[] test2;
     String[] testresamp;
+    String[] testtrim;
     String[] empty;
     
     public ProcessStepsRecorderTest() {
@@ -51,6 +52,11 @@ public class ProcessStepsRecorderTest {
         testresamp[0] = "|<PROCESS> AUTO";
         testresamp[1] = "|<RESAMPLE> Data resampled to 200.00 samples/sec";
         testresamp[2] = "|<EONSET> event onset(sec)=  15.3200";
+        
+        testtrim = new String[3];
+        testtrim[0] = "|<PROCESS> MANUAL";
+        testtrim[1] = "|<TRIM> 260 samp. of beginning, 400 samp. of end of original record";
+        testtrim[2] = "|<EONSET> event onset(sec)=  14.6600";
     }
     
     @Test
@@ -112,5 +118,16 @@ public class ProcessStepsRecorderTest {
         String[] result = new String[3];
         result = stepRec.formatSteps().toArray(result);
         org.junit.Assert.assertArrayEquals(testresamp,result);
+    }
+    @Test
+    public void testRecorderTrim() {
+        ProcessStepsRecorder2 stepRec = ProcessStepsRecorder2.INSTANCE;
+        stepRec.clearSteps();
+        stepRec.addCorrectionType(VFileConstants.CorrectionType.MANUAL);
+        stepRec.addEventOnset(14.66);
+        stepRec.addTrimIndicies(260,400);
+        String[] result = new String[3];
+        result = stepRec.formatSteps().toArray(result);
+        org.junit.Assert.assertArrayEquals(testtrim,result);
     }
 }

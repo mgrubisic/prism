@@ -35,6 +35,9 @@ public class ProcessStepsRecorder2 {
     private CorrectionType ctype;
     private boolean needsResampling;
     private double samplerate;
+    private boolean gotTrimmed;
+    private int startTrimCount;
+    private int endTrimCount;
     private ArrayList<blcorrect> blist;
     public final static ProcessStepsRecorder2 INSTANCE = new ProcessStepsRecorder2();
     /**
@@ -44,7 +47,10 @@ public class ProcessStepsRecorder2 {
         this.eventOnsetTime = 0.0;
         this.ctype = CorrectionType.AUTO;
         this.needsResampling = false;
+        this.gotTrimmed = false;
         this.samplerate = 0.0;
+        this.startTrimCount = 0;
+        this.endTrimCount = 0;
         this.blist = new ArrayList<>();
     }
     /**
@@ -69,7 +75,12 @@ public class ProcessStepsRecorder2 {
         samplerate = newsamp;
         needsResampling = true;
     }
-    /**
+    public void addTrimIndicies( int startCount, int endCount ) {
+        gotTrimmed = true;
+        startTrimCount = startCount;
+        endTrimCount = endCount;
+    }
+    /** 
      * Adds baseline correction information to the recorder.  Baseline corrections
      * are recorded by identifying the start and stop times for the baseline function
      * as well as the start and stop times of the application interval over which
@@ -99,6 +110,9 @@ public class ProcessStepsRecorder2 {
         ctype = CorrectionType.AUTO;
         needsResampling = false;
         samplerate = 0.0;
+        gotTrimmed = false;
+        startTrimCount = 0;
+        endTrimCount = 0;
         blist.clear();
     }
     /**
@@ -114,6 +128,9 @@ public class ProcessStepsRecorder2 {
         outlist.add(String.format("|<PROCESS> %1$s", ctype.name()));
         if (needsResampling) {
             outlist.add(String.format("|<RESAMPLE> Data resampled to %6.2f samples/sec",samplerate));
+        }
+        if (gotTrimmed) {
+            outlist.add(String.format("|<TRIM> %1$d samp. of beginning, %2$d samp. of end of original record", startTrimCount, endTrimCount));
         }
         outlist.add(String.format("|<EONSET> event onset(sec)=%1s",
             String.format(timeformat,eventOnsetTime)));

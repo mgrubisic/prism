@@ -238,27 +238,15 @@ public class ArrayOps {
      * Calculates the approximate derivative of the input array.
      * This method has been deprecated and replaced with central_diff.  See the
      * differentiate method with 3 parameters, which is a wrapper for central_diff.
+     * To redirect any legacy usage of this method, its call is directed to
+     * the differentiate with 3 parms, and the order is hard-wired at 5.
      * @param array the array to be differentiated
      * @param dt the time step in seconds
      * @return new array containing the approximate derivative of the input points,
      * or an array of 0 length if input parameters are invalid
      */
     public static double[] differentiate( double[] array, double dt) {
-        if ((array == null) || (array.length == 0) || (Math.abs(dt - 0.0) < OPS_EPSILON)) {
-            return new double[0];
-        }
-        int len = array.length;
-        double[] calc = new double[ len ];
-        calc[0] = (array[1] - array[0]) *2.0;
-        for (int i = 1; i < len-1; i++) {
-            calc[i] = array[i+1] - array[i-1];
-        }
-        calc[len-1] = (array[len-1] - array[len-2]) * 2.0;
-        
-        for (int i = 0; i < len; i++) {
-            calc[i] = calc[i] / (dt + dt);
-        }
-        return calc;
+        return differentiate( array, dt, 5);
     }
     /**
      * Wrapper for the new centralDiff algorithm for differentiation.
@@ -459,6 +447,22 @@ public class ArrayOps {
             result[i] = inArray[i] * countConv;
         }
         return result;
+    }
+    /**
+     * Finds the mean of the input array and then removes the mean from the array.
+     * @param inArray input double array, this array is modified when the mean is removed
+     * @return double value of the calculated mean, or Double.MIN_VALUE if the
+     * input array is invalid
+     */
+    public static double findAndRemoveMean( double[] inArray ) {
+        if ((inArray == null) || (inArray.length == 0)) {
+            return Double.MIN_VALUE;
+        }
+        double meanToZero;
+        ArrayStats arrmean = new ArrayStats( inArray );
+        meanToZero = arrmean.getMean();
+        ArrayOps.removeValue(inArray, meanToZero);
+        return meanToZero;
     }
     /**
      * Converts a floating (double) point array of one data unit type to another

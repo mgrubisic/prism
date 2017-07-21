@@ -20,6 +20,7 @@ import SmConstants.VFileConstants.EventOnsetType;
 import SmConstants.VFileConstants.MagnitudeType;
 import SmConstants.VFileConstants.V2DataType;
 import SmException.SmException;
+import SmUtilities.CSVFileWriter;
 import SmUtilities.ConfigReader;
 import SmUtilities.ProcessStepsRecorder2;
 import static SmUtilities.SmConfigConstants.*;
@@ -756,7 +757,8 @@ public class V2Process {
                 data.add(String.format("%d",ABCwinrank));
             }
         }
-        elog.writeToCSV(data, headerline, "ParameterLog.csv");
+        CSVFileWriter csv = new CSVFileWriter(elog.getLogFolder());
+        csv.writeToCSV(data, headerline, "ParameterLog.csv", "");
         data.clear();
     }
     /**

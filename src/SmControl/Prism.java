@@ -92,11 +92,10 @@ public class Prism {
      * @throws SmException if a fatal error occurs during processing
      * @throws IOException if unable to read in the files or file names
      */
-    public static void main(String[] args) throws SmException, IOException { 
+    public static void main(String[] args) throws SmException, IOException, Exception { 
         String config = "";
         int lineCount = 0; 
         int recordCount = 0;
-        double NANO_TO_SECOND = 1.0e-9; //for timing tests
         // 
         try {
             Prism smc = new Prism( args ); 
@@ -138,8 +137,8 @@ public class Prism {
             //with an individual file and move directly to the next file.  
             //Attempt to process all the files in the list.
             for (File each: smc.inVList){
-                smc.smqueue = new SmQueue( each, logtime );
-                smc.Vproduct = new SmProduct(smc.inFolder, smc.outFolder);
+                smc.smqueue = new SmQueue( each, logtime, log.getLogFolder() );
+                smc.Vproduct = new SmProduct(smc.outFolder);
                 try {
                     smc.smqueue.readInFile( each );
                     
@@ -149,7 +148,7 @@ public class Prism {
                     //process the records, then write out results
                     smc.smqueue.processQueueContents(smc.Vproduct);
 
-                    String[] outlist = smc.Vproduct.writeOutProducts();
+                    String[] outlist = smc.Vproduct.writeOutProducts("");
                     log.writeToLog(outlist);
                     String[] troublelist = smc.Vproduct.buildTroubleLog(outlist);
                     if (troublelist.length > 0) {

@@ -26,6 +26,7 @@ import SmException.SmException;
 import SmProcessing.V1Process;
 import SmProcessing.V2Process;
 import SmProcessing.V3Process;
+import SmUtilities.BuildAPKtable;
 import SmUtilities.TextFileReader;
 import java.io.*;
 import java.util.ArrayList;
@@ -42,14 +43,16 @@ public class SmQueue {
     private ArrayList<COSMOScontentFormat> smlist;  //holds each channel as a record
     private String[] fileContents;  // the input file contents by line
     private String logtime;
+    private File logfolder;
     /**
      * Constructor for SmQueue
      * @param inFileName input file name
      * @param logtime time processing started (not used?)
      */
-    public SmQueue (File inFileName, String logtime){
+    public SmQueue (File inFileName, String logtime, File logfolder){
         this.fileName = inFileName;
         this.logtime = logtime;
+        this.logfolder = logfolder;
     }
     /**
      * This method reads in the input text file
@@ -122,7 +125,7 @@ public class SmQueue {
      * @throws IOException if unable to create directories, etc.
      */
     public void processQueueContents(SmProduct Vprod) 
-                                throws FormatException, SmException, IOException {
+                                throws FormatException, SmException, IOException, Exception {
 
         V2Component V2acc;
         V2Component V2vel;
@@ -169,8 +172,9 @@ public class SmQueue {
                     v3val.processV3Data();
                     V3Component V3rec = new V3Component( SPECTRA, V2acc, V2vel, V2dis);
                     V3rec.buildV3(v3val);
-                    V3rec.updateUploadParms();
                     Vprod.addProduct(V3rec, "V3");
+                    BuildAPKtable apk = new BuildAPKtable();
+                    apk.buildTable(V3rec, v1rec, V2acc, V2vel, V2dis, this.logfolder);
                 }
             }
         }

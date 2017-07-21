@@ -31,6 +31,7 @@ public class PrismLogger {
     private final String logname = "PrismLog.txt";
     public final static PrismLogger INSTANCE = new PrismLogger();
     private String finalFolder;
+    private File logfolder;
     private String startTime;
     /**
      * Constructor for the logger is private as part of the
@@ -51,11 +52,11 @@ public class PrismLogger {
         finalFolder = outfolder;
         startTime = time;
         if (!logReady) {
-            File logId = Paths.get(outfolder, "Logs").toFile();
-            if (!logId.isDirectory()) {
-                logId.mkdir();
+            logfolder = Paths.get(outfolder, "Logs").toFile();
+            if (!logfolder.isDirectory()) {
+                logfolder.mkdir();
             }
-            this.logfile = Paths.get(logId.toString(),logname);
+            this.logfile = Paths.get(logfolder.toString(),logname);
             logReady = true;
         }
     }
@@ -88,4 +89,5 @@ public class PrismLogger {
             }
         }
     }
+    public File getLogFolder() { return logfolder; }
 }

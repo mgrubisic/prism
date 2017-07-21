@@ -36,7 +36,7 @@ public class SmDebugLogger {
     private final String troublename = "TroubleLog.txt";
     public final static SmDebugLogger INSTANCE = new SmDebugLogger();
     private String finalFolder;
-    private File logFolder;
+    private File logfolder;
     private String startTime;
     /**
      * Constructor for the logger is private as part of the
@@ -57,19 +57,18 @@ public class SmDebugLogger {
         finalFolder = outfolder;
         startTime = time.replace("-","_").replace(" ", "_").replace(":","_");
         if (!logReady) {
-            File logId = Paths.get(outfolder, "Logs").toFile();
-            logFolder = logId;
-            if (!logId.isDirectory()) {
-                logId.mkdir();
-            }
+            logfolder = Paths.get(outfolder, "Logs").toFile();
+            if (!logfolder.isDirectory()) {
+                logfolder.mkdir();
+             }
             String[] segments = logname.split("\\.");
             sb.append(segments[0]).append("_").append(startTime).append(".").append(segments[1]);
-            this.logfile = Paths.get(logId.toString(),sb.toString());
+            this.logfile = Paths.get(logfolder.toString(),sb.toString());
 
             segments = troublename.split("\\.");
             sb = new StringBuilder();
             sb.append(segments[0]).append("_").append(startTime).append(".").append(segments[1]);
-            this.troublefile = Paths.get(logId.toString(),sb.toString());
+            this.troublefile = Paths.get(logfolder.toString(),sb.toString());
             logReady = true;
         }
     }
@@ -108,42 +107,5 @@ public class SmDebugLogger {
             }
         }
     }
-    /**
-     * Writes the list of V2 processing parameters out as a CSV file, with the
-     * first line containing the column names
-     * @param msg a list of the parameters for one record
-     * @param headerline the column names to write out the first time
-     * @param name the name of the file
-     * @throws IOException if unable to write to the file
-     */
-    public void writeToCSV( ArrayList<String> msg, String[] headerline, 
-                                            String name ) throws IOException {
-        String[] values;
-        StringBuilder sbheader = new StringBuilder();
-        StringBuilder sbname = new StringBuilder();
-        StringBuilder sbmsg = new StringBuilder();
-        for (String each : msg) {
-            sbmsg.append(each).append(",");
-        }
-        sbmsg.replace(sbmsg.length()-1, sbmsg.length(), "");
-        if (logReady) {
-            String[] segments = name.split("\\.");
-            sbname.append(segments[0]).append("_").append(startTime).append(".").append(segments[1]);
-            Path outfile = Paths.get(logFolder.toString(), sbname.toString());
-            if (!outfile.toFile().exists()) {
-                values = new String[2];
-                for (String each : headerline) {
-                    sbheader.append(each).append(",");
-                }
-                sbheader.replace(sbheader.length()-1, sbheader.length(), "");
-                values[0] = sbheader.toString();
-                values[1] = sbmsg.toString();
-            } else {
-                values = new String[1];
-                values[0] = sbmsg.toString();
-            }
-            TextFileWriter csvfile = new TextFileWriter( outfile, values);
-            csvfile.appendToFile();
-        }
-    }
+    public File getLogFolder() { return logfolder; }
 }
