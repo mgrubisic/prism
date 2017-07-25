@@ -25,9 +25,7 @@ import SmUtilities.ConfigReader;
 import static SmUtilities.SmConfigConstants.OUT_ARRAY_FORMAT;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_ABBREV;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_CODE;
-import SmUtilities.SmDebugLogger;
 import SmUtilities.SmTimeFormatter;
-import java.io.IOException;
 import java.util.ArrayList;
 
 /**
@@ -84,9 +82,6 @@ public class V3Component extends COSMOScontentFormat {
         this.realHeader = new VRealArray(pV2.realHeader);
         this.setChannel(pV2.getChannel());
         this.fileName = pV2.getFileName();
-        this.rcrdId = pV2.getRcrdId();
-        this.SCNLauth = pV2.getSCNLauth();
-        this.SCNLcode = pV2.getSCNLcode();
         
         //The buildV2 method fills in these data values, the format line, and
         //the individual params for the real arrays.

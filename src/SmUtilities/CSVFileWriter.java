@@ -44,8 +44,9 @@ public class CSVFileWriter {
      * @throws IOException if unable to write to the file
      */
     public void writeToCSV( ArrayList<String> msg, String[] headerline, 
-                            String name, String startTime ) throws IOException {
+                            String name, String time ) throws IOException {
         String[] values;
+        String startTime = time.replace("-","_").replace(" ", "_").replace(":","_");
         StringBuilder sbheader = new StringBuilder();
         StringBuilder sbname = new StringBuilder();
         StringBuilder sbmsg = new StringBuilder();

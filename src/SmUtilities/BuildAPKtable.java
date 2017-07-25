@@ -23,6 +23,7 @@ import static SmConstants.VFileConstants.COSMOS_EPICENTRALDIST;
 import static SmConstants.VFileConstants.COSMOS_LATITUDE;
 import static SmConstants.VFileConstants.COSMOS_LONGITUDE;
 import static SmConstants.VFileConstants.COSMOS_STATION_TYPE;
+import static SmConstants.VFileConstants.MAX_LINE_LENGTH;
 import static SmConstants.VFileConstants.PEAK_VAL;
 import static SmConstants.VFileConstants.TO_G_CONVERSION;
 import static SmConstants.VFileConstants.VALUE_SA_0P3;
@@ -31,7 +32,6 @@ import static SmConstants.VFileConstants.VALUE_SA_3P0;
 import static SmConstants.VFileConstants.V_UNITS_INDEX;
 import SmException.SmException;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 
 /**
@@ -45,27 +45,32 @@ public class BuildAPKtable {
     
     public void buildTable(V3Component v3Component, V1Component v1Component,
             V2Component v2ComponentAcc, V2Component v2ComponentVel, 
-            V2Component v2ComponentDis, File csvFolder) throws Exception {
+            V2Component v2ComponentDis, File csvFolder, String startTime) throws Exception {
         try {
-            String[] headerline = {"SCNL","STATION_TYPE","STATION_NAME","LAT","LON",
+            String[] headerline = {"EVENT","SCNL","STATION_TYPE","STATION_NAME","LAT","LON",
                 "EPIC","FAULT","PGAV1","PGAV2","PGV","PGD","SA0P3","SA1P0","SA3P0"};
             ArrayList<String> data = new ArrayList<>();
+            //event id
+            RecordIDValidator rcdvalid = new RecordIDValidator(v1Component.getRcrdId());
+            String event = (rcdvalid.isValidRcrdID()) ? rcdvalid.getEventID() : "not found";
+            data.add(event);
             //SCNL code
-            data.add(v3Component.getSCNLcode());
+            String scode = v1Component.getSCNLcode();
+            data.add(scode);
             //station type
-            int stationtype = v3Component.getIntHeaderValue(COSMOS_STATION_TYPE);
+            int stationtype = v1Component.getIntHeaderValue(COSMOS_STATION_TYPE);
             data.add(String.format("%d", stationtype));
             //station name
-            String stationname = v3Component.checkForStationName();
+            String stationname = v1Component.checkForStationName();
             data.add(stationname.replace(",", " "));
             //station latitude
-            double lat = v3Component.getRealHeaderValue(COSMOS_LATITUDE);
+            double lat = v1Component.getRealHeaderValue(COSMOS_LATITUDE);
             data.add(String.format("%10.5f",lat));
             //station longitude
-            double lon = v3Component.getRealHeaderValue(COSMOS_LONGITUDE);
+            double lon = v1Component.getRealHeaderValue(COSMOS_LONGITUDE);
             data.add(String.format("%10.5f",lon));
             //epicentral distance
-            double epic = v3Component.getRealHeaderValue(COSMOS_EPICENTRALDIST);
+            double epic = v1Component.getRealHeaderValue(COSMOS_EPICENTRALDIST);
             data.add(String.format("%10.5f",epic));
             //fault
             data.add("( -- )");
@@ -92,8 +97,7 @@ public class BuildAPKtable {
             data.add(String.format("%15.6f",v3Component.getRealHeaderValue(VALUE_SA_3P0)));
 
             CSVFileWriter csvwrite = new CSVFileWriter( csvFolder );
-            csvwrite.writeToCSV(data,headerline,tablename, "");
-            
+            csvwrite.writeToCSV(data,headerline,tablename, startTime);
             data.clear();
         }
         catch (SmException ex) {

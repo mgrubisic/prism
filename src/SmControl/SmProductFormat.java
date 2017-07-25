@@ -21,6 +21,7 @@ import COSMOSformat.V2Component;
 import COSMOSformat.V3Component;
 import SmConstants.VFileConstants;
 import static SmConstants.VFileConstants.MAX_LINE_LENGTH;
+import SmUtilities.RecordIDValidator;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -98,23 +99,13 @@ abstract class SmProductFormat {
      */
     public void setDirectories(String rcid, String scnlauth, String eventMarker, 
                                                             VFileConstants.V2Status V2result) {
-        String event;
-        String station;
-        StringBuilder sb = new StringBuilder(MAX_LINE_LENGTH);
-        boolean validid = validateRcrdId( rcid );
-        String[] sections = rcid.split("\\.");
         
-        //determine the event and station names
-        if ((!scnlauth.isEmpty()) && (validid)) {
-            event = sb.append(sections[0]).append(".").append(sections[1]).toString(); 
-        } else {
-            event = "Orphan";
-        }
-        if (event.equals("Orphan")) {
-            station = eventMarker;
-        } else {
-            sb = new StringBuilder(MAX_LINE_LENGTH);
-            station = sb.append(sections[2]).append(".").append(sections[3]).toString();
+        String event = "Orphan";
+        String station = eventMarker;
+        RecordIDValidator rcdvalid = new RecordIDValidator(rcid);
+        if ((!scnlauth.isEmpty()) && (rcdvalid.isValidRcrdID())) {
+            event = rcdvalid.getEventID();
+            station = rcdvalid.getStationID();
         }
         //create the log folder
         File logId = Paths.get(this.outFolder, "Logs").toFile();

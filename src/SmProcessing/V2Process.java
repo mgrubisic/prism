@@ -35,62 +35,62 @@ import java.util.ArrayList;
  * @author jmjones
  */
 public class V2Process {
-    protected double[] accel;
-    protected double ApeakVal;
-    protected int ApeakIndex;
-    protected double AavgVal;
-    protected final int acc_unit_code;
-    protected final String acc_units;
+    private double[] accel;
+    private double ApeakVal;
+    private int ApeakIndex;
+    private double AavgVal;
+    private final int acc_unit_code;
+    private final String acc_units;
     
-    protected double[] velocity;
-    protected double VpeakVal;
-    protected int VpeakIndex;
-    protected double VavgVal;
-    protected final int vel_unit_code;
-    protected final String vel_units;
+    private double[] velocity;
+    private double VpeakVal;
+    private int VpeakIndex;
+    private double VavgVal;
+    private final int vel_unit_code;
+    private final String vel_units;
     
-    protected double[] displace;
-    protected double DpeakVal;
-    protected int DpeakIndex;
-    protected double DavgVal;
-    protected final int dis_unit_code;
-    protected final String dis_units;
+    private double[] displace;
+    private double DpeakVal;
+    private int DpeakIndex;
+    private double DavgVal;
+    private final int dis_unit_code;
+    private final String dis_units;
     
-    protected double initialVel;
-    protected double initialDis;
+    private double initialVel;
+    private double initialDis;
     
     private int inArrayLength;
-    protected double[] paddedaccel;
-    protected final V1Component inV1;
-    protected int data_unit_code;
-    protected double dtime;
-    protected double samplerate;
-    protected double orig_samplerate;
-    protected boolean needresampling;
-    protected double noRealVal;
-    protected double lowcutoff;
-    protected double highcutoff;
-    protected double lowcutadj;
-    protected double highcutadj;
-    protected double mmag;
-    protected double lmag;
-    protected double smag;
-    protected double omag;
-    protected double magnitude;
-    protected BaselineType basetype;
+    private double[] paddedaccel;
+    private final V1Component inV1;
+    private int data_unit_code;
+    private double dtime;
+    private double samplerate;
+    private double orig_samplerate;
+    private boolean needresampling;
+    private double noRealVal;
+    private double lowcutoff;
+    private double highcutoff;
+    private double lowcutadj;
+    private double highcutadj;
+    private double mmag;
+    private double lmag;
+    private double smag;
+    private double omag;
+    private double magnitude;
+    private BaselineType basetype;
     
     private int pickIndex;
-    protected int startIndex;
+    private int startIndex;
     private double ebuffer;
     private EventOnsetType emethod;
-    protected int numroll;  // the filter order is rolloff*2
-    protected double taperlength;
+    private int numroll;  // the filter order is rolloff*2
+    private double taperlength;
     private double preEventMean;
     private int trendRemovalOrder;
     private double calculated_taper;
     private double config_taper;
     private boolean strongMotion;
-    protected double smThreshold;
+    private double smThreshold;
     private final String logtime;
     
     private V2Status procStatus;
@@ -114,14 +114,14 @@ public class V2Process {
     private int ABCbreak1;
     private int ABCbreak2;
     
-    protected double bracketedDuration;
-    protected double AriasIntensity;
-    protected double HousnerIntensity;
-    protected double RMSacceleration;
-    protected double durationInterval;
-    protected double cumulativeAbsVelocity;
+    private double bracketedDuration;
+    private double AriasIntensity;
+    private double HousnerIntensity;
+    private double RMSacceleration;
+    private double durationInterval;
+    private double cumulativeAbsVelocity;
     
-    protected ProcessStepsRecorder2 stepRec;
+    private ProcessStepsRecorder2 stepRec;
     
     /**
      * Constructor gets the necessary header and configuration file parameters
@@ -758,7 +758,7 @@ public class V2Process {
             }
         }
         CSVFileWriter csv = new CSVFileWriter(elog.getLogFolder());
-        csv.writeToCSV(data, headerline, "ParameterLog.csv", "");
+        csv.writeToCSV(data, headerline, "ParameterLog.csv", logtime);
         data.clear();
     }
     /**

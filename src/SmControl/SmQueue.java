@@ -174,7 +174,7 @@ public class SmQueue {
                     V3rec.buildV3(v3val);
                     Vprod.addProduct(V3rec, "V3");
                     BuildAPKtable apk = new BuildAPKtable();
-                    apk.buildTable(V3rec, v1rec, V2acc, V2vel, V2dis, this.logfolder);
+                    apk.buildTable(V3rec, v1rec, V2acc, V2vel, V2dis, this.logfolder, this.logtime);
                 }
             }
         }
