@@ -22,7 +22,6 @@ import static SmConstants.VFileConstants.CMSECT;
 import static SmConstants.VFileConstants.CMSQSECN;
 import static SmConstants.VFileConstants.CMSQSECT;
 import static SmConstants.VFileConstants.CMT;
-import static SmConstants.VFileConstants.DEFAULT_DIFFORDER;
 import static SmConstants.VFileConstants.DELTA_T;
 import static SmConstants.VFileConstants.LOCAL_MAGNITUDE;
 import static SmConstants.VFileConstants.MOMENT_MAGNITUDE;
@@ -30,8 +29,7 @@ import static SmConstants.VFileConstants.MSEC_TO_SEC;
 import static SmConstants.VFileConstants.OTHER_MAGNITUDE;
 import static SmConstants.VFileConstants.SURFACE_MAGNITUDE;
 import SmException.SmException;
-import SmUtilities.ConfigReader;
-import static SmUtilities.SmConfigConstants.DIFFERENTIATION_ORDER;
+import SmUtilities.ProcessStepsRecorder2;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,66 +38,19 @@ import java.util.Arrays;
  *
  * @author jmjones
  */
-public class V2ProcessGUI {
+public class V2ProcessGUI extends V2Process{
     private File v1File;
     private V1Component v1Rec;
-
-    private double[] accel;
-    private double ApeakVal;
-    private int ApeakIndex;
-    private double AavgVal;
-    private final int acc_unit_code;
-    private final String acc_units;
     
-    private double[] velocity;
-    private double VpeakVal;
-    private int VpeakIndex;
-    private double VavgVal;
-    private final int vel_unit_code;
-    private final String vel_units;
-    
-    private double[] displace;
-    private double DpeakVal;
-    private int DpeakIndex;
-    private double DavgVal;
-    private final int dis_unit_code;
-    private final String dis_units;
-    
-    private double initialVel;
-    private double initialDis;
-    
-    private double[] paddedaccel;
-    private double dtime;
-    private double samplerate;
-    private double orig_samplerate;
-    private boolean needresampling;
-    private double noRealVal;
-    private double lowcutadj;
-    private double highcutadj;
-    private double mmag;
-    private double lmag;
-    private double smag;
-    private double omag;
-    private double magnitude;
-    
-    private int numroll;  // the filter order is rolloff*2
     private int filterOrder;
     private double taperLength;
-    private double smThreshold;
     private double eventOnset;
-    private int startIndex;
     private ArrayList<BLCStep> blcSteps = new ArrayList<>();
     
     private double snapshotEventOnset;
     private double[] snapshotAcc;
     private double[] snapshotVel;
     private double[] snapshotDis;
-    private double bracketedDuration;
-    private double AriasIntensity;
-    private double HousnerIntensity;
-    private double RMSacceleration;
-    private double durationInterval;
-    private double cumulativeAbsVelocity;
     
     private int diffOrder;
     /**
@@ -113,11 +64,13 @@ public class V2ProcessGUI {
      * @param smThreshold
      * @param taperLength
      * @param eventOnset
+     * @param diffOrder
      * @throws SmException if the earthquake magnitude values are invalid
      */
     public V2ProcessGUI(final V1Component v1Rec, final File v1File, int filterOrder, 
         double smThreshold, double taperLength, double eventOnset, int diffOrder) throws SmException {
         
+        super(v1Rec,v1File,"");
         this.v1File = v1File;
         this.v1Rec = v1Rec;
         this.filterOrder = filterOrder;
@@ -129,6 +82,7 @@ public class V2ProcessGUI {
         this.orig_samplerate = this.samplerate;
         this.needresampling = false;
         this.diffOrder = diffOrder;
+        this.stepRec = ProcessStepsRecorder2.INSTANCE;
         
         //Get config values to cm/sec2 (acc), cm/sec (vel), cm (dis)
         this.acc_unit_code = CMSQSECN;
@@ -146,6 +100,7 @@ public class V2ProcessGUI {
         this.cumulativeAbsVelocity = 0.0;
         this.initialVel = 0.0;
         this.initialDis = 0.0;
+        this.stepRec.clearSteps();
 
         this.setEventOnset(eventOnset, this.dtime);
         this.noRealVal = this.v1Rec.getNoRealVal();
@@ -188,6 +143,29 @@ public class V2ProcessGUI {
         //Integrate the velocity to get displacement.
         this.displace = new double[this.accel.length];
         this.displace = integrateAnArray( this.velocity, this.dtime, eventOnset);
+    }
+    /**
+     * Copy constructor.
+     * @param v2ProcessGUI V2ProcessGUI object to copy.
+     * @throws SmException 
+     */
+    public V2ProcessGUI(V2ProcessGUI v2ProcessGUI) throws SmException {
+        
+        this(v2ProcessGUI.v1Rec,v2ProcessGUI.getV1File(),v2ProcessGUI.getFilterOrder(), 
+                v2ProcessGUI.getsmThreshold(),v2ProcessGUI.getTaperLength(),
+                v2ProcessGUI.getEventOnset(),v2ProcessGUI.getDiffOrder());
+
+        this.lowcutadj = v2ProcessGUI.lowcutadj;
+        this.highcutadj = v2ProcessGUI.highcutadj;
+        this.samplerate = v2ProcessGUI.samplerate;
+        this.needresampling = v2ProcessGUI.needresampling;
+        
+        this.accel = new double[v2ProcessGUI.accel.length];
+        System.arraycopy(v2ProcessGUI.accel,0,this.accel,0,v2ProcessGUI.accel.length);
+        this.velocity = new double[v2ProcessGUI.velocity.length];
+        System.arraycopy(v2ProcessGUI.velocity,0,this.velocity,0,v2ProcessGUI.velocity.length);
+        this.displace = new double[v2ProcessGUI.accel.length];
+        System.arraycopy(v2ProcessGUI.displace,0,this.displace,0,v2ProcessGUI.displace.length);
     }
     /**
      * Cycles through a list of V2processGUI objects and filters the acceleration
@@ -348,16 +326,40 @@ public class V2ProcessGUI {
      * @param aStart the starting time (seconds) for subtraction, inclusive
      * @param aStop the ending time(seconds) for subtraction, exclusive
      */
-    public final void makeBaselineCorrection(VFileConstants.V2DataType v2DataType, double[] inBaseline, 
-        double dTime, double aStart, double aStop){
+    public final static V2ProcessGUI makeBaselineCorrection(VFileConstants.V2DataType v2DataType, double[] inBaseline, 
+        V2ProcessGUI v2ProcessGUI, double dTime, double aStart, double aStop, boolean isPreview) throws SmException{
+        
         int aStartAdj = (int)(aStart / dTime);
         int aStopAdj = (int)(aStop / dTime);
         double[] baseline = inBaseline;
-        if (v2DataType == VFileConstants.V2DataType.VEL) {
-            baseline = ArrayOps.differentiate(inBaseline, dTime, diffOrder);
+        
+        if (isPreview) {
+            // Create a copy of V2ProcessGUI, subtract baseline function from either 
+            // accel or velocity, depending on v2DataTYpe, and return copy 
+            V2ProcessGUI v2ProcessCopy = new V2ProcessGUI(v2ProcessGUI);
+            if (v2DataType == VFileConstants.V2DataType.ACC) {
+                for (int i = aStartAdj; i < aStopAdj; i++) {
+                    v2ProcessCopy.accel[i] = v2ProcessCopy.accel[i] - baseline[i];
+                }
+            }
+            else {
+                for (int i = aStartAdj; i < aStopAdj; i++) {
+                    v2ProcessCopy.velocity[i] = v2ProcessCopy.velocity[i] - baseline[i];
+                }                        
+            }
+            return v2ProcessCopy;
         }
-        for (int i = aStartAdj; i < aStopAdj; i++) {
-            accel[i] = accel[i] - baseline[i];
+        else {
+            // Subtract the baseline function from acceleration for final processing.
+            // If the baseline correction function was made using the velocity trace,
+            // first differentiate it before subtracting from acceleration.
+            if (v2DataType == VFileConstants.V2DataType.VEL) {
+                baseline = ArrayOps.differentiate(inBaseline, dTime, v2ProcessGUI.diffOrder);
+            }
+            for (int i = aStartAdj; i < aStopAdj; i++) {
+                v2ProcessGUI.accel[i] = v2ProcessGUI.accel[i] - baseline[i];
+            }
+            return v2ProcessGUI;
         }
     }
     
@@ -522,11 +524,48 @@ public class V2ProcessGUI {
                 cTypeFinal.name());
         }
     }    
+    public final void addBaselineProcessingStep(double fStart, double fStop, double aStart, double aStop, 
+        VFileConstants.V2DataType v2DataTypeOrig, VFileConstants.V2DataType v2DataTypeFinal,
+        VFileConstants.BaselineType bType, VFileConstants.CorrectionOrder cTypeOrig, 
+        VFileConstants.CorrectionOrder cTypeFinal, int cStep) {
+        
+        blcSteps.add(new BLCStep(fStart,fStop,aStart,aStop,v2DataTypeOrig,v2DataTypeFinal,
+            bType,cTypeOrig,cTypeFinal,cStep));
+    }
+    
+    public final ArrayList<BLCStep> getBLCSteps() {return this.blcSteps;}
+
+    public final void runProcessStepsRecorder() {
+        stepRec.clearSteps();
+        stepRec.addCorrectionType(VFileConstants.CorrectionType.MANUAL);
+        stepRec.addEventOnset(this.eventOnset);
+        
+        for (BLCStep blcStep : blcSteps) {
+            double fStart = blcStep.getFunctionStart();
+            double fStop = blcStep.getFunctionStop();
+            double aStart = blcStep.getAppStart();
+            double aStop = blcStep.getAppStop();
+            VFileConstants.V2DataType v2DataTypeOrig = blcStep.getV2DataTypeOrig();
+            VFileConstants.V2DataType v2DataTypeFinal = blcStep.getV2DataTypeFinal();
+            VFileConstants.BaselineType bType = blcStep.getBaselineType();
+            VFileConstants.CorrectionOrder cTypeOrig = blcStep.getCorrectionOrderTypeOrig();
+            VFileConstants.CorrectionOrder cTypeFinal = blcStep.getCorrectionOrderTypeFinal();
+            int cStep = blcStep.getCorrectionStep();
+            
+            stepRec.addBaselineStep(fStart,fStop,aStart,aStop,v2DataTypeFinal,
+                bType,cTypeFinal,cStep);
+        }
+    }
+    
+    public final ArrayList<String> getProcessSteps() {return stepRec.formatSteps();}
     public File getV1File() {return this.v1File;}
     public V1Component getV1Component() {return this.v1Rec;}
     public double[] getAcceleration() {return this.accel;}
     public double[] getVelocity() {return this.velocity;}
     public double[] getDisplacement() {return this.displace;}
+    public void setAcceleration(double[] accel) {this.accel = accel;}
+    public void setVelocity(double[] velocity) {this.velocity = velocity;}
+    public void setDisplacement(double[] displace) {this.displace = displace;}
     public double getDTime() {return this.dtime;}
     public double getEventOnset() {return this.eventOnset;}
     public double getLowFilterCorner() {return this.lowcutadj;}
@@ -534,5 +573,8 @@ public class V2ProcessGUI {
     public double getNoRealValue() {return this.noRealVal;}
     public int getDiffOrder() {return this.diffOrder;}
     public void setLowFilterCorner(double low) {this.lowcutadj = low;}
-    public void setHighFilterCorner(double high) {this.highcutadj = high;}    
+    public void setHighFilterCorner(double high) {this.highcutadj = high;}
+    public double getsmThreshold() {return this.smThreshold;}
+    public int getFilterOrder() {return this.filterOrder;}
+    public double getTaperLength() {return this.taperLength;}
 }

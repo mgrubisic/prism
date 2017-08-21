@@ -17,6 +17,8 @@ package COSMOSformat;
 import static SmConstants.VFileConstants.*;
 import SmException.FormatException;
 import SmException.SmException;
+import SmProcessing.ArrayOps;
+import SmProcessing.ArrayStats;
 import SmProcessing.V1Process;
 import SmUtilities.ConfigReader;
 import static SmUtilities.SmConfigConstants.OUT_ARRAY_FORMAT;
@@ -265,5 +267,54 @@ public class V1Component extends COSMOScontentFormat {
         System.arraycopy(V1DataText, 0, outText, currentLength, V1DataText.length);
         outText[totalLength-1] = this.endOfData;
         return outText;
+    }
+    /**
+     * This method is used by the GUI review tool during the trim process. After
+     * an uncorrected acceleration array is trimmed, the array is updated and
+     * new statistics calculated.  Line 10 of the text header is updated with
+     * the current time and the new statistics, and the data format line is
+     * also updated.
+     * @param inArray trimmed uncorrected acceleration array.  This array is modified
+     * if a non-zero mean is calculated (in this case the mean will be removed
+     * from the array).
+     */
+    public void updateArray(double[] inArray, int StartSamplesTrimmed) throws SmException{
+        double meanToZero, avgVal, peakVal, peakIndex;
+        
+        //Remove the mean from the array and save for the Real Header
+        meanToZero = ArrayOps.findAndRemoveMean(inArray);
+        
+        //Find the new mean (should now be zero) and the location and mag. of peak value
+        ArrayStats stat = new ArrayStats( inArray );
+        avgVal = stat.getMean();
+        peakVal = stat.getPeakVal();
+        peakIndex = stat.getPeakValIndex();
+        
+        //Update the V1Component values
+        String currentline = getDataFormatLine();
+        String unitsname = currentline.substring(51,58);
+        int unitscode = Integer.parseInt(currentline.substring(59,61));
+        String realformat = "%8.3f";
+        String agabbrev = this.textHeader[10].substring(35,39);
+        
+        double delta_t = this.realHeader.getRealValue(DELTA_T);
+        double ptime = peakIndex * MSEC_TO_SEC * delta_t;
+        SmTimeFormatter proctime = new SmTimeFormatter();
+        String val = proctime.getGMTdateTime();  //Get the current processing time
+        StringBuilder sb = new StringBuilder(MAX_LINE_LENGTH);
+        this.textHeader[10] = sb.append("Processed:").append(val).append(", ")
+                                .append(agabbrev).append(", Max = ")
+                                .append(String.format(realformat,peakVal))
+                                .append(" ").append(unitsname).append(" at ")
+                                .append(String.format(realformat,ptime))
+                                .append(" sec").toString();
+        buildNewDataFormatLine(unitsname, unitscode);
+        
+        V1Data.setRealArray(inArray);
+        this.realHeader.setRealValue(PEAK_VAL, peakVal);
+        this.realHeader.setRealValue(AVG_VAL, avgVal);
+        this.realHeader.setRealValue(PEAK_VAL_TIME, ptime);
+        this.realHeader.setRealValue(MEAN_ZERO, meanToZero);
+
     }
 }

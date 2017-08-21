@@ -35,62 +35,62 @@ import java.util.ArrayList;
  * @author jmjones
  */
 public class V2Process {
-    private double[] accel;
-    private double ApeakVal;
-    private int ApeakIndex;
-    private double AavgVal;
-    private final int acc_unit_code;
-    private final String acc_units;
+    protected double[] accel;
+    protected double ApeakVal;
+    protected int ApeakIndex;
+    protected double AavgVal;
+    protected int acc_unit_code;
+    protected String acc_units;
     
-    private double[] velocity;
-    private double VpeakVal;
-    private int VpeakIndex;
-    private double VavgVal;
-    private final int vel_unit_code;
-    private final String vel_units;
+    protected double[] velocity;
+    protected double VpeakVal;
+    protected int VpeakIndex;
+    protected double VavgVal;
+    protected int vel_unit_code;
+    protected String vel_units;
     
-    private double[] displace;
-    private double DpeakVal;
-    private int DpeakIndex;
-    private double DavgVal;
-    private final int dis_unit_code;
-    private final String dis_units;
+    protected double[] displace;
+    protected double DpeakVal;
+    protected int DpeakIndex;
+    protected double DavgVal;
+    protected int dis_unit_code;
+    protected String dis_units;
     
-    private double initialVel;
-    private double initialDis;
+    protected double initialVel;
+    protected double initialDis;
     
     private int inArrayLength;
-    private double[] paddedaccel;
-    private final V1Component inV1;
-    private int data_unit_code;
-    private double dtime;
-    private double samplerate;
-    private double orig_samplerate;
-    private boolean needresampling;
-    private double noRealVal;
-    private double lowcutoff;
-    private double highcutoff;
-    private double lowcutadj;
-    private double highcutadj;
-    private double mmag;
-    private double lmag;
-    private double smag;
-    private double omag;
-    private double magnitude;
-    private BaselineType basetype;
+    protected double[] paddedaccel;
+    protected final V1Component inV1;
+    protected int data_unit_code;
+    protected double dtime;
+    protected double samplerate;
+    protected double orig_samplerate;
+    protected boolean needresampling;
+    protected double noRealVal;
+    protected double lowcutoff;
+    protected double highcutoff;
+    protected double lowcutadj;
+    protected double highcutadj;
+    protected double mmag;
+    protected double lmag;
+    protected double smag;
+    protected double omag;
+    protected double magnitude;
+    protected BaselineType basetype;
     
     private int pickIndex;
-    private int startIndex;
+    protected int startIndex;
     private double ebuffer;
     private EventOnsetType emethod;
-    private int numroll;  // the filter order is rolloff*2
-    private double taperlength;
+    protected int numroll;  // the filter order is rolloff*2
+    protected double taperlength;
     private double preEventMean;
     private int trendRemovalOrder;
     private double calculated_taper;
     private double config_taper;
     private boolean strongMotion;
-    private double smThreshold;
+    protected double smThreshold;
     private final String logtime;
     
     private V2Status procStatus;
@@ -114,14 +114,14 @@ public class V2Process {
     private int ABCbreak1;
     private int ABCbreak2;
     
-    private double bracketedDuration;
-    private double AriasIntensity;
-    private double HousnerIntensity;
-    private double RMSacceleration;
-    private double durationInterval;
-    private double cumulativeAbsVelocity;
+    protected double bracketedDuration;
+    protected double AriasIntensity;
+    protected double HousnerIntensity;
+    protected double RMSacceleration;
+    protected double durationInterval;
+    protected double cumulativeAbsVelocity;
     
-    private ProcessStepsRecorder2 stepRec;
+    protected ProcessStepsRecorder2 stepRec;
     
     /**
      * Constructor gets the necessary header and configuration file parameters
