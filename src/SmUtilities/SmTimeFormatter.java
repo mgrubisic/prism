@@ -14,6 +14,7 @@
 
 package SmUtilities;
 
+import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
@@ -27,11 +28,25 @@ import java.util.TimeZone;
  */
 public class SmTimeFormatter {
     String GMT_ZONE = "GMT";
-    
+    String UTC_ZONE = "UTC";
+    ZonedDateTime datetime;
+    int zyear, zmonth, zday, zhour, zmin, zsec, znano;
+    double fullsec;
 /**
  * Default constructor
  */
     public SmTimeFormatter() {
+    }
+    public SmTimeFormatter(ZonedDateTime newdatetime) {
+        datetime = newdatetime;
+        zyear = datetime.getYear();
+        zmonth = datetime.getMonthValue();
+        zday = datetime.getDayOfMonth();
+        zhour = datetime.getHour();
+        zmin = datetime.getMinute();
+        zsec = datetime.getSecond();
+        znano = datetime.getNano();
+        fullsec = (double)zsec + (double)znano/(1.0e-9);
     }
 /**
  * This method returns the formatted date and time, with "GMT" appended
@@ -51,4 +66,16 @@ public class SmTimeFormatter {
                                 year,month,day,hour,min,sec,GMT_ZONE);
         return result;
     }
+    public String getUTCdateTime() {
+        String result;
+        result = String.format("%1$4d/%2$02d/%3$02d %4$02d:%5$02d:%6$5.3f %7$3s",
+                                zyear,zmonth,zday,zhour,zmin,fullsec,UTC_ZONE);        
+        return result;
+    }
+    public int getUTCyear(){return zyear;}
+    public int getUTCmonth() {return zmonth;}
+    public int getUTCday() {return zday;}
+    public int getUTChour() {return zhour;}
+    public int getUTCminute() {return zmin;}
+    public double getUTCsecond() {return fullsec;}
 }

@@ -25,6 +25,7 @@ import static SmUtilities.SmConfigConstants.OUT_ARRAY_FORMAT;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_ABBREV;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_CODE;
 import SmUtilities.SmTimeFormatter;
+import java.time.ZonedDateTime;
 
 /**
  * This class extends the COSMOScontentFormat base class to define a V1 record.
@@ -271,14 +272,14 @@ public class V1Component extends COSMOScontentFormat {
     /**
      * This method is used by the GUI review tool during the trim process. After
      * an uncorrected acceleration array is trimmed, the array is updated and
-     * new statistics calculated.  Line 10 of the text header is updated with
+     * new statistics calculated.  Line 10(11) of the text header is updated with
      * the current time and the new statistics, and the data format line is
      * also updated.
      * @param inArray trimmed uncorrected acceleration array.  This array is modified
      * if a non-zero mean is calculated (in this case the mean will be removed
      * from the array).
      */
-    public void updateArray(double[] inArray, int StartSamplesTrimmed) throws SmException{
+    public void updateArray(double[] inArray, ZonedDateTime newStartTime) throws SmException{
         double meanToZero, avgVal, peakVal, peakIndex;
         
         //Remove the mean from the array and save for the Real Header
@@ -297,11 +298,21 @@ public class V1Component extends COSMOScontentFormat {
         String realformat = "%8.3f";
         String agabbrev = this.textHeader[10].substring(35,39);
         
+        //Update line 8, the record start time, and the real and int header
+        //values associated with the time
+        StringBuilder sb = new StringBuilder(MAX_LINE_LENGTH);
+        SmTimeFormatter zonetime = new SmTimeFormatter(newStartTime);
+        String startformat = zonetime.getUTCdateTime();
+        String currenttext = this.textHeader[7];
+        this.textHeader[7] = sb.append(currenttext.substring(0,16)).append(" ")
+                  .append(startformat)
+                  .append(currenttext.substring(44,MAX_LINE_LENGTH)).toString();
+        
         double delta_t = this.realHeader.getRealValue(DELTA_T);
         double ptime = peakIndex * MSEC_TO_SEC * delta_t;
         SmTimeFormatter proctime = new SmTimeFormatter();
         String val = proctime.getGMTdateTime();  //Get the current processing time
-        StringBuilder sb = new StringBuilder(MAX_LINE_LENGTH);
+        sb = new StringBuilder(MAX_LINE_LENGTH);
         this.textHeader[10] = sb.append("Processed:").append(val).append(", ")
                                 .append(agabbrev).append(", Max = ")
                                 .append(String.format(realformat,peakVal))
@@ -310,11 +321,18 @@ public class V1Component extends COSMOScontentFormat {
                                 .append(" sec").toString();
         buildNewDataFormatLine(unitsname, unitscode);
         
+        // Update the array and the new procesing parameters
         V1Data.setRealArray(inArray);
         this.realHeader.setRealValue(PEAK_VAL, peakVal);
         this.realHeader.setRealValue(AVG_VAL, avgVal);
         this.realHeader.setRealValue(PEAK_VAL_TIME, ptime);
         this.realHeader.setRealValue(MEAN_ZERO, meanToZero);
-
+        //Update the date and time values
+        this.intHeader.setIntValue(START_TIME_YEAR, zonetime.getUTCyear());
+        this.intHeader.setIntValue(START_TIME_MONTH, zonetime.getUTCmonth());
+        this.intHeader.setIntValue(START_TIME_DAY, zonetime.getUTCday());
+        this.intHeader.setIntValue(START_TIME_HOUR, zonetime.getUTChour());
+        this.intHeader.setIntValue(START_TIME_MIN, zonetime.getUTCminute());
+        this.realHeader.setRealValue(START_TIME_SEC, zonetime.getUTCsecond());
     }
 }
