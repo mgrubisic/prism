@@ -560,7 +560,7 @@ public class ArrayOps {
      */
     public static double[] centralDiff( double[] inarr, double dt, int order) {
         Set<Integer> check = new HashSet<>(Arrays.asList(3,5,7,9));
-        if ((inarr == null) || (inarr.length < order) || (dt < 0.0) ||
+        if ((inarr == null) || (inarr.length < order) || (dt <= 0.0) ||
                                                     (!check.contains(order))) {
             return new double[0];
         }

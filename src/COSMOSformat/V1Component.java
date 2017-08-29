@@ -123,6 +123,8 @@ public class V1Component extends COSMOScontentFormat {
     public double[] getDataArray() {
         return V1Data.getRealArray();
     }
+    public double getRealValue(int index) {return this.realHeader.getRealValue(index);}
+    public int getIntValue(int index) {return this.intHeader.getIntValue(index);}
     /**
      * This method builds the V1 component from the V1 process object, picking
      * up the data array and updating header parameters and format lines.  Once
@@ -281,9 +283,14 @@ public class V1Component extends COSMOScontentFormat {
      */
     public void updateArray(double[] inArray, ZonedDateTime newStartTime) throws SmException{
         double meanToZero, avgVal, peakVal, peakIndex;
+        String realformat = "%8.3f";
+        String unitsname, agabbrev;
+        int unitscode;
         
         //Remove the mean from the array and save for the Real Header
         meanToZero = ArrayOps.findAndRemoveMean(inArray);
+        V1Data.setRealArray(inArray);
+        V1Data.setNumVals(inArray.length);
         
         //Find the new mean (should now be zero) and the location and mag. of peak value
         ArrayStats stat = new ArrayStats( inArray );
@@ -293,10 +300,21 @@ public class V1Component extends COSMOScontentFormat {
         
         //Update the V1Component values
         String currentline = getDataFormatLine();
-        String unitsname = currentline.substring(51,58);
-        int unitscode = Integer.parseInt(currentline.substring(59,61));
-        String realformat = "%8.3f";
-        String agabbrev = this.textHeader[10].substring(35,39);
+        try {
+            unitsname = currentline.substring(UNITS_NAME_START,UNITS_NAME_START+7);
+        } catch (IndexOutOfBoundsException err) {
+            unitsname = "unknown";
+        }
+        try {
+            unitscode = Integer.parseInt(currentline.substring(UNITS_CODE_START,UNITS_CODE_START+2));
+        } catch (IndexOutOfBoundsException err) {
+            unitscode = 0;
+        }
+        try {
+            agabbrev = this.textHeader[10].substring(AGENCY_ABBR,AGENCY_ABBR+4);
+        } catch (IndexOutOfBoundsException | NumberFormatException err) {
+            agabbrev = DEFAULT_AG_CODE;
+        }
         
         //Update line 8, the record start time, and the real and int header
         //values associated with the time
@@ -304,11 +322,13 @@ public class V1Component extends COSMOScontentFormat {
         SmTimeFormatter zonetime = new SmTimeFormatter(newStartTime);
         String startformat = zonetime.getUTCdateTime();
         String currenttext = this.textHeader[7];
-        this.textHeader[7] = sb.append(currenttext.substring(0,16)).append(" ")
-                  .append(startformat)
-                  .append(currenttext.substring(44,MAX_LINE_LENGTH)).toString();
-        
+        sb.append("Rcrd start time:").append(startformat);
+        if (currenttext.length() > END_START_TIME) {
+            sb.append(currenttext.substring(END_START_TIME,currenttext.length()));
+        }
+        this.textHeader[7] = sb.toString();
         double delta_t = this.realHeader.getRealValue(DELTA_T);
+        double seriesLength = delta_t * inArray.length;
         double ptime = peakIndex * MSEC_TO_SEC * delta_t;
         SmTimeFormatter proctime = new SmTimeFormatter();
         String val = proctime.getGMTdateTime();  //Get the current processing time
@@ -322,13 +342,14 @@ public class V1Component extends COSMOScontentFormat {
         buildNewDataFormatLine(unitsname, unitscode);
         
         // Update the array and the new procesing parameters
-        V1Data.setRealArray(inArray);
+        this.realHeader.setRealValue(SERIES_LENGTH, seriesLength);
         this.realHeader.setRealValue(PEAK_VAL, peakVal);
         this.realHeader.setRealValue(AVG_VAL, avgVal);
         this.realHeader.setRealValue(PEAK_VAL_TIME, ptime);
         this.realHeader.setRealValue(MEAN_ZERO, meanToZero);
         //Update the date and time values
         this.intHeader.setIntValue(START_TIME_YEAR, zonetime.getUTCyear());
+        this.intHeader.setIntValue(START_TIME_JULDAY, zonetime.getUTCjulday());
         this.intHeader.setIntValue(START_TIME_MONTH, zonetime.getUTCmonth());
         this.intHeader.setIntValue(START_TIME_DAY, zonetime.getUTCday());
         this.intHeader.setIntValue(START_TIME_HOUR, zonetime.getUTChour());

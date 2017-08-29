@@ -16,15 +16,32 @@ package PRISMtest.Package;
 
 import COSMOSformat.V0Component;
 import COSMOSformat.V1Component;
+import static SmConstants.VFileConstants.AVG_VAL;
+import static SmConstants.VFileConstants.DELTA_T;
+import static SmConstants.VFileConstants.MEAN_ZERO;
+import static SmConstants.VFileConstants.MSEC_TO_SEC;
+import static SmConstants.VFileConstants.PEAK_VAL;
+import static SmConstants.VFileConstants.PEAK_VAL_TIME;
 import static SmConstants.VFileConstants.PROCESSING_STAGE_INDEX;
 import static SmConstants.VFileConstants.RAWACC;
+import static SmConstants.VFileConstants.SERIES_LENGTH;
+import static SmConstants.VFileConstants.START_TIME_DAY;
+import static SmConstants.VFileConstants.START_TIME_HOUR;
+import static SmConstants.VFileConstants.START_TIME_JULDAY;
+import static SmConstants.VFileConstants.START_TIME_MIN;
+import static SmConstants.VFileConstants.START_TIME_MONTH;
+import static SmConstants.VFileConstants.START_TIME_SEC;
+import static SmConstants.VFileConstants.START_TIME_YEAR;
 import static SmConstants.VFileConstants.UNCORACC;
 import static SmConstants.VFileConstants.V1_STAGE;
 import SmException.FormatException;
 import SmException.SmException;
+import SmProcessing.ArrayOps;
+import SmProcessing.ArrayStats;
 import SmProcessing.V1Process;
 import SmUtilities.PrismXMLReader;
 import java.io.IOException;
+import java.time.ZonedDateTime;
 import javax.xml.parsers.ParserConfigurationException;
 import static org.junit.Assert.*;
 import org.junit.Before;
@@ -42,6 +59,10 @@ public class V1ComponentTest {
     V1Component v1;
     V1Component v1a;
     double delta = 0.0001;
+    int arrlen = 14;
+    double[] newArray = new double[arrlen];
+    double[] saveArray = new double[arrlen];
+    double EPSILON = 0.000001;
     
     public V1ComponentTest() {
         this.v0file = new String[48];
@@ -51,6 +72,12 @@ public class V1ComponentTest {
             xml.readFile("D:/PRISM/config_files/prism_config.xml");
         } catch (ParserConfigurationException | SAXException | IOException err) {
             System.out.println("config read error");
+        }
+        double start = 1.0;
+        for (int i=0; i < arrlen; i++) {
+            newArray[i] = start;
+            saveArray[i] = start;
+            start += 1.0;
         }
     }
     
@@ -63,7 +90,7 @@ public class V1ComponentTest {
         v0file[4] = "Statn No: 05- 13921 Code:CE-13921  CGS  Riverside - Limonite & Downey";
         v0file[5] = "Coords: 33.975  -117.487   Site geology:  ";
         v0file[6] = "Recorder: Etna   s/n 1614 ( 3 Chns of   3 at Sta) Sensor: FBA ";
-        v0file[7] = "Rcrd start time: 1/15/2014, 09:35:  .0 UTC (Q=5) RcrdId: 13921-L1614-14015.39";
+        v0file[7] = "Rcrd start time: 1/15/2014 09:35:23.152 UTC (Q=5) RcrdId: 13921-L1614-14015.39";
         v0file[8] = "Sta Chan  1: 360 deg (Rcrdr Chan  1)";
         v0file[9] = "Raw record length =  56.000 sec, Uncor max =    20108 counts, at   25.205 sec.";
         v0file[10]= "Processed: 01/15/14  (k2vol0 v0.1 CSMIP)";
@@ -126,7 +153,7 @@ public class V1ComponentTest {
         v1file[15]= "    -999    -999    -999       2    -999       1    -999    -999       3    -999";
         v1file[16]= "    -999    -999       3    -999       6    -999    -999       6    -999    -999";
         v1file[17]= "    -999    -999       3       3      24      24    -999    -999    -999    2014";
-        v1file[18]= "      88       3      29       4       9       5       5    -999    -999       2";
+        v1file[18]= "      62       9       3      20      39       5       5    -999    -999       2";
         v1file[19]= "       2       0       0     360    -999    -999    -999    -999    -999       0";
         v1file[20]= "    -999    -999    -999    -999    -999    -999    -999    -999    -999    -999";
         v1file[21]= "    -999    -999    -999    -999    -999    -999    -999    -999    -999    -999";
@@ -145,7 +172,7 @@ public class V1ComponentTest {
         v1file[34]= "  -9.990000e+02   1.000000e+00  -9.990000e+02  -9.990000e+02  -9.990000e+02";
         v1file[35]= "  -9.990000e+02  -9.990000e+02  -9.990000e+02  -9.990000e+02  -9.990000e+02";
         v1file[36]= "  -9.990000e+02  -9.990000e+02  -9.990000e+02  -9.990000e+02  -9.990000e+02";
-        v1file[37]= "  -9.990000e+02   1.000000e+01   3.071900e+02   8.369725e-01   3.335000e+01";
+        v1file[37]= "  -9.990000e+02   1.000000e+05   3.071900e+02   8.369725e-01   3.335000e+01";
         v1file[38]= "  -4.653877e-14  -9.990000e+02  -9.990000e+02  -9.990000e+02  -9.990000e+02";
         v1file[39]= "  -9.990000e+02  -9.990000e+02  -9.990000e+02  -9.990000e+02  -9.990000e+02";
         v1file[40]= "  -9.990000e+02  -9.990000e+02  -9.990000e+02  -9.990000e+02  -9.990000e+02";
@@ -155,7 +182,7 @@ public class V1ComponentTest {
         v1file[44]= "  -9.990000e+02  -9.990000e+02  -9.990000e+02  -9.990000e+02  -9.990000e+02";
         v1file[45]= "   1 Comment line(s) follow, each starting with a \"|\":";
         v1file[46]= "|";
-        v1file[47]= "      16  acceleration pts, approx  307 secs, units=cm/sec2(04), Format=(6E12.3)";
+        v1file[47]= "      16 acceleration pts, approx  307 secs, units=cm/sec2(04), Format=(6E12.3)";
         v1file[48]= "   1.197e-04   3.024e-04   6.676e-04   4.850e-04   4.850e-04   8.503e-04";
         v1file[49]= "   1.033e-03   6.676e-04   4.850e-04   6.676e-04   4.850e-04   6.676e-04";
         v1file[50]= "   1.216e-03   1.216e-03   3.024e-04   1.033e-03";
@@ -215,5 +242,49 @@ public class V1ComponentTest {
         String test = v1rec.getDataFormatLine();
         CharSequence seq = "xxyyz(25)";
         org.junit.Assert.assertEquals(true, test.contains(seq) );
+    }
+    
+    @Test
+    public void updateDataTest() throws FormatException, SmException {
+        ZonedDateTime newtime = ZonedDateTime.parse("2015-03-29T12:26:10Z[UTC]");
+        ZonedDateTime extratime = newtime.plusNanos(123456000);
+        String teststring = "2015/03/29 12:26:10.123 UTC";
+        v1a = new V1Component(UNCORACC);
+        v1a.loadComponent(0, v1file);
+        v1a.updateArray(newArray, extratime);
+        
+        org.junit.Assert.assertEquals(arrlen,v1a.getDataLength());
+        double[] test = v1a.getDataArray();
+        double[] testnomean = new double[newArray.length];
+        System.arraycopy(saveArray,0,testnomean,0,saveArray.length);
+        double meanToZero = ArrayOps.findAndRemoveMean(testnomean);
+        org.junit.Assert.assertArrayEquals(testnomean, test, EPSILON);
+        
+        ArrayStats stat = new ArrayStats( testnomean );
+        double avgVal = stat.getMean();
+        double peakVal = stat.getPeakVal();
+        int peakIndex = stat.getPeakValIndex();
+        double delta_t = v1a.getRealValue(DELTA_T);
+        double seriesLength = delta_t * test.length;
+        double ptime = peakIndex * MSEC_TO_SEC * delta_t;
+        
+        org.junit.Assert.assertEquals( avgVal, v1a.getRealValue(AVG_VAL), EPSILON);
+        org.junit.Assert.assertEquals( peakVal, v1a.getRealValue(PEAK_VAL), EPSILON);
+        org.junit.Assert.assertEquals( ptime, v1a.getRealValue(PEAK_VAL_TIME), EPSILON);
+        org.junit.Assert.assertEquals( meanToZero, v1a.getRealValue(MEAN_ZERO), EPSILON);
+        org.junit.Assert.assertEquals( seriesLength, v1a.getRealValue(SERIES_LENGTH), EPSILON);
+        
+        org.junit.Assert.assertEquals( 2015, v1a.getIntValue(START_TIME_YEAR));
+        org.junit.Assert.assertEquals( 88, v1a.getIntValue(START_TIME_JULDAY));
+        org.junit.Assert.assertEquals( 3, v1a.getIntValue(START_TIME_MONTH));
+        org.junit.Assert.assertEquals( 29, v1a.getIntValue(START_TIME_DAY));
+        org.junit.Assert.assertEquals( 12, v1a.getIntValue(START_TIME_HOUR));
+        org.junit.Assert.assertEquals( 26, v1a.getIntValue(START_TIME_MIN));
+        org.junit.Assert.assertEquals( 10.123456, v1a.getRealValue(START_TIME_SEC),EPSILON);
+        
+//        String[] text = v1a.VrecToText();
+//        for (int j=0;j<text.length;j++) {
+//            System.out.println(text[j]);
+//        }
     }
 }

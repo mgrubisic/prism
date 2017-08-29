@@ -31,6 +31,10 @@ public final class VFileConstants {
     public static final int SENSOR_LOCATION_START = 46;
     public static final int NODATA_LINE = 12;
     public static final int END_OF_DATA_CHAN = 17;
+    public static final int AGENCY_ABBR = 35;
+    public static final int UNITS_NAME_START = 51;
+    public static final int UNITS_CODE_START = 59;
+    public static final int END_START_TIME = 44;
     
     //data arrays, display default parameters
     public static final int DEFAULT_NOINTVAL = -999;
@@ -49,6 +53,7 @@ public final class VFileConstants {
     
     //event date time text header entries
     public static final int START_TIME_YEAR = 39;
+    public static final int START_TIME_JULDAY = 40;
     public static final int START_TIME_MONTH = 41;
     public static final int START_TIME_DAY = 42;
     public static final int START_TIME_HOUR = 43;
@@ -120,6 +125,7 @@ public final class VFileConstants {
     //real header index values
     public static final int MEAN_ZERO = 35;
     public static final int DELTA_T = 61;
+    public static final int SERIES_LENGTH = 62;
     public static final int PEAK_VAL = 63;
     public static final int PEAK_VAL_TIME = 64;
     public static final int AVG_VAL = 65;

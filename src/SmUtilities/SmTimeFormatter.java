@@ -30,7 +30,7 @@ public class SmTimeFormatter {
     String GMT_ZONE = "GMT";
     String UTC_ZONE = "UTC";
     ZonedDateTime datetime;
-    int zyear, zmonth, zday, zhour, zmin, zsec, znano;
+    int zyear, zjulday, zmonth, zday, zhour, zmin, zsec, znano;
     double fullsec;
 /**
  * Default constructor
@@ -40,13 +40,14 @@ public class SmTimeFormatter {
     public SmTimeFormatter(ZonedDateTime newdatetime) {
         datetime = newdatetime;
         zyear = datetime.getYear();
+        zjulday = datetime.getDayOfYear();
         zmonth = datetime.getMonthValue();
         zday = datetime.getDayOfMonth();
         zhour = datetime.getHour();
         zmin = datetime.getMinute();
         zsec = datetime.getSecond();
         znano = datetime.getNano();
-        fullsec = (double)zsec + (double)znano/(1.0e-9);
+        fullsec = (double)zsec + (double)znano/(1.0e9);
     }
 /**
  * This method returns the formatted date and time, with "GMT" appended
@@ -73,9 +74,12 @@ public class SmTimeFormatter {
         return result;
     }
     public int getUTCyear(){return zyear;}
+    public int getUTCjulday() {return zjulday;}
     public int getUTCmonth() {return zmonth;}
     public int getUTCday() {return zday;}
     public int getUTChour() {return zhour;}
     public int getUTCminute() {return zmin;}
     public double getUTCsecond() {return fullsec;}
+    public int getUTCjustSecond() {return zsec;}
+    public int getUTCjustNano() {return znano;}
 }
