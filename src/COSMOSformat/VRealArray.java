@@ -83,7 +83,9 @@ public class VRealArray extends COSMOSarrayFormat {
             throw new FormatException("Unexpected EOF encountered at line " + current);
         }
         try {
-            this.parseNumberFormatLine(infile[current]);
+            super.parseNumberFormatLine(infile[current]);
+            String numformat = super.getNumberFormat();
+            this.displayType = ((numformat.contains("F")) || (numformat.contains("f"))) ? "F" : "E";
             holdNumbers =  this.extractNumericVals( current, infile);        
             realVals = new double[holdNumbers.size()];
             for (String each: holdNumbers){

@@ -140,7 +140,7 @@ public class SmProductGUI extends SmProductFormat {
             channel = rec1.getChannel();
             srcFileName = rec1.getFileName();
             srcFileExt = srcFileName.substring(srcFileName.lastIndexOf(".")+1);
-            destFileExt = srcFileExt.length() == 2 ? "V1" + srcFileExt.substring(2) : "V1";
+            destFileExt = srcFileExt.length() > 2 ? "V1" + srcFileExt.substring(2) : "V1";
             
             outName = buildFilename(location, "", srcFileName, destFileExt, channel, "");
             File outFile = outName.toFile();
@@ -189,7 +189,7 @@ public class SmProductGUI extends SmProductFormat {
             channel = rec2.getChannel();
             srcFileName = rec2.getFileName();
             srcFileExt = srcFileName.substring(srcFileName.lastIndexOf(".")+1);
-            destFileExt = srcFileExt.length() == 2 ? "V2" + srcFileExt.substring(2) : "V2";
+            destFileExt = srcFileExt.length() > 2 ? "V2" + srcFileExt.substring(2) : "V2";
             
             outName = buildFilename(location, "", srcFileName, destFileExt, channel, v2DataTypeExt);
             File outFile = outName.toFile();
@@ -225,7 +225,7 @@ public class SmProductGUI extends SmProductFormat {
             channel = rec3.getChannel();
             srcFileName = rec3.getFileName();
             srcFileExt = srcFileName.substring(srcFileName.lastIndexOf(".")+1);
-            destFileExt = srcFileExt.length() == 2 ? "V3" + srcFileExt.substring(2) : "V3";
+            destFileExt = srcFileExt.length() > 2 ? "V3" + srcFileExt.substring(2) : "V3";
             
             outName = buildFilename(location,"", srcFileName,destFileExt,channel, "");
             File outFile = outName.toFile();

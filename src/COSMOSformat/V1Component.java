@@ -21,11 +21,13 @@ import SmProcessing.ArrayOps;
 import SmProcessing.ArrayStats;
 import SmProcessing.V1Process;
 import SmUtilities.ConfigReader;
+import SmUtilities.ProcessStepsRecorder2;
 import static SmUtilities.SmConfigConstants.OUT_ARRAY_FORMAT;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_ABBREV;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_CODE;
 import SmUtilities.SmTimeFormatter;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 
 /**
  * This class extends the COSMOScontentFormat base class to define a V1 record.
@@ -280,41 +282,56 @@ public class V1Component extends COSMOScontentFormat {
      * @param inArray trimmed uncorrected acceleration array.  This array is modified
      * if a non-zero mean is calculated (in this case the mean will be removed
      * from the array).
+     * @param newStartTime ZonedDateTime-formatted updated record start time
+     * @param startcount number of points removed from the beginning of the array
+     * @param endcount number of points removed from the end of the array
+     * @return the original data format line, before the trim (optional, for debug)
+     * @throws SmException.SmException 
+     * @throws SmException.FormatException 
      */
-    public void updateArray(double[] inArray, ZonedDateTime newStartTime) throws SmException{
+    public String updateArray(double[] inArray, ZonedDateTime newStartTime, 
+            int startcount, int endcount) throws SmException, FormatException{
         double meanToZero, avgVal, peakVal, peakIndex;
+        meanToZero = 0.0;
         String realformat = "%8.3f";
         String unitsname, agabbrev;
         int unitscode;
+        ProcessStepsRecorder2 stepRec  = ProcessStepsRecorder2.INSTANCE;
+        ArrayList<String> newComments;
+        stepRec.clearSteps();
+        stepRec.addCorrectionType(CorrectionType.MANUAL);
         
         //Remove the mean from the array and save for the Real Header
         meanToZero = ArrayOps.findAndRemoveMean(inArray);
         V1Data.setRealArray(inArray);
+        V1Data.setFieldWidth(REAL_FIELDWIDTH_V1);
+        V1Data.setPrecision(REAL_PRECISION_V1);
+        V1Data.setDisplayType("E");
         V1Data.setNumVals(inArray.length);
+        V1Data.calculateNumLines();
+        SmArrayStyle numStyle = (V1Data.getValsPerLine() > 1) ? SmArrayStyle.PACKED : 
+                                                                SmArrayStyle.SINGLE_COLUMN;
+        V1Data.buildArrayParams(numStyle);
         
-        //Find the new mean (should now be zero) and the location and mag. of peak value
+        //Find the new mean (should now be close to zero) and the location and mag. of peak value
         ArrayStats stat = new ArrayStats( inArray );
         avgVal = stat.getMean();
         peakVal = stat.getPeakVal();
         peakIndex = stat.getPeakValIndex();
         
-        //Update the V1Component values
-        String currentline = getDataFormatLine();
+        String currentline = this.getDataFormatLine();
         try {
             unitsname = currentline.substring(UNITS_NAME_START,UNITS_NAME_START+7);
         } catch (IndexOutOfBoundsException err) {
             unitsname = "unknown";
         }
-        try {
-            unitscode = Integer.parseInt(currentline.substring(UNITS_CODE_START,UNITS_CODE_START+2));
-        } catch (IndexOutOfBoundsException err) {
-            unitscode = 0;
-        }
+        unitscode = this.intHeader.getIntValue(UNITS_CODE);
         try {
             agabbrev = this.textHeader[10].substring(AGENCY_ABBR,AGENCY_ABBR+4);
-        } catch (IndexOutOfBoundsException | NumberFormatException err) {
+        } catch (IndexOutOfBoundsException err) {
             agabbrev = DEFAULT_AG_CODE;
         }
+        this.buildNewDataFormatLine(unitsname, unitscode);
         
         //Update line 8, the record start time, and the real and int header
         //values associated with the time
@@ -328,7 +345,7 @@ public class V1Component extends COSMOScontentFormat {
         }
         this.textHeader[7] = sb.toString();
         double delta_t = this.realHeader.getRealValue(DELTA_T);
-        double seriesLength = delta_t * inArray.length;
+        double seriesLength = delta_t * inArray.length * MSEC_TO_SEC;
         double ptime = peakIndex * MSEC_TO_SEC * delta_t;
         SmTimeFormatter proctime = new SmTimeFormatter();
         String val = proctime.getGMTdateTime();  //Get the current processing time
@@ -339,7 +356,6 @@ public class V1Component extends COSMOScontentFormat {
                                 .append(" ").append(unitsname).append(" at ")
                                 .append(String.format(realformat,ptime))
                                 .append(" sec").toString();
-        buildNewDataFormatLine(unitsname, unitscode);
         
         // Update the array and the new procesing parameters
         this.realHeader.setRealValue(SERIES_LENGTH, seriesLength);
@@ -347,6 +363,7 @@ public class V1Component extends COSMOScontentFormat {
         this.realHeader.setRealValue(AVG_VAL, avgVal);
         this.realHeader.setRealValue(PEAK_VAL_TIME, ptime);
         this.realHeader.setRealValue(MEAN_ZERO, meanToZero);
+        
         //Update the date and time values
         this.intHeader.setIntValue(START_TIME_YEAR, zonetime.getUTCyear());
         this.intHeader.setIntValue(START_TIME_JULDAY, zonetime.getUTCjulday());
@@ -355,5 +372,14 @@ public class V1Component extends COSMOScontentFormat {
         this.intHeader.setIntValue(START_TIME_HOUR, zonetime.getUTChour());
         this.intHeader.setIntValue(START_TIME_MIN, zonetime.getUTCminute());
         this.realHeader.setRealValue(START_TIME_SEC, zonetime.getUTCsecond());
+        
+        //Update the comments to include the trim info
+        stepRec.addTrimIndicies(startcount, endcount);
+        newComments = stepRec.formatSteps();
+        this.comments = super.updateComments(this.comments, newComments);
+        newComments.clear();
+        stepRec.clearSteps();
+        
+        return currentline;
     }
 }

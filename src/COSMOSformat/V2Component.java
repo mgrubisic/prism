@@ -27,7 +27,6 @@ import static SmUtilities.SmConfigConstants.PROC_AGENCY_ABBREV;
 import static SmUtilities.SmConfigConstants.PROC_AGENCY_CODE;
 import SmUtilities.SmTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -315,12 +314,12 @@ public class V2Component extends COSMOScontentFormat {
         
         //Update the comments with processing steps
         if (processSteps != null) {
-            this.comments = updateComments(this.comments, processSteps);
+            this.comments = super.updateComments(this.comments, processSteps);
         } else {
             if (inVvals.getQCStatus() == V2Status.GOOD) {
                 ProcessStepsRecorder2 stepRec = ProcessStepsRecorder2.INSTANCE;
                 ArrayList<String> psteps = stepRec.formatSteps();
-                this.comments = updateComments(this.comments, psteps);
+                this.comments = super.updateComments(this.comments, psteps);
                 psteps.clear();
             }
         }
@@ -386,27 +385,6 @@ public class V2Component extends COSMOScontentFormat {
         System.arraycopy(V2DataText, 0, outText, currentLength, V2DataText.length);
         outText[totalLength-1] = this.endOfData;
         return outText;
-    }
-    /**
-     * Takes the current list of comments and appends additional comments created
-     * during V2 processing.
-     * @param comments the set of comments received from the V0 file
-     * @param lines a list of additional comments to append to the current comments
-     * @return the updated comment list
-     */
-    public String[] updateComments(String[] comments, ArrayList<String> lines) {
-        ArrayList<String> text = new ArrayList<>(Arrays.asList(comments));
-        text.addAll(lines);
-        StringBuilder sb = new StringBuilder();
-        String start = text.get(0);
-        sb.append(String.format("%4d",(text.size()-1)))
-                .append(start.substring(4, start.length()));
-        text.set(0,sb.toString());
-        comments = new String[text.size()];
-        comments = text.toArray(comments);
-        lines.clear();
-        text.clear();
-        return comments;
     }
     public double extractEONSETfromComments() throws SmException {
         String matchRegex = "(<EONSET>)";

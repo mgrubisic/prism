@@ -32,8 +32,7 @@ public final class VFileConstants {
     public static final int NODATA_LINE = 12;
     public static final int END_OF_DATA_CHAN = 17;
     public static final int AGENCY_ABBR = 35;
-    public static final int UNITS_NAME_START = 51;
-    public static final int UNITS_CODE_START = 59;
+    public static final int UNITS_NAME_START = 52;
     public static final int END_START_TIME = 44;
     
     //data arrays, display default parameters
@@ -42,12 +41,12 @@ public final class VFileConstants {
     public static final int DEFAULT_INT_FIELDWIDTH = 8;
     public static final int DEFAULT_REAL_FIELDWIDTH = 15;
     public static final int DEFAULT_REAL_PRECISION = 6;
-    public static final int REAL_FIELDWIDTH_V1 = 12;
-    public static final int REAL_PRECISION_V1 = 3;
-    public static final int REAL_FIELDWIDTH_V2 = 12;
-    public static final int REAL_PRECISION_V2 = 3;
+    public static final int REAL_FIELDWIDTH_V1 = 15;
+    public static final int REAL_PRECISION_V1 = 6;
+    public static final int REAL_FIELDWIDTH_V2 = 15;
+    public static final int REAL_PRECISION_V2 = 6;
     public static final int REAL_FIELDWIDTH_V3 = 15;
-    public static final int REAL_PRECISION_V3 = 3;
+    public static final int REAL_PRECISION_V3 = 6;
     public static final String DEFAULT_REAL_DISPLAYTYPE = "F";
     public static final String DEFAULT_INT_DISPLAYTYPE = "I";
     
@@ -61,6 +60,7 @@ public final class VFileConstants {
     public static final int START_TIME_SEC = 29;
     
     //V2 processing header markers
+    public static final int UNITS_CODE = 2;
     public static final int LOW_FREQ_FILTER_TYPE = 60;
     public static final int HIGH_FREQ_FILTER_TYPE = 61;
     public static final int LOW_FREQ_CORNER = 53;

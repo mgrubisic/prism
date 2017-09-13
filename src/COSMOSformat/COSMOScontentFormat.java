@@ -19,6 +19,7 @@ import static SmConstants.VFileConstants.*;
 import SmException.FormatException;
 import SmException.SmException;
 import java.io.File;
+import java.util.ArrayList;
 
 import java.util.Arrays;
 import java.util.regex.Matcher;
@@ -566,6 +567,27 @@ public class COSMOScontentFormat {
         String[] textCopy = new String[comments.length];
         System.arraycopy(comments, 0 , textCopy, 0, comments.length);
         return textCopy;        
+    }
+    /**
+     * Takes the current list of comments and appends additional comments created
+     * during processing.
+     * @param comments the set of comments received from the V* file
+     * @param lines a list of additional comments to append to the current comments
+     * @return the updated comment list
+     */
+    public String[] updateComments(String[] comments, ArrayList<String> lines) {
+        ArrayList<String> text = new ArrayList<>(Arrays.asList(comments));
+        text.addAll(lines);
+        StringBuilder sb = new StringBuilder();
+        String start = text.get(0);
+        sb.append(String.format("%4d",(text.size()-1)))
+                .append(start.substring(4, start.length()));
+        text.set(0,sb.toString());
+        comments = new String[text.size()];
+        comments = text.toArray(comments);
+        lines.clear();
+        text.clear();
+        return comments;
     }
     /**
      * Getter for the End-of-data line

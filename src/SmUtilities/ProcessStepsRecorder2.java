@@ -35,6 +35,7 @@ public class ProcessStepsRecorder2 {
     private CorrectionType ctype;
     private boolean needsResampling;
     private double samplerate;
+    private boolean gotEventOnset;
     private boolean gotTrimmed;
     private int startTrimCount;
     private int endTrimCount;
@@ -48,6 +49,7 @@ public class ProcessStepsRecorder2 {
         this.ctype = CorrectionType.AUTO;
         this.needsResampling = false;
         this.gotTrimmed = false;
+        this.gotEventOnset = false;
         this.samplerate = 0.0;
         this.startTrimCount = 0;
         this.endTrimCount = 0;
@@ -58,6 +60,7 @@ public class ProcessStepsRecorder2 {
      * @param inonsettime event onset time in seconds
      */
     public void addEventOnset( double inonsettime ) {
+        gotEventOnset = true;
         eventOnsetTime = inonsettime;
     }
     /**
@@ -111,6 +114,7 @@ public class ProcessStepsRecorder2 {
         needsResampling = false;
         samplerate = 0.0;
         gotTrimmed = false;
+        gotEventOnset = false;
         startTrimCount = 0;
         endTrimCount = 0;
         blist.clear();
@@ -130,10 +134,12 @@ public class ProcessStepsRecorder2 {
             outlist.add(String.format("|<RESAMPLE> Data resampled to %6.2f samples/sec",samplerate));
         }
         if (gotTrimmed) {
-            outlist.add(String.format("|<TRIM> %1$d samp. of beginning, %2$d samp. of end of original record", startTrimCount, endTrimCount));
+            outlist.add(String.format("|<TRIM> %1$d samp. of beginning, %2$d samp. of end of original channel", startTrimCount, endTrimCount));
         }
-        outlist.add(String.format("|<EONSET> event onset(sec)=%1s",
-            String.format(timeformat,eventOnsetTime)));
+        if (gotEventOnset) {
+            outlist.add(String.format("|<EONSET> event onset(sec)=%1s",
+                                        String.format(timeformat,eventOnsetTime)));
+        }
         for (blcorrect blc : blist) {
             String dType = blc.getV2DataType().toString().substring(0,1);
             String blTag = (blc.getBaselineType().equals(BaselineType.ABC)) ?
