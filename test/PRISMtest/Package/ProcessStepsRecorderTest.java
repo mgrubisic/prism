@@ -36,9 +36,8 @@ public class ProcessStepsRecorderTest {
         test1[2] = "|<ABLC>SF:   0.0000, EF:  31.9800, SA:   0.0000, EA: 132.0000, ORDER:  MEAN";
         test1[3] = "|<VBLC>SF:   0.0000, EF: 132.0000, SA:   0.0000, EA: 132.0000, ORDER:ORDER2";
         
-        empty = new String[2];
+        empty = new String[1];
         empty[0] = "|<PROCESS> AUTO";
-        empty[1] = "|<EONSET> event onset(sec)=   0.0000";
         
         test2 = new String[6];
         test2[0] = "|<PROCESS> AUTO";
@@ -53,10 +52,9 @@ public class ProcessStepsRecorderTest {
         testresamp[1] = "|<RESAMPLE> Data resampled to 200.00 samples/sec";
         testresamp[2] = "|<EONSET> event onset(sec)=  15.3200";
         
-        testtrim = new String[3];
+        testtrim = new String[2];
         testtrim[0] = "|<PROCESS> MANUAL";
-        testtrim[1] = "|<TRIM> 260 samp. of beginning, 400 samp. of end of original record";
-        testtrim[2] = "|<EONSET> event onset(sec)=  14.6600";
+        testtrim[1] = "|<TRIM> 260 samp. of beginning, 400 samp. of end of original channel";
     }
     
     @Test
@@ -78,7 +76,7 @@ public class ProcessStepsRecorderTest {
         org.junit.Assert.assertArrayEquals(test1,result);
         
         stepRec.clearSteps();
-        result = new String[2];
+        result = new String[1];
         result = stepRec.formatSteps().toArray(result);
         org.junit.Assert.assertArrayEquals(empty, result);
     }
@@ -124,9 +122,8 @@ public class ProcessStepsRecorderTest {
         ProcessStepsRecorder2 stepRec = ProcessStepsRecorder2.INSTANCE;
         stepRec.clearSteps();
         stepRec.addCorrectionType(VFileConstants.CorrectionType.MANUAL);
-        stepRec.addEventOnset(14.66);
         stepRec.addTrimIndicies(260,400);
-        String[] result = new String[3];
+        String[] result = new String[2];
         result = stepRec.formatSteps().toArray(result);
         org.junit.Assert.assertArrayEquals(testtrim,result);
     }

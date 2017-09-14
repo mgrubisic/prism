@@ -65,18 +65,18 @@ public class V1ComponentTest {
     double[] newArray = new double[arrlen];
     double[] saveArray = new double[arrlen];
     double EPSILON = 0.000001;
-    String filename = "D:\\PRISM\\source_version_2\\test\\updateArray\\BKSAO--n.481.HNE.00.V1";
-    String filename2 = "C:\\Users\\jmjones\\Documents\\prism_2017_09_13\\test\\HV.61792931\\NP.2812\\V1\\NP2812-n.61792931.HNN.--.V1c";
+//    String filename = "D:\\PRISM\\source_version_2\\test\\updateArray\\BKSAO--n.481.HNE.00.V1";
+//    String filename2 = "C:\\Users\\jmjones\\Documents\\prism_2017_09_13\\test\\HV.61792931\\NP.2812\\V1\\NP2812-n.61792931.HNN.--.V1c";
     
     public V1ComponentTest() {
         this.v0file = new String[48];
         this.v1file = new String[52];
-        try {
-            PrismXMLReader xml = new PrismXMLReader();
-            xml.readFile("C:\\Users\\jmjones\\Documents\\prism_2017_09_13\\config_files\\prism_config.xml");
-        } catch (ParserConfigurationException | SAXException | IOException err) {
-            System.out.println("config read error");
-        }
+//        try {
+//            PrismXMLReader xml = new PrismXMLReader();
+//            xml.readFile("C:\\Users\\jmjones\\Documents\\prism_2017_09_13\\config_files\\prism_config.xml");
+//        } catch (ParserConfigurationException | SAXException | IOException err) {
+//            System.out.println("config read error");
+//        }
         double start = 1.49999999;
         for (int i=0; i < arrlen; i++) {
             newArray[i] = start;
@@ -256,37 +256,35 @@ public class V1ComponentTest {
         v1a = new V1Component(UNCORACC);
         v1a.loadComponent(0, v1file);
         String checkline = v1a.updateArray(newArray, extratime, 10, 100);
-//        System.out.println(v1a.getDataFormatLine());
-//        System.out.println(checkline);
         
-//        org.junit.Assert.assertEquals(arrlen,v1a.getDataLength());
-//        double[] test = v1a.getDataArray();
-//        double[] testnomean = new double[newArray.length];
-//        System.arraycopy(saveArray,0,testnomean,0,saveArray.length);
-//        double meanToZero = ArrayOps.findAndRemoveMean(testnomean);
-//        org.junit.Assert.assertArrayEquals(testnomean, test, EPSILON);
-//        
-//        ArrayStats stat = new ArrayStats( testnomean );
-//        double avgVal = stat.getMean();
-//        double peakVal = stat.getPeakVal();
-//        int peakIndex = stat.getPeakValIndex();
-//        double delta_t = v1a.getRealValue(DELTA_T);
-//        double seriesLength = delta_t * test.length * MSEC_TO_SEC;
-//        double ptime = peakIndex * MSEC_TO_SEC * delta_t;
-//        
-//        org.junit.Assert.assertEquals( avgVal, v1a.getRealValue(AVG_VAL), EPSILON);
-//        org.junit.Assert.assertEquals( peakVal, v1a.getRealValue(PEAK_VAL), EPSILON);
-//        org.junit.Assert.assertEquals( ptime, v1a.getRealValue(PEAK_VAL_TIME), EPSILON);
-//        org.junit.Assert.assertEquals( meanToZero, v1a.getRealValue(MEAN_ZERO), EPSILON);
-//        org.junit.Assert.assertEquals( seriesLength, v1a.getRealValue(SERIES_LENGTH), EPSILON);
-//        
-//        org.junit.Assert.assertEquals( 2015, v1a.getIntValue(START_TIME_YEAR));
-//        org.junit.Assert.assertEquals( 88, v1a.getIntValue(START_TIME_JULDAY));
-//        org.junit.Assert.assertEquals( 3, v1a.getIntValue(START_TIME_MONTH));
-//        org.junit.Assert.assertEquals( 29, v1a.getIntValue(START_TIME_DAY));
-//        org.junit.Assert.assertEquals( 12, v1a.getIntValue(START_TIME_HOUR));
-//        org.junit.Assert.assertEquals( 26, v1a.getIntValue(START_TIME_MIN));
-//        org.junit.Assert.assertEquals( 10.123456, v1a.getRealValue(START_TIME_SEC),EPSILON);
+        org.junit.Assert.assertEquals(arrlen,v1a.getDataLength());
+        double[] test = v1a.getDataArray();
+        double[] testnomean = new double[newArray.length];
+        System.arraycopy(saveArray,0,testnomean,0,saveArray.length);
+        double meanToZero = ArrayOps.findAndRemoveMean(testnomean);
+        org.junit.Assert.assertArrayEquals(testnomean, test, EPSILON);
+        
+        ArrayStats stat = new ArrayStats( testnomean );
+        double avgVal = stat.getMean();
+        double peakVal = stat.getPeakVal();
+        int peakIndex = stat.getPeakValIndex();
+        double delta_t = v1a.getRealValue(DELTA_T);
+        double seriesLength = delta_t * test.length * MSEC_TO_SEC;
+        double ptime = peakIndex * MSEC_TO_SEC * delta_t;
+        
+        org.junit.Assert.assertEquals( avgVal, v1a.getRealValue(AVG_VAL), EPSILON);
+        org.junit.Assert.assertEquals( peakVal, v1a.getRealValue(PEAK_VAL), EPSILON);
+        org.junit.Assert.assertEquals( ptime, v1a.getRealValue(PEAK_VAL_TIME), EPSILON);
+        org.junit.Assert.assertEquals( meanToZero, v1a.getRealValue(MEAN_ZERO), EPSILON);
+        org.junit.Assert.assertEquals( seriesLength, v1a.getRealValue(SERIES_LENGTH), EPSILON);
+        
+        org.junit.Assert.assertEquals( 2015, v1a.getIntValue(START_TIME_YEAR));
+        org.junit.Assert.assertEquals( 88, v1a.getIntValue(START_TIME_JULDAY));
+        org.junit.Assert.assertEquals( 3, v1a.getIntValue(START_TIME_MONTH));
+        org.junit.Assert.assertEquals( 29, v1a.getIntValue(START_TIME_DAY));
+        org.junit.Assert.assertEquals( 12, v1a.getIntValue(START_TIME_HOUR));
+        org.junit.Assert.assertEquals( 26, v1a.getIntValue(START_TIME_MIN));
+        org.junit.Assert.assertEquals( 10.123456, v1a.getRealValue(START_TIME_SEC),EPSILON);
 //        
 //        String[] text = v1a.VrecToText();
 //        for (int j=0;j<text.length;j++) {
@@ -329,26 +327,26 @@ public class V1ComponentTest {
 //            System.out.println(text[j]);
 //        }
 //    }
-    @Test
-    public void checkUpdateFromFileNoChange() throws IOException, FormatException, SmException {
-        ZonedDateTime newtime = ZonedDateTime.parse("2015-03-29T12:26:10Z[UTC]");
-        ZonedDateTime extratime = newtime.plusNanos(123456000);
-        
-        File newV1 = new File(filename2);
-        TextFileReader reader = new TextFileReader(newV1);
-        String[] contents = reader.readInTextFile();
-        V1Component v1Check = new V1Component(UNCORACC);
-        v1Check.loadComponent(0,contents);
-        String[] textcheck = v1Check.VrecToText();
-        for (int j=0;j<100;j++) {
-            System.out.println(textcheck[j]);
-        }
-        V1Component v1Component = new V1Component(UNCORACC);
-        v1Component.loadComponent(0,contents);
-        String checkline = v1Component.updateArray(v1Component.getDataArray(), extratime, 0, 0);        
-        String[] text = v1Component.VrecToText();
-        for (int j=0;j<100;j++) {
-            System.out.println(text[j]);
-        }
-    }
+//    @Test
+//    public void checkUpdateFromFileNoChange() throws IOException, FormatException, SmException {
+//        ZonedDateTime newtime = ZonedDateTime.parse("2015-03-29T12:26:10Z[UTC]");
+//        ZonedDateTime extratime = newtime.plusNanos(123456000);
+//        
+//        File newV1 = new File(filename2);
+//        TextFileReader reader = new TextFileReader(newV1);
+//        String[] contents = reader.readInTextFile();
+//        V1Component v1Check = new V1Component(UNCORACC);
+//        v1Check.loadComponent(0,contents);
+//        String[] textcheck = v1Check.VrecToText();
+//        for (int j=0;j<100;j++) {
+//            System.out.println(textcheck[j]);
+//        }
+//        V1Component v1Component = new V1Component(UNCORACC);
+//        v1Component.loadComponent(0,contents);
+//        String checkline = v1Component.updateArray(v1Component.getDataArray(), extratime, 0, 0);        
+//        String[] text = v1Component.VrecToText();
+//        for (int j=0;j<100;j++) {
+//            System.out.println(text[j]);
+//        }
+//    }
 }
