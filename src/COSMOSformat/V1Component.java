@@ -308,7 +308,6 @@ public class V1Component extends COSMOScontentFormat {
         V1Data.setPrecision(REAL_PRECISION_V1);
         V1Data.setDisplayType("E");
         V1Data.setNumVals(inArray.length);
-        V1Data.calculateNumLines();
         SmArrayStyle numStyle = (V1Data.getValsPerLine() > 1) ? SmArrayStyle.PACKED : 
                                                                 SmArrayStyle.SINGLE_COLUMN;
         V1Data.buildArrayParams(numStyle);
@@ -318,14 +317,11 @@ public class V1Component extends COSMOScontentFormat {
         avgVal = stat.getMean();
         peakVal = stat.getPeakVal();
         peakIndex = stat.getPeakValIndex();
-        
-        String currentline = this.getDataFormatLine();
-        try {
-            unitsname = currentline.substring(UNITS_NAME_START,UNITS_NAME_START+7);
-        } catch (IndexOutOfBoundsException err) {
-            unitsname = "unknown";
-        }
+                
         unitscode = this.intHeader.getIntValue(UNITS_CODE);
+        unitsname = ((unitscode >= 0) && (unitscode < SMARRAYUNITS.length)) ? SMARRAYUNITS[unitscode] : UNKNOWN_UNITS;
+        String currentline = this.getDataFormatLine();
+        
         try {
             agabbrev = this.textHeader[10].substring(AGENCY_ABBR,AGENCY_ABBR+4);
         } catch (IndexOutOfBoundsException err) {

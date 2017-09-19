@@ -32,7 +32,7 @@ public final class VFileConstants {
     public static final int NODATA_LINE = 12;
     public static final int END_OF_DATA_CHAN = 17;
     public static final int AGENCY_ABBR = 35;
-    public static final int UNITS_NAME_START = 52;
+    public static final int UNITS_NAME_START = 51;
     public static final int END_START_TIME = 44;
     
     //data arrays, display default parameters
@@ -92,10 +92,14 @@ public final class VFileConstants {
     public static final int CMSECN = 5;
     public static final String CMT = "cm";
     public static final int CMN = 6;
+    public static final String GSECTEXT = "notusd";
+    public static final int GSECN = 2;
     public static final String GUNITST = "g";
     public static final int GLN = 2;
     public static final String COUNTTEXT = "counts";
     public static final int CNTN = 50;
+    public static final String UNKNOWN_UNITS = "unkn";
+    public static final String[] SMARRAYUNITS = {"unkn","sec","g","notusd","cm/sec2","cm/sec","cm"};
     
     //filter code
     public static final int BUTTER_A_CODE = 5;
